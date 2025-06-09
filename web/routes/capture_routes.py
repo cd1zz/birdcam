@@ -64,7 +64,6 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
     def api_get_motion_settings():
         """Get motion detection settings"""
         try:
-            # Get current settings from motion detector
             region = capture_service.motion_detector.motion_region
             
             settings = {
@@ -74,6 +73,7 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
                 } if region else None,
                 'motion_threshold': capture_service.motion_detector.config.threshold,
                 'min_contour_area': capture_service.motion_detector.config.min_contour_area,
+                'motion_timeout_seconds': capture_service.motion_config.motion_timeout_seconds,  # NEW
                 'source': 'current'
             }
             
@@ -81,6 +81,22 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     
+    @app.route('/api/motion-debug')
+    def api_motion_debug():
+        """Get real-time motion detection debug info"""
+        try:
+            # Get the latest frame
+            ret, frame = capture_service.camera_manager.read_frame()
+            if not ret:
+                return jsonify({'error': 'Camera not available'})
+            
+            # Get debug info from motion detector
+            debug_info = capture_service.motion_detector.get_debug_info(frame)
+            return jsonify(debug_info)
+            
+        except Exception as e:
+            return jsonify({'error': f'Debug failed: {str(e)}'})
+
     @app.route('/api/motion-settings', methods=['POST'])
     def api_set_motion_settings():
         """Save motion detection settings persistently"""
@@ -89,6 +105,7 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
             region_data = data.get('region')
             motion_threshold = data.get('motion_threshold', 5000)
             min_contour_area = data.get('min_contour_area', 500)
+            motion_timeout_seconds = data.get('motion_timeout_seconds', 30)  # NEW
             
             if not region_data or not all(k in region_data for k in ['x1', 'y1', 'x2', 'y2']):
                 return jsonify({'error': 'Invalid region data'}), 400
@@ -102,9 +119,13 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
             capture_service.motion_detector.set_motion_region(region)
             capture_service.motion_detector.config.threshold = motion_threshold
             capture_service.motion_detector.config.min_contour_area = min_contour_area
+            capture_service.motion_detector.config.motion_timeout_seconds = motion_timeout_seconds  # NEW
             
-            # Save to database for persistence
-            settings_repo.save_motion_settings(region, motion_threshold, min_contour_area)
+            # IMPORTANT: Update the capture service timeout too
+            capture_service.motion_config.motion_timeout_seconds = motion_timeout_seconds
+            
+            # Save to database for persistence (extend settings_repo to save timeout)
+            settings_repo.save_motion_settings(region, motion_threshold, min_contour_area, motion_timeout_seconds)
             
             # Try to update server settings too
             server_updated = False
@@ -114,11 +135,11 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
             except Exception as e:
                 print(f"Failed to update server settings: {e}")
             
-            message = 'Settings saved locally'
+            message = f'Settings saved: sensitivity={motion_threshold}, size={min_contour_area}, timeout={motion_timeout_seconds}s'
             if server_updated:
-                message += ' and synced to server'
+                message += ' (synced to server)'
             else:
-                message += ' (server sync failed - server may be offline)'
+                message += ' (local only - server offline)'
             
             return jsonify({
                 'message': message,
