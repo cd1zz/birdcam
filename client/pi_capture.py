@@ -54,9 +54,64 @@ class PiCaptureSystem:
         self.files_to_sync = []
         self.sync_lock = threading.Lock()
         
-        # Initialize capture
-        self.cap = None
-        self._init_capture()
+    def load_motion_settings(self):
+        """Load motion detection settings from database"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # Create settings table if it doesn't exist
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS motion_settings (
+                id INTEGER PRIMARY KEY,
+                region_x1 INTEGER,
+                region_y1 INTEGER, 
+                region_x2 INTEGER,
+                region_y2 INTEGER,
+                motion_threshold INTEGER DEFAULT 5000,
+                min_contour_area INTEGER DEFAULT 500,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Load existing settings
+        cursor.execute('SELECT * FROM motion_settings ORDER BY id DESC LIMIT 1')
+        settings = cursor.fetchone()
+        
+        if settings:
+            _, x1, y1, x2, y2, threshold, min_area, _ = settings
+            self.motion_region = (x1, y1, x2, y2)
+            self.motion_threshold = threshold
+            self.min_contour_area = min_area
+            print(f"✅ Loaded motion settings: region=({x1},{y1},{x2},{y2}), threshold={threshold}")
+        else:
+            # Default to center 60% of frame
+            self.motion_region = None  # Will be set in detect_motion
+            print("📋 Using default motion settings")
+            
+        conn.commit()
+        conn.close()
+
+    def save_motion_settings(self, region, motion_threshold, min_contour_area):
+        """Save motion detection settings to database"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        x1, y1, x2, y2 = region
+        cursor.execute('''
+            INSERT INTO motion_settings (region_x1, region_y1, region_x2, region_y2, 
+                                       motion_threshold, min_contour_area)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (x1, y1, x2, y2, motion_threshold, min_contour_area))
+        
+        conn.commit()
+        conn.close()
+        
+        # Update current settings
+        self.motion_region = region
+        self.motion_threshold = motion_threshold
+        self.min_contour_area = min_contour_area
+        
+        print(f"💾 Saved motion settings: region=({x1},{y1},{x2},{y2})")
 
     def init_database(self):
         """Initialize SQLite database for capture logging"""
@@ -501,6 +556,7 @@ def index():
                         <h3>🎛️ Controls</h3>
                         <button class="btn" onclick="syncNow()">📤 Sync Files</button>
                         <button class="btn warning" onclick="processServerQueue()">🧠 Process Queue</button>
+                        <button class="btn" onclick="showSettings()">⚙️ Settings</button>
                         <button class="btn" onclick="location.reload()">🔄 Refresh</button>
                     </div>
                 </div>
@@ -564,6 +620,288 @@ def index():
         </div>
 
         <script>
+            function showSettings() {
+                // Create settings modal
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                    background: rgba(0,0,0,0.8); z-index: 1000; 
+                    display: flex; align-items: center; justify-content: center;
+                `;
+                
+                const settingsContainer = document.createElement('div');
+                settingsContainer.style.cssText = `
+                    background: white; padding: 20px; border-radius: 10px; 
+                    max-width: 90%; max-height: 90%; position: relative;
+                    width: 800px;
+                `;
+                
+                settingsContainer.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">⚙️ Motion Detection Settings</h3>
+                        <button onclick="this.closest('.modal').remove()" style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">✕ Close</button>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 300px; gap: 20px;">
+                        <div>
+                            <h4>🎯 Draw Motion Detection Region</h4>
+                            <p style="font-size: 14px; color: #666;">Click and drag to draw a rectangle. Only motion inside this area will trigger recording.</p>
+                            <div style="position: relative; border: 2px solid #ddd; display: inline-block;">
+                                <img id="settings-feed" src="/live_feed" style="width: 400px; height: 300px; cursor: crosshair;">
+                                <canvas id="region-canvas" width="400" height="300" style="position: absolute; top: 0; left: 0; pointer-events: auto;"></canvas>
+                            </div>
+                            <div style="margin-top: 10px;">
+                                <button class="btn" onclick="clearRegion()">🗑️ Clear Region</button>
+                                <button class="btn" onclick="setDefaultRegion()">📐 Default (Center)</button>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4>🔧 Detection Parameters</h4>
+                            <div style="margin-bottom: 15px;">
+                                <label>Sensitivity:</label>
+                                <input type="range" id="threshold-slider" min="1000" max="10000" value="5000" style="width: 100%;">
+                                <span id="threshold-value">5000</span>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label>Min Object Size:</label>
+                                <input type="range" id="size-slider" min="100" max="2000" value="500" style="width: 100%;">
+                                <span id="size-value">500</span>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <h5>Current Region:</h5>
+                                <div id="region-info" style="font-family: monospace; font-size: 12px; background: #f5f5f5; padding: 10px;">
+                                    No region selected
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <button class="btn success" onclick="saveSettings()" style="width: 100%; margin-bottom: 10px;">💾 Save Settings</button>
+                                <button class="btn" onclick="testMotion()" style="width: 100%;">🧪 Test Motion Detection</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                modal.className = 'modal';
+                modal.appendChild(settingsContainer);
+                document.body.appendChild(modal);
+                
+                // Initialize canvas drawing
+                initializeRegionDrawing();
+                
+                // Load current settings
+                loadCurrentSettings();
+                
+                // Close on background click
+                modal.onclick = (e) => {
+                    if (e.target === modal) modal.remove();
+                };
+            }
+
+            let isDrawing = false;
+            let startX, startY, currentRegion = null;
+
+            function initializeRegionDrawing() {
+                const canvas = document.getElementById('region-canvas');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.addEventListener('mousedown', startDrawing);
+                canvas.addEventListener('mousemove', draw);
+                canvas.addEventListener('mouseup', stopDrawing);
+                
+                // Touch events for mobile
+                canvas.addEventListener('touchstart', handleTouch);
+                canvas.addEventListener('touchmove', handleTouch);
+                canvas.addEventListener('touchend', handleTouch);
+            }
+            
+            function startDrawing(e) {
+                isDrawing = true;
+                const rect = e.target.getBoundingClientRect();
+                startX = e.clientX - rect.left;
+                startY = e.clientY - rect.top;
+            }
+            
+            function draw(e) {
+                if (!isDrawing) return;
+                
+                const canvas = document.getElementById('region-canvas');
+                const ctx = canvas.getContext('2d');
+                const rect = e.target.getBoundingClientRect();
+                
+                const currentX = e.clientX - rect.left;
+                const currentY = e.clientY - rect.top;
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw rectangle
+                ctx.strokeStyle = '#00ff00';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(startX, startY, currentX - startX, currentY - startY);
+                
+                // Semi-transparent fill
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+                ctx.fillRect(startX, startY, currentX - startX, currentY - startY);
+                
+                updateRegionInfo(startX, startY, currentX, currentY);
+            }
+            
+            function stopDrawing(e) {
+                if (!isDrawing) return;
+                isDrawing = false;
+                
+                const rect = e.target.getBoundingClientRect();
+                const endX = e.clientX - rect.left;
+                const endY = e.clientY - rect.top;
+                
+                // Convert canvas coordinates to camera coordinates (640x480)
+                const scaleX = 640 / 400;
+                const scaleY = 480 / 300;
+                
+                currentRegion = {
+                    x1: Math.round(Math.min(startX, endX) * scaleX),
+                    y1: Math.round(Math.min(startY, endY) * scaleY),
+                    x2: Math.round(Math.max(startX, endX) * scaleX),
+                    y2: Math.round(Math.max(startY, endY) * scaleY)
+                };
+                
+                updateRegionInfo(startX, startY, endX, endY);
+            }
+            
+            function handleTouch(e) {
+                e.preventDefault();
+                const touch = e.touches[0] || e.changedTouches[0];
+                const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
+                                                 e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                e.target.dispatchEvent(mouseEvent);
+            }
+            
+            function updateRegionInfo(x1, y1, x2, y2) {
+                const info = document.getElementById('region-info');
+                if (currentRegion) {
+                    info.innerHTML = `
+                        Region: (${currentRegion.x1}, ${currentRegion.y1}) to (${currentRegion.x2}, ${currentRegion.y2})<br>
+                        Size: ${currentRegion.x2 - currentRegion.x1} x ${currentRegion.y2 - currentRegion.y1} pixels
+                    `;
+                } else {
+                    info.textContent = 'Draw a region on the image above';
+                }
+            }
+            
+            function clearRegion() {
+                const canvas = document.getElementById('region-canvas');
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                currentRegion = null;
+                updateRegionInfo();
+            }
+            
+            function setDefaultRegion() {
+                // Set to center 60% of frame
+                currentRegion = {
+                    x1: 128,  // 20% of 640
+                    y1: 96,   // 20% of 480  
+                    x2: 512,  // 80% of 640
+                    y2: 384   // 80% of 480
+                };
+                
+                // Draw on canvas
+                const canvas = document.getElementById('region-canvas');
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Convert to canvas coordinates
+                const x1 = currentRegion.x1 * 400 / 640;
+                const y1 = currentRegion.y1 * 300 / 480;
+                const x2 = currentRegion.x2 * 400 / 640;
+                const y2 = currentRegion.y2 * 300 / 480;
+                
+                ctx.strokeStyle = '#00ff00';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+                ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+                
+                updateRegionInfo();
+            }
+            
+            function loadCurrentSettings() {
+                fetch('/api/motion-settings')
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.region) {
+                            currentRegion = data.region;
+                            // Draw current region on canvas
+                            const canvas = document.getElementById('region-canvas');
+                            const ctx = canvas.getContext('2d');
+                            
+                            const x1 = data.region.x1 * 400 / 640;
+                            const y1 = data.region.y1 * 300 / 480;
+                            const x2 = data.region.x2 * 400 / 640;
+                            const y2 = data.region.y2 * 300 / 480;
+                            
+                            ctx.strokeStyle = '#00ff00';
+                            ctx.lineWidth = 2;
+                            ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+                            ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+                            ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+                            
+                            updateRegionInfo();
+                        }
+                        
+                        document.getElementById('threshold-slider').value = data.motion_threshold || 5000;
+                        document.getElementById('size-slider').value = data.min_contour_area || 500;
+                        document.getElementById('threshold-value').textContent = data.motion_threshold || 5000;
+                        document.getElementById('size-value').textContent = data.min_contour_area || 500;
+                    });
+                
+                // Update slider values in real-time
+                document.getElementById('threshold-slider').oninput = function() {
+                    document.getElementById('threshold-value').textContent = this.value;
+                };
+                
+                document.getElementById('size-slider').oninput = function() {
+                    document.getElementById('size-value').textContent = this.value;
+                };
+            }
+            
+            function saveSettings() {
+                if (!currentRegion) {
+                    alert('Please draw a motion detection region first');
+                    return;
+                }
+                
+                const settings = {
+                    region: currentRegion,
+                    motion_threshold: parseInt(document.getElementById('threshold-slider').value),
+                    min_contour_area: parseInt(document.getElementById('size-slider').value)
+                };
+                
+                fetch('/api/motion-settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(settings)
+                })
+                .then(r => r.json())
+                .then(data => {
+                    alert(data.message || 'Settings saved!');
+                    document.querySelector('.modal').remove();
+                    updateDashboard();
+                })
+                .catch(err => alert('Failed to save settings: ' + err));
+            }
+            
+            function testMotion() {
+                alert('Wave your hand in the detection region and watch the live feed for motion indicators!');
+            }
+
             function viewVideo(filename) {
                 console.log('Attempting to play video:', filename);
                 const videoUrl = `http://192.168.1.136:8091/videos/${filename}`;
@@ -786,6 +1124,45 @@ def api_process_server_queue():
     except Exception as e:
         return jsonify({'error': f'Failed to contact server: {str(e)}'}), 500
 
+@app.route('/api/motion-settings', methods=['GET'])
+def api_get_motion_settings():
+    """Get current motion detection settings"""
+    if capture_system:
+        settings = {
+            'region': None,
+            'motion_threshold': capture_system.motion_threshold,
+            'min_contour_area': capture_system.min_contour_area
+        }
+        
+        if capture_system.motion_region:
+            x1, y1, x2, y2 = capture_system.motion_region
+            settings['region'] = {'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2}
+        
+        return jsonify(settings)
+    return jsonify({'error': 'System not initialized'})
+
+@app.route('/api/motion-settings', methods=['POST'])
+def api_set_motion_settings():
+    """Save motion detection settings"""
+    if not capture_system:
+        return jsonify({'error': 'System not initialized'}), 500
+    
+    try:
+        data = request.get_json()
+        region_data = data.get('region')
+        motion_threshold = data.get('motion_threshold', 5000)
+        min_contour_area = data.get('min_contour_area', 500)
+        
+        if region_data:
+            region = (region_data['x1'], region_data['y1'], region_data['x2'], region_data['y2'])
+            capture_system.save_motion_settings(region, motion_threshold, min_contour_area)
+            return jsonify({'message': 'Motion settings saved successfully'})
+        else:
+            return jsonify({'error': 'Invalid region data'}), 400
+            
+    except Exception as e:
+        return jsonify({'error': f'Failed to save settings: {str(e)}'}), 500
+
 @app.route('/live_feed')
 def live_feed():
     """Live video feed for troubleshooting"""
@@ -804,6 +1181,13 @@ def live_feed():
                                    cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
                         cv2.putText(frame, f"Recording: {capture_system.is_capturing}", (10, 70),
                                    cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+                        
+                        # Draw motion detection region
+                        if capture_system.motion_region:
+                            x1, y1, x2, y2 = capture_system.motion_region
+                            cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 255, 0), 2)
+                            cv2.putText(frame, "Detection Zone", (x1, y1-10),
+                                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
                     except:
                         pass
                     # Encode frame
