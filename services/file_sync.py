@@ -31,13 +31,18 @@ class FileSyncService:
             return False
     
     def get_server_status(self) -> dict:
+        """Get status from processing server"""
         try:
             response = requests.get(f"{self.base_url}/api/status", timeout=5)
             if response.status_code == 200:
-                return response.json()
-        except (RequestException, Timeout):
-            pass
+                status_data = response.json()
+                # Add the 'connected' flag that the capture system expects
+                status_data['connected'] = True
+                return status_data
+        except (RequestException, Timeout) as e:
+            print(f"⚠️ Could not reach processing server: {e}")
         
+        # Return disconnected status if request failed
         return {'connected': False}
     
     def trigger_processing(self) -> bool:
