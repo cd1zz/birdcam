@@ -9,7 +9,8 @@ class DatabaseConfig:
     path: Path
     
     def __post_init__(self):
-        self.path = Path(self.path)
+        # Resolve to an absolute path so Flask can serve files correctly
+        self.path = Path(self.path).resolve()
 
 @dataclass
 class CaptureConfig:
@@ -38,7 +39,10 @@ class ProcessingConfig:
     max_thumbnails_per_video: int = 5
     
     def __post_init__(self):
-        self.storage_path = Path(self.storage_path)
+        # Resolve storage path to an absolute location to avoid issues with
+        # Flask's send_from_directory which interprets relative paths relative
+        # to the application's root directory.
+        self.storage_path = Path(self.storage_path).resolve()
 
 @dataclass
 class SyncConfig:
