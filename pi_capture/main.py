@@ -56,11 +56,49 @@ def setup_services(config):
     else:
         print("📋 No saved settings found, using defaults")
     
-    # Rest of the function remains the same...
+    # Core services
     print("🎯 Setting up motion detector...")
     motion_detector = MotionDetector(config.motion)
     print("✅ Motion detector ready")
-    
+
+    print("📹 Setting up camera manager...")
+    camera_manager = CameraManager(config.capture)
+    print("✅ Camera manager ready")
+
+    # Video writing
+    print("🎬 Setting up video writer...")
+    raw_dir = config.processing.storage_path / "raw_footage"
+    video_writer = VideoWriter(
+        raw_dir,
+        config.capture.fps,
+        config.capture.resolution
+    )
+    print("✅ Video writer ready")
+
+    # Sync service
+    print("🔄 Setting up sync service...")
+    sync_service = FileSyncService(
+        config.sync.processing_server_host,
+        config.sync.processing_server_port,
+        config.sync.upload_timeout_seconds
+    )
+    print("✅ Sync service ready")
+
+    # Main capture service
+    print("🚀 Setting up capture service...")
+    capture_service = CaptureService(
+        config.capture,
+        config.motion,
+        camera_manager,
+        motion_detector,
+        video_writer,
+        sync_service,
+        video_repo
+    )
+    print("✅ Capture service ready")
+
+    return capture_service, sync_service, settings_repo
+
 
 def setup_scheduler(capture_service, config):
     """Setup scheduled tasks"""
