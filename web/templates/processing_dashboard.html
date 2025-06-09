@@ -1,0 +1,81 @@
+<!-- web/templates/processing_dashboard.html -->
+{% extends "base.html" %}
+
+{% block title %}🧠 Bird AI Processor{% endblock %}
+
+{% block header_title %}🧠 Bird AI Processing System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/processing.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number" id="total-videos">-</div>
+        <div class="stat-label">Total Videos</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" id="processed-videos">-</div>
+        <div class="stat-label">Processed</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" id="queue-size">-</div>
+        <div class="stat-label">Queue Size</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" id="total-birds">-</div>
+        <div class="stat-label">Birds Found</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" id="today-birds">-</div>
+        <div class="stat-label">Today's Birds</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" id="avg-time">-</div>
+        <div class="stat-label">Avg Process Time (s)</div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="detections-panel">
+        <div class="panel-header">
+            <h2>🐦 Recent Bird Detections</h2>
+            <div class="panel-controls">
+                <button class="btn btn-primary" onclick="processNow()">🔄 Process Queue</button>
+                <button class="btn btn-secondary" onclick="location.reload()">🔄 Refresh</button>
+            </div>
+        </div>
+        
+        <div id="detection-grid" class="detection-grid">
+            <div class="loading-message">Loading detections...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Video Modal -->
+<div id="video-modal" class="modal" style="display: none;">
+    <div class="modal-content video-modal-content">
+        <div class="modal-header">
+            <h3 id="video-title">📹 Video Player</h3>
+            <button class="modal-close" onclick="closeVideoModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <video id="video-player" controls style="width: 100%; max-width: 800px;">
+                Your browser does not support the video tag.
+            </video>
+            <div class="video-info">
+                <div id="video-details"></div>
+                <div class="video-actions">
+                    <a id="download-link" class="btn btn-success" target="_blank">📥 Download</a>
+                    <a id="new-tab-link" class="btn btn-secondary" target="_blank">🔗 Open in New Tab</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/processing.js') }}"></script>
+{% endblock %}

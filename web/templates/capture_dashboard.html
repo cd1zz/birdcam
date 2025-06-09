@@ -1,0 +1,117 @@
+<!-- web/templates/capture_dashboard.html -->
+{% extends "base.html" %}
+
+{% block title %}🐦 Bird Capture System{% endblock %}
+
+{% block header_title %}🐦 Bird Detection System - Capture{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/capture.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="main-grid">
+    <div class="left-panel">
+        <div class="live-feed">
+            <h3>📺 Live Feed</h3>
+            <img src="/live_feed" alt="Live Camera" id="live-feed" onerror="handleImageError(this)">
+            <p class="feed-info"><small>Green = Motion detected | Red = No motion</small></p>
+        </div>
+        
+        <div class="controls">
+            <h3>🎛️ Controls</h3>
+            <button class="btn btn-primary" onclick="syncNow()">📤 Sync Files</button>
+            <button class="btn btn-secondary" onclick="showSettings()">⚙️ Settings</button>
+            <button class="btn btn-secondary" onclick="location.reload()">🔄 Refresh</button>
+        </div>
+    </div>
+    
+    <div class="right-panel">
+        <div class="status-panel">
+            <h3>📊 System Status</h3>
+            <div id="status-content">
+                <div class="status-item">
+                    <span id="capture-status" class="status-indicator online"></span>
+                    <span id="capture-text">Loading...</span>
+                </div>
+                <div class="status-item">
+                    <span id="server-status" class="status-indicator offline"></span>
+                    <span id="server-text">Checking server...</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Queue Size:</span>
+                    <span id="queue-size" class="status-value">-</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Last Motion:</span>
+                    <span id="last-motion" class="status-value">-</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="recent-activity">
+            <h3>📈 Recent Activity</h3>
+            <div id="activity-log">
+                <p>Activity log will appear here...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settings-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>⚙️ Motion Detection Settings</h3>
+            <button class="modal-close" onclick="closeSettings()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="settings-grid">
+                <div class="settings-preview">
+                    <h4>🎯 Motion Detection Region</h4>
+                    <p>Click and drag to draw detection area</p>
+                    <div class="preview-container">
+                        <img id="settings-feed" src="/live_feed">
+                        <canvas id="region-canvas" width="400" height="300"></canvas>
+                    </div>
+                    <div class="region-controls">
+                        <button class="btn btn-secondary" onclick="clearRegion()">🗑️ Clear</button>
+                        <button class="btn btn-secondary" onclick="setDefaultRegion()">📐 Default</button>
+                    </div>
+                </div>
+                
+                <div class="settings-controls">
+                    <h4>🔧 Detection Parameters</h4>
+                    <div class="setting-item">
+                        <label for="threshold-slider">Sensitivity:</label>
+                        <input type="range" id="threshold-slider" min="1000" max="10000" value="5000">
+                        <span id="threshold-value">5000</span>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label for="size-slider">Min Object Size:</label>
+                        <input type="range" id="size-slider" min="100" max="2000" value="500">
+                        <span id="size-value">500</span>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <h5>Current Region:</h5>
+                        <div id="region-info" class="region-display">
+                            No region selected
+                        </div>
+                    </div>
+                    
+                    <div class="setting-actions">
+                        <button class="btn btn-success" onclick="saveSettings()">💾 Save Settings</button>
+                        <button class="btn btn-secondary" onclick="testMotion()">🧪 Test Detection</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/capture.js') }}"></script>
+{% endblock %}
