@@ -1,6 +1,7 @@
 # services/camera_manager.py
 import cv2
-from typing import List, Optional, Callable, Tuple
+import numpy as np
+from typing import Optional, Tuple
 from config.settings import CaptureConfig
 
 class CameraManager:
