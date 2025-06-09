@@ -83,17 +83,22 @@ class PiCaptureSystem:
         cursor.execute('SELECT * FROM motion_settings ORDER BY id DESC LIMIT 1')
         settings = cursor.fetchone()
         
-        if settings:
+        if settings and settings[1] is not None:  # Check if region data exists
             _, x1, y1, x2, y2, threshold, min_area, _ = settings
-            self.motion_region = (x1, y1, x2, y2)
-            self.motion_threshold = threshold
-            self.min_contour_area = min_area
-            print(f"✅ Loaded motion settings: region=({x1},{y1},{x2},{y2}), threshold={threshold}")
+            # Only set if we have valid coordinates
+            if all(coord is not None for coord in [x1, y1, x2, y2]):
+                self.motion_region = (x1, y1, x2, y2)
+                self.motion_threshold = threshold
+                self.min_contour_area = min_area
+                print(f"✅ Loaded motion settings: region=({x1},{y1},{x2},{y2}), threshold={threshold}")
+            else:
+                print("⚠️ Found settings but coordinates are None, using defaults")
+                self.motion_region = None
         else:
-            # Default to center 60% of frame
-            self.motion_region = None  # Will be set in detect_motion
-            print("📋 Using default motion settings")
-            
+            # Default to center 60% of frame only if no settings exist
+            print("📋 No saved settings found, using default motion settings")
+            self.motion_region = None  # Will be set in detect_motion when first called
+                
         conn.commit()
         conn.close()
 
@@ -103,21 +108,32 @@ class PiCaptureSystem:
         cursor = conn.cursor()
         
         x1, y1, x2, y2 = region
+        
+        # Clear old settings to avoid confusion
+        cursor.execute('DELETE FROM motion_settings')
+        
+        # Insert new settings
         cursor.execute('''
             INSERT INTO motion_settings (region_x1, region_y1, region_x2, region_y2, 
-                                       motion_threshold, min_contour_area)
+                                    motion_threshold, min_contour_area)
             VALUES (?, ?, ?, ?, ?, ?)
         ''', (x1, y1, x2, y2, motion_threshold, min_contour_area))
         
         conn.commit()
+        
+        # Verify the save worked
+        cursor.execute('SELECT * FROM motion_settings ORDER BY id DESC LIMIT 1')
+        saved_settings = cursor.fetchone()
+        print(f"💾 Verified saved settings: {saved_settings}")
+        
         conn.close()
         
-        # Update current settings
+        # Update current settings in memory
         self.motion_region = region
         self.motion_threshold = motion_threshold
         self.min_contour_area = min_contour_area
         
-        print(f"💾 Saved motion settings: region=({x1},{y1},{x2},{y2})")
+        print(f"💾 Updated in-memory settings - region: {self.motion_region}")
 
     def init_database(self):
         """Initialize SQLite database for capture logging"""
@@ -167,11 +183,12 @@ class PiCaptureSystem:
         """Enhanced motion detection with region masking and contour filtering"""
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         
-        # Apply region of interest if set
+        # Apply region of interest if set, otherwise use default
         if self.motion_region is None:
             # Default to center 60% of frame (avoid edges where trees usually are)
             h, w = gray.shape
             self.motion_region = (int(w*0.2), int(h*0.2), int(w*0.8), int(h*0.8))
+            print(f"🎯 Set default motion region: {self.motion_region}")
         
         # Create mask for region of interest
         mask = np.zeros(gray.shape, dtype=np.uint8)
