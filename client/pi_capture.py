@@ -54,6 +54,12 @@ class PiCaptureSystem:
         self.files_to_sync = []
         self.sync_lock = threading.Lock()
         
+        # Initialize camera capture - ADD THIS LINE
+        self._init_capture()
+        
+        # Load motion detection settings from database
+        self.load_motion_settings()
+        
     def load_motion_settings(self):
         """Load motion detection settings from database"""
         conn = sqlite3.connect(self.db_path)
