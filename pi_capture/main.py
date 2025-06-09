@@ -1,7 +1,7 @@
-# pi_capture/main.py
+# pi_capture/main.py - FIXED VERSION
 #!/usr/bin/env python3
 """
-Raspberry Pi Capture System Entry Point
+Raspberry Pi Capture System Entry Point - FIXED
 """
 import schedule
 import threading
@@ -19,32 +19,46 @@ from services.capture_service import CaptureService
 from web.app import create_capture_app
 
 def setup_services(config):
-    """Initialize all services"""
+    """Initialize all services with proper debugging"""
+    print("🔧 Setting up services...")
+    
     # Database
+    print("📊 Initializing database...")
     db_manager = DatabaseManager(config.database.path)
     video_repo = VideoRepository(db_manager)
     video_repo.create_table()
+    print("✅ Database ready")
     
     # Core services
+    print("🎯 Setting up motion detector...")
     motion_detector = MotionDetector(config.motion)
+    print("✅ Motion detector ready")
+    
+    print("📹 Setting up camera manager...")
     camera_manager = CameraManager(config.capture)
+    print("✅ Camera manager ready")
     
     # Video writing
+    print("🎬 Setting up video writer...")
     raw_dir = config.processing.storage_path / "raw_footage"
     video_writer = VideoWriter(
         raw_dir, 
         config.capture.fps, 
         config.capture.resolution
     )
+    print("✅ Video writer ready")
     
     # Sync service
+    print("🔄 Setting up sync service...")
     sync_service = FileSyncService(
         config.sync.processing_server_host,
         config.sync.processing_server_port,
         config.sync.upload_timeout_seconds
     )
+    print("✅ Sync service ready")
     
     # Main capture service
+    print("🚀 Setting up capture service...")
     capture_service = CaptureService(
         config.capture,
         config.motion,
@@ -54,11 +68,14 @@ def setup_services(config):
         sync_service,
         video_repo
     )
+    print("✅ Capture service ready")
     
     return capture_service, sync_service
 
 def setup_scheduler(capture_service, config):
     """Setup scheduled tasks"""
+    print("📅 Setting up scheduler...")
+    
     # Schedule sync every N minutes
     schedule.every(config.sync.sync_interval_minutes).minutes.do(
         capture_service.sync_files
@@ -76,6 +93,7 @@ def setup_scheduler(capture_service, config):
     
     scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
     scheduler_thread.start()
+    print("✅ Scheduler started")
 
 def cleanup_old_files(storage_path: Path, days_to_keep: int):
     """Clean up old files"""
@@ -92,24 +110,31 @@ def cleanup_old_files(storage_path: Path, days_to_keep: int):
 def main():
     print("🚀 Starting Pi Capture System...")
     
-    # Load configuration
-    config = load_capture_config()
-    
-    # Setup services
-    capture_service, sync_service = setup_services(config)
-    
-    # Setup scheduler
-    setup_scheduler(capture_service, config)
-    
-    # Start capture
-    capture_service.start_capture()
-    
-    # Start web interface
-    app = create_capture_app(capture_service, sync_service, config)
-    
-    print(f"✅ System ready! Web interface: http://0.0.0.0:{config.web.capture_port}")
-    
     try:
+        # Load configuration
+        print("📋 Loading configuration...")
+        config = load_capture_config()
+        print(f"✅ Config loaded - Stream: {config.capture.stream_url}")
+        print(f"📁 Storage: {config.processing.storage_path}")
+        
+        # Setup services
+        capture_service, sync_service = setup_services(config)
+        
+        # Setup scheduler
+        setup_scheduler(capture_service, config)
+        
+        # Start capture
+        print("🎬 Starting video capture...")
+        capture_service.start_capture()
+        print("✅ Capture started")
+        
+        # Start web interface
+        print("🌐 Starting web interface...")
+        app = create_capture_app(capture_service, sync_service, config)
+        
+        print(f"✅ System ready! Web interface: http://0.0.0.0:{config.web.capture_port}")
+        print("🎯 Waiting for motion to trigger recording...")
+        
         app.run(
             host=config.web.host,
             port=config.web.capture_port,
@@ -118,8 +143,12 @@ def main():
         )
     except KeyboardInterrupt:
         print("\n🛑 Shutting down...")
-        capture_service.stop_capture()
+        if 'capture_service' in locals():
+            capture_service.stop_capture()
+    except Exception as e:
+        print(f"\n❌ Fatal error: {e}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == '__main__':
     main()
-
