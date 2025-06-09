@@ -21,7 +21,7 @@ class MotionDetector:
         self.motion_region = region
     
     def detect_motion(self, frame: np.ndarray) -> bool:
-        """Enhanced motion detection with WORKING sensitivity threshold"""
+        """Detect motion using contour area within the configured region"""
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         
         # Set default region if none specified
@@ -41,21 +41,11 @@ class MotionDetector:
         fg_mask = self.background_subtractor.apply(gray, learningRate=self.config.learning_rate)
         fg_mask = cv2.bitwise_and(fg_mask, mask)
         
-        # FIXED: Apply sensitivity threshold from UI
-        # Convert motion_threshold to a threshold value (invert it - lower number = more sensitive)
-        sensitivity_threshold = max(1, int(10000 - self.config.threshold) // 40)  # Convert 1000-10000 to ~225-1
-        
-        # Apply threshold to the foreground mask
+        # Convert user threshold to a sensitivity value and apply binary threshold
+        sensitivity_threshold = max(1, int(10000 - self.config.threshold) // 40)
         _, fg_mask_thresh = cv2.threshold(fg_mask, sensitivity_threshold, 255, cv2.THRESH_BINARY)
-        
-        # Count total white pixels (motion pixels)
-        motion_pixel_count = cv2.countNonZero(fg_mask_thresh)
-        
-        # OPTION 1: Use pixel count method (more direct sensitivity control)
-        if motion_pixel_count > self.config.min_contour_area:
-            return True
-        
-        # OPTION 2: Use contour method (better for object detection)
+
+        # Find contours within the thresholded mask
         contours, _ = cv2.findContours(fg_mask_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
         for contour in contours:
@@ -84,7 +74,7 @@ class MotionDetector:
         sensitivity_threshold = max(1, int(10000 - self.config.threshold) // 40)
         _, fg_mask_thresh = cv2.threshold(fg_mask, sensitivity_threshold, 255, cv2.THRESH_BINARY)
         
-        # Count pixels and contours
+        # Count pixels and contours for debugging purposes
         motion_pixel_count = cv2.countNonZero(fg_mask_thresh)
         contours, _ = cv2.findContours(fg_mask_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
@@ -98,5 +88,5 @@ class MotionDetector:
             'largest_contour': largest_contour_area,
             'sensitivity_threshold': sensitivity_threshold,
             'min_contour_area': self.config.min_contour_area,
-            'motion_detected': motion_pixel_count > self.config.min_contour_area or largest_contour_area > self.config.min_contour_area
+            'motion_detected': largest_contour_area > self.config.min_contour_area
         }
