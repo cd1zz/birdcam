@@ -85,7 +85,7 @@ class CaptureService:
         print("✅ Capture stopped")
     
     def _capture_loop(self):
-        """Main capture loop - COMPLETELY REWRITTEN"""
+        """Main capture loop - FINAL VERSION"""
         print("🔄 Capture loop started")
         last_heartbeat = time.time()
         
@@ -110,6 +110,7 @@ class CaptureService:
                 
                 # Start recording if not already recording
                 if not self.is_capturing:
+                    print(f"🎯 Motion detected! Starting recording...")
                     self._start_recording()
             
             # Always add frames to pre-motion buffer when NOT recording
@@ -140,11 +141,7 @@ class CaptureService:
                 if should_stop:
                     print(f"🛑 Stopping recording: {stop_reason}")
                     self._finish_current_segment()
-                    
-                    # If motion is still very recent (within 60s), start a new segment
-                    if time_since_motion < 60:
-                        print(f"🔄 Motion still recent ({time_since_motion:.1f}s ago), starting new segment")
-                        self._start_recording()
+                    # DO NOT RESTART HERE - let the loop detect new motion naturally!
             
             # Heartbeat every 30 seconds
             if current_time - last_heartbeat > 30:
@@ -152,8 +149,8 @@ class CaptureService:
                 frames_written = self.video_writer.get_frames_written() if self.is_capturing else 0
                 
                 print(f"💓 Status: Motion={has_motion}, Recording={self.is_capturing}, "
-                      f"LastMotion={motion_age:.1f}s ago, Frames={frames_written}, "
-                      f"Buffer={len(self.pre_motion_buffer)}")
+                    f"LastMotion={motion_age:.1f}s ago, Frames={frames_written}, "
+                    f"Buffer={len(self.pre_motion_buffer)}")
                 last_heartbeat = current_time
             
             # Control frame rate
@@ -193,7 +190,7 @@ class CaptureService:
                 print("⚠️ No segment to finish")
                 return
             
-            # Only keep segments longer than 5 seconds (reduced from 10)
+            # Only keep segments longer than 5 seconds
             min_duration = 5
             if completed_segment.duration and completed_segment.duration > min_duration:
                 # Add to sync queue
@@ -212,11 +209,15 @@ class CaptureService:
                 duration = completed_segment.duration or 0
                 frames = self.video_writer.get_frames_written()
                 print(f"🗑️ Deleted short segment: {completed_segment.filename} ({duration}s, {frames} frames)")
+            
+            # DO NOT RESTART RECORDING HERE!
+            # Let the main loop handle new motion detection
+            print("✅ Segment finished, waiting for new motion...")
                 
         except Exception as e:
             print(f"❌ Error finishing segment: {e}")
             self.is_capturing = False
-    
+
     def sync_files(self):
         """Sync pending files to processing server"""
         with self.sync_lock:
