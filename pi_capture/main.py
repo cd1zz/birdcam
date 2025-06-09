@@ -1,7 +1,7 @@
-# pi_capture/main.py - FIXED VERSION
+# pi_capture/main.py - UPDATED WITH SETTINGS PERSISTENCE
 #!/usr/bin/env python3
 """
-Raspberry Pi Capture System Entry Point - FIXED
+Raspberry Pi Capture System Entry Point with Settings Persistence
 """
 import schedule
 import threading
@@ -11,6 +11,7 @@ from pathlib import Path
 from config.settings import load_capture_config
 from database.connection import DatabaseManager
 from database.repositories.video_repository import VideoRepository
+from database.repositories.settings_repository import SettingsRepository
 from services.motion_detector import MotionDetector
 from services.camera_manager import CameraManager
 from services.video_writer import VideoWriter
@@ -19,15 +20,34 @@ from services.capture_service import CaptureService
 from web.app import create_capture_app
 
 def setup_services(config):
-    """Initialize all services with proper debugging"""
+    """Initialize all services with settings persistence"""
     print("🔧 Setting up services...")
     
     # Database
     print("📊 Initializing database...")
     db_manager = DatabaseManager(config.database.path)
     video_repo = VideoRepository(db_manager)
+    settings_repo = SettingsRepository(db_manager)
+    
+    # Create tables
     video_repo.create_table()
+    settings_repo.create_table()
     print("✅ Database ready")
+    
+    # Load saved motion settings
+    print("⚙️ Loading saved motion settings...")
+    saved_settings = settings_repo.load_motion_settings()
+    if saved_settings:
+        # Apply saved settings to config
+        config.motion.region = (
+            saved_settings['region'].x1, saved_settings['region'].y1,
+            saved_settings['region'].x2, saved_settings['region'].y2
+        )
+        config.motion.threshold = saved_settings['motion_threshold']
+        config.motion.min_contour_area = saved_settings['min_contour_area']
+        print(f"✅ Loaded saved settings: region={config.motion.region}, threshold={config.motion.threshold}")
+    else:
+        print("📋 No saved settings found, using defaults")
     
     # Core services
     print("🎯 Setting up motion detector...")
@@ -70,7 +90,7 @@ def setup_services(config):
     )
     print("✅ Capture service ready")
     
-    return capture_service, sync_service
+    return capture_service, sync_service, settings_repo
 
 def setup_scheduler(capture_service, config):
     """Setup scheduled tasks"""
@@ -107,8 +127,25 @@ def cleanup_old_files(storage_path: Path, days_to_keep: int):
                 file_path.unlink()
                 print(f"🗑️ Cleaned up: {file_path.name}")
 
+def create_unified_app(capture_service, sync_service, settings_repo, config):
+    """Create Flask app with unified dashboard"""
+    from flask import Flask
+    from flask_cors import CORS
+    
+    app = Flask(__name__, template_folder='../web/templates', static_folder='../web/static')
+    app.config['MAX_CONTENT_LENGTH'] = config.web.max_content_length
+    
+    if config.web.cors_enabled:
+        CORS(app)
+    
+    # Import and register routes with settings repo
+    from web.routes.capture_routes import create_capture_routes
+    create_capture_routes(app, capture_service, sync_service, settings_repo)
+    
+    return app
+
 def main():
-    print("🚀 Starting Pi Capture System...")
+    print("🚀 Starting Pi Capture System with Unified Dashboard...")
     
     try:
         # Load configuration
@@ -118,7 +155,7 @@ def main():
         print(f"📁 Storage: {config.processing.storage_path}")
         
         # Setup services
-        capture_service, sync_service = setup_services(config)
+        capture_service, sync_service, settings_repo = setup_services(config)
         
         # Setup scheduler
         setup_scheduler(capture_service, config)
@@ -128,12 +165,14 @@ def main():
         capture_service.start_capture()
         print("✅ Capture started")
         
-        # Start web interface
-        print("🌐 Starting web interface...")
-        app = create_capture_app(capture_service, sync_service, config)
+        # Start web interface with unified dashboard
+        print("🌐 Starting unified dashboard...")
+        app = create_unified_app(capture_service, sync_service, settings_repo, config)
         
-        print(f"✅ System ready! Web interface: http://0.0.0.0:{config.web.capture_port}")
-        print("🎯 Waiting for motion to trigger recording...")
+        print(f"✅ Unified Dashboard ready!")
+        print(f"🌐 Access at: http://0.0.0.0:{config.web.capture_port}")
+        print("🎯 This dashboard shows both Pi capture AND AI processing status")
+        print("⚙️ Motion settings will be saved and restored on restart")
         
         app.run(
             host=config.web.host,

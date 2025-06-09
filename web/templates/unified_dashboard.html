@@ -1,0 +1,205 @@
+<!-- web/templates/unified_dashboard.html -->
+{% extends "base.html" %}
+
+{% block title %}🐦 Bird Detection System - Unified Dashboard{% endblock %}
+
+{% block header_title %}🐦 Bird Detection System - Unified Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/unified.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- System Status Overview -->
+<div class="status-overview">
+    <div class="status-card">
+        <h3>📹 Pi Capture System</h3>
+        <div id="pi-status-content">
+            <div class="status-item">
+                <span id="capture-status" class="status-indicator online"></span>
+                <span id="capture-text">Loading...</span>
+            </div>
+            <div class="status-grid-mini">
+                <div class="mini-stat">
+                    <span class="mini-number" id="pi-total-videos">-</span>
+                    <span class="mini-label">Captured</span>
+                </div>
+                <div class="mini-stat">
+                    <span class="mini-number" id="pi-pending">-</span>
+                    <span class="mini-label">Pending</span>
+                </div>
+                <div class="mini-stat">
+                    <span class="mini-number" id="pi-storage">-</span>
+                    <span class="mini-label">MB</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="status-card">
+        <h3>🧠 AI Processing Server</h3>
+        <div id="server-status-content">
+            <div class="status-item">
+                <span id="server-status" class="status-indicator offline"></span>
+                <span id="server-text">Checking...</span>
+            </div>
+            <div class="status-grid-mini">
+                <div class="mini-stat">
+                    <span class="mini-number" id="server-processed">-</span>
+                    <span class="mini-label">Processed</span>
+                </div>
+                <div class="mini-stat">
+                    <span class="mini-number" id="server-queue">-</span>
+                    <span class="mini-label">Queue</span>
+                </div>
+                <div class="mini-stat">
+                    <span class="mini-number" id="total-birds">-</span>
+                    <span class="mini-label">Birds</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="status-card">
+        <h3>📊 Today's Activity</h3>
+        <div class="status-grid-mini">
+            <div class="mini-stat">
+                <span class="mini-number" id="today-birds">-</span>
+                <span class="mini-label">Birds Today</span>
+            </div>
+            <div class="mini-stat">
+                <span class="mini-number" id="avg-time">-</span>
+                <span class="mini-label">Avg Time (s)</span>
+            </div>
+            <div class="mini-stat">
+                <span class="mini-number" id="last-motion">-</span>
+                <span class="mini-label">Last Motion</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="main-content-grid">
+    <!-- Live Feed Section -->
+    <div class="live-section">
+        <div class="panel">
+            <h3>📺 Live Camera Feed</h3>
+            <div class="live-feed-container">
+                <img src="/live_feed" alt="Live Camera" id="live-feed" onerror="handleImageError(this)">
+                <div class="feed-overlay">
+                    <span id="motion-indicator" class="motion-badge">●</span>
+                    <span id="recording-indicator" class="recording-badge">●</span>
+                </div>
+            </div>
+            <p class="feed-info">Live camera with motion detection overlay</p>
+        </div>
+        
+        <div class="panel controls-panel">
+            <h3>🎛️ System Controls</h3>
+            <div class="controls-grid">
+                <button class="btn btn-primary" onclick="syncNow()">📤 Sync Files</button>
+                <button class="btn btn-success" onclick="processNow()">🧠 Process Queue</button>
+                <button class="btn btn-secondary" onclick="showSettings()">⚙️ Motion Settings</button>
+                <button class="btn btn-secondary" onclick="location.reload()">🔄 Refresh</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bird Detections Section -->
+    <div class="detections-section">
+        <div class="panel">
+            <div class="panel-header">
+                <h3>🐦 Recent Bird Detections</h3>
+                <div class="detection-controls">
+                    <span id="detection-count" class="count-badge">0 detections</span>
+                    <button class="btn btn-small" onclick="refreshDetections()">🔄</button>
+                </div>
+            </div>
+            
+            <div id="detection-grid" class="detection-grid">
+                <div class="loading-message">Loading detections...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settings-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>⚙️ Motion Detection Settings</h3>
+            <button class="modal-close" onclick="closeSettings()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="settings-grid">
+                <div class="settings-preview">
+                    <h4>🎯 Motion Detection Region</h4>
+                    <p>Click and drag to draw detection area</p>
+                    <div class="preview-container">
+                        <img id="settings-feed" src="/live_feed">
+                        <canvas id="region-canvas" width="400" height="300"></canvas>
+                    </div>
+                    <div class="region-controls">
+                        <button class="btn btn-secondary" onclick="clearRegion()">🗑️ Clear</button>
+                        <button class="btn btn-secondary" onclick="setDefaultRegion()">📐 Default</button>
+                    </div>
+                </div>
+                
+                <div class="settings-controls">
+                    <h4>🔧 Detection Parameters</h4>
+                    <div class="setting-item">
+                        <label for="threshold-slider">Sensitivity:</label>
+                        <input type="range" id="threshold-slider" min="1000" max="10000" value="5000">
+                        <span id="threshold-value">5000</span>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label for="size-slider">Min Object Size:</label>
+                        <input type="range" id="size-slider" min="100" max="2000" value="500">
+                        <span id="size-value">500</span>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <h5>Current Region:</h5>
+                        <div id="region-info" class="region-display">
+                            No region selected
+                        </div>
+                    </div>
+                    
+                    <div class="setting-actions">
+                        <button class="btn btn-success" onclick="saveSettings()">💾 Save Settings</button>
+                        <button class="btn btn-secondary" onclick="testMotion()">🧪 Test Detection</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Video Modal -->
+<div id="video-modal" class="modal" style="display: none;">
+    <div class="modal-content video-modal-content">
+        <div class="modal-header">
+            <h3 id="video-title">📹 Video Player</h3>
+            <button class="modal-close" onclick="closeVideoModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <video id="video-player" controls style="width: 100%; max-width: 800px;">
+                Your browser does not support the video tag.
+            </video>
+            <div class="video-info">
+                <div id="video-details"></div>
+                <div class="video-actions">
+                    <a id="download-link" class="btn btn-success" target="_blank">📥 Download</a>
+                    <a id="new-tab-link" class="btn btn-secondary" target="_blank">🔗 Open in New Tab</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/unified.js') }}"></script>
+{% endblock %}
