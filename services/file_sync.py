@@ -46,3 +46,18 @@ class FileSyncService:
             return response.status_code == 200
         except (RequestException, Timeout):
             return False
+        
+    def get_server_detections(self, limit: int = 10) -> List[dict]:
+        """Get recent detections from processing server"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/recent-detections", 
+                timeout=5
+            )
+            if response.status_code == 200:
+                data = response.json()
+                return data.get('detections', [])
+        except (RequestException, Timeout) as e:
+            print(f"⚠️ Could not get detections from processing server: {e}")
+        
+        return []

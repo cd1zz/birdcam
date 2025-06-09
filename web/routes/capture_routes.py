@@ -113,3 +113,17 @@ def create_capture_routes(app, capture_service, sync_service):
         
         return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+    @app.route('/api/server-detections')
+    def api_server_detections():
+        """Get recent detections from processing server"""
+        try:
+            if not sync_service:
+                return jsonify({'detections': [], 'error': 'Sync service not available'})
+            
+            # Try to get detections from the processing server
+            detections = sync_service.get_server_detections()
+            return jsonify({'detections': detections or []})
+            
+        except Exception as e:
+            print(f"Error getting server detections: {e}")
+            return jsonify({'detections': [], 'error': str(e)})
