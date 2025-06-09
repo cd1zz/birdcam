@@ -2,6 +2,7 @@ import cv2
 import os
 import time
 import threading
+import numpy as np
 from datetime import datetime, timedelta
 from flask import Flask, Response, jsonify, render_template_string
 import sqlite3
@@ -36,13 +37,18 @@ class PiCaptureSystem:
         self.current_segment_start = None
         self.is_capturing = False
         
-        # Motion detection
+        # Enhanced motion detection settings
         self.background_subtractor = cv2.createBackgroundSubtractorMOG2(
-            detectShadows=False, varThreshold=50)
-        self.motion_threshold = 2000
+            detectShadows=False, varThreshold=16, history=500)
+        self.motion_threshold = 5000  # Increased from 2000
+        self.min_contour_area = 500   # Minimum size for motion objects
         self.last_motion_time = 0
         self.pre_motion_buffer = []
         self.buffer_size = 150  # 15 seconds at 10fps
+        
+        # Motion detection region (ignore areas with trees)
+        # Format: (x1, y1, x2, y2) - set to None to use full frame
+        self.motion_region = None  # Will be set to center region by default
         
         # Sync tracking
         self.files_to_sync = []
@@ -97,11 +103,35 @@ class PiCaptureSystem:
             print("✅ Camera/stream opened successfully")
 
     def detect_motion(self, frame):
-        """Lightweight motion detection"""
+        """Enhanced motion detection with region masking and contour filtering"""
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        fg_mask = self.background_subtractor.apply(gray)
-        motion_pixels = cv2.countNonZero(fg_mask)
-        return motion_pixels > self.motion_threshold
+        
+        # Apply region of interest if set
+        if self.motion_region is None:
+            # Default to center 60% of frame (avoid edges where trees usually are)
+            h, w = gray.shape
+            self.motion_region = (int(w*0.2), int(h*0.2), int(w*0.8), int(h*0.8))
+        
+        # Create mask for region of interest
+        mask = np.zeros(gray.shape, dtype=np.uint8)
+        x1, y1, x2, y2 = self.motion_region
+        mask[y1:y2, x1:x2] = 255
+        
+        # Apply background subtraction only to region of interest
+        fg_mask = self.background_subtractor.apply(gray, learningRate=0.01)
+        fg_mask = cv2.bitwise_and(fg_mask, mask)
+        
+        # Find contours to filter out small movements
+        contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        # Check for significant motion (large enough contours)
+        significant_motion = False
+        for contour in contours:
+            if cv2.contourArea(contour) > self.min_contour_area:
+                significant_motion = True
+                break
+        
+        return significant_motion
 
     def start_new_segment(self, motion_triggered=False):
         """Start recording a new video segment"""
