@@ -112,31 +112,14 @@ class PiCaptureSystem:
         filename = f"segment_{timestamp.strftime('%Y%m%d_%H%M%S')}.mp4"
         filepath = self.raw_dir / filename
         
-        # Try different codecs in order of preference
-        codecs_to_try = ['XVID', 'mp4v', 'MJPG']
-        self.current_writer = None
+        # Use reliable mp4v codec - server will convert to H.264 for web compatibility
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        self.current_writer = cv2.VideoWriter(str(filepath), fourcc, 10.0, (640, 480))
         
-        for codec in codecs_to_try:
-            try:
-                fourcc = cv2.VideoWriter_fourcc(*codec)
-                self.current_writer = cv2.VideoWriter(str(filepath), fourcc, 10.0, (640, 480))
-                
-                # Test if the writer was created successfully
-                if self.current_writer.isOpened():
-                    print(f"✅ Using {codec} codec for recording")
-                    break
-                else:
-                    self.current_writer.release()
-                    self.current_writer = None
-            except Exception as e:
-                print(f"❌ Failed to use {codec} codec: {e}")
-                if self.current_writer:
-                    self.current_writer.release()
-                    self.current_writer = None
-        
-        if not self.current_writer or not self.current_writer.isOpened():
-            print("❌ Failed to initialize video writer with any codec")
+        if not self.current_writer.isOpened():
+            print("❌ Failed to initialize video writer")
             return
+            
         self.current_segment_start = timestamp
         self.current_filename = filename
         
@@ -617,7 +600,6 @@ def index():
                 video.addEventListener('canplay', () => {
                     statusDiv.textContent = 'Video ready to play';
                 });
-                document.body.appendChild(modal);
                 
                 // Close on background click
                 modal.onclick = (e) => {
@@ -703,65 +685,7 @@ def index():
                     .then(r => r.json())
                     .then(data => {
                         alert(data.message || data.error);
-                        function viewVideo(filename) {
-                console.log('Attempting to play video:', filename);
-                const videoUrl = `http://192.168.1.136:8091/videos/${filename}`;
-                console.log('Video URL:', videoUrl);
-                
-                // Test if video URL is accessible
-                fetch(videoUrl, {method: 'HEAD'})
-                    .then(response => {
-                        console.log('Video URL response:', response.status);
-                        if (!response.ok) {
-                            alert(`Video not found: ${filename}\nStatus: ${response.status}`);
-                            return;
-                        }
-                        showVideoModal(videoUrl, filename);
-                    })
-                    .catch(error => {
-                        console.error('Error accessing video:', error);
-                        alert(`Cannot access video: ${error.message}`);
-                    });
-            }
-            
-            function showVideoModal(videoUrl, filename) {
-                // Create modal overlay
-                const modal = document.createElement('div');
-                modal.style.cssText = `
-                    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-                    background: rgba(0,0,0,0.8); z-index: 1000; 
-                    display: flex; align-items: center; justify-content: center;
-                `;
-                
-                // Create video container
-                const videoContainer = document.createElement('div');
-                videoContainer.style.cssText = `
-                    background: white; padding: 20px; border-radius: 10px; 
-                    max-width: 90%; max-height: 90%; position: relative;
-                `;
-                
-                videoContainer.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3 style="margin: 0;">📹 ${filename}</h3>
-                        <button onclick="this.closest('.modal').remove()" style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">✕ Close</button>
-                    </div>
-                    <video controls style="width: 100%; max-width: 800px;">
-                        <source src="${videoUrl}" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
-                `;
-                
-                modal.className = 'modal';
-                modal.appendChild(videoContainer);
-                document.body.appendChild(modal);
-                
-                // Close on background click
-                modal.onclick = (e) => {
-                    if (e.target === modal) modal.remove();
-                };
-            }
-
-            updateDashboard();
+                        updateDashboard();
                     })
                     .catch(err => alert('Sync failed: ' + err));
             }

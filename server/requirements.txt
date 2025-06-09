@@ -13,9 +13,11 @@ ultralytics>=8.0.0
 # Computer Vision
 opencv-python>=4.8.0
 
-# Data processing
+# Data processing and visualization
 pandas>=2.0.0
 numpy>=1.24.0
+seaborn>=0.12.0
+matplotlib>=3.7.0
 
 # File handling and utilities
 werkzeug>=2.3.0
@@ -33,8 +35,6 @@ schedule>=1.2.0
 
 # Development dependencies (optional)
 # jupyter>=1.0.0
-# matplotlib>=3.7.0
-# seaborn>=0.12.0
 
 # System requirements notes:
 # - Python 3.8 or higher required
