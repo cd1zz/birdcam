@@ -2,6 +2,7 @@
 import cv2
 import time
 import threading
+import subprocess
 from pathlib import Path
 from typing import List, Optional
 from datetime import datetime
@@ -65,6 +66,56 @@ class ProcessingService:
         print(f"📥 Received: {filename} -> {unique_filename} ({len(file_data)/1024/1024:.1f}MB)")
         
         return unique_filename
+    
+    def convert_to_h264_for_web(self, filename):
+        """Convert videos to H.264 for web browser compatibility"""
+        file_path = self.processed_dir / filename
+        if not file_path.exists():
+            print(f"❌ File not found for conversion: {filename}")
+            return False
+        
+        try:
+            # Check current codec
+            result = subprocess.run([
+                'ffprobe', '-v', 'quiet', '-select_streams', 'v:0', 
+                '-show_entries', 'stream=codec_name', '-of', 'csv=p=0', 
+                str(file_path)
+            ], capture_output=True, text=True, timeout=10)
+            
+            codec = result.stdout.strip()
+            if codec == 'h264':
+                print(f"✅ {filename} already uses H.264")
+                return True
+                
+            print(f"🔄 Converting {filename} from {codec} to H.264 for web compatibility...")
+            
+            # Create temporary output file
+            temp_path = file_path.with_suffix('.h264.mp4')
+            
+            # Convert to H.264 with web optimization
+            subprocess.run([
+                'ffmpeg', '-i', str(file_path), 
+                '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+                '-c:a', 'aac', '-movflags', '+faststart',  # Web-optimized
+                '-y',  # Overwrite output file
+                str(temp_path)
+            ], check=True, timeout=300, capture_output=True)
+            
+            # Replace original with converted version
+            file_path.unlink()
+            temp_path.rename(file_path)
+            
+            print(f"✅ Converted {filename} to H.264")
+            return True
+            
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
+            print(f"❌ Failed to convert {filename}: {e}")
+            if 'temp_path' in locals() and temp_path.exists():
+                temp_path.unlink()
+            return False
+        except Exception as e:
+            print(f"❌ Unexpected error converting {filename}: {e}")
+            return False
     
     def process_pending_videos(self):
         """Process all pending videos"""
@@ -177,6 +228,11 @@ class ProcessingService:
         # Move processed video
         processed_path = self.processed_dir / video.filename
         video_path.rename(processed_path)
+        
+        # Convert to H.264 for web browser compatibility
+        conversion_success = self.convert_to_h264_for_web(video.filename)
+        if not conversion_success:
+            print(f"⚠️ Warning: {video.filename} conversion failed - video may not stream properly in browsers")
         
         print(f"✅ {video.filename}: {len(detections)} birds found in {processing_time:.1f}s")
     
