@@ -1,0 +1,45 @@
+# AI Processing Server Requirements
+# Install with: pip install -r requirements.txt
+
+# Core web framework
+flask>=2.3.0
+flask-cors>=4.0.0
+
+# Machine Learning
+torch>=2.0.0
+torchvision>=0.15.0
+ultralytics>=8.0.0
+
+# Computer Vision
+opencv-python>=4.8.0
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# File handling and utilities
+werkzeug>=2.3.0
+pathlib2>=2.3.7
+
+# Task scheduling
+schedule>=1.2.0
+
+# Database (usually included with Python)
+# sqlite3 - built into Python standard library
+
+# Optional: GPU acceleration (uncomment if using CUDA)
+# torch-audio>=2.0.0
+# torchaudio>=2.0.0
+
+# Development dependencies (optional)
+# jupyter>=1.0.0
+# matplotlib>=3.7.0
+# seaborn>=0.12.0
+
+# System requirements notes:
+# - Python 3.8 or higher required
+# - FFmpeg must be installed separately on the system
+#   Ubuntu/Debian: sudo apt install ffmpeg
+#   macOS: brew install ffmpeg
+#   Windows: Download from https://ffmpeg.org/download.html
+# - For GPU support, install CUDA toolkit separately
