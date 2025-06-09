@@ -94,7 +94,8 @@
     gap: 10px;
 }
 
-.motion-badge, .recording-badge {
+.motion-badge,
+.recording-badge {
     display: inline-block;
     width: 12px;
     height: 12px;
@@ -103,20 +104,24 @@
 }
 
 .motion-badge {
-    background: #95a5a6; /* Default: no motion */
+    background: #95a5a6;
+    /* Default: no motion */
 }
 
 .motion-badge.active {
-    background: #27ae60; /* Green: motion detected */
+    background: #27ae60;
+    /* Green: motion detected */
     animation: pulse 1s infinite;
 }
 
 .recording-badge {
-    background: #95a5a6; /* Default: not recording */
+    background: #95a5a6;
+    /* Default: not recording */
 }
 
 .recording-badge.active {
-    background: #e74c3c; /* Red: recording */
+    background: #e74c3c;
+    /* Red: recording */
     animation: pulse 1s infinite;
 }
 
@@ -366,11 +371,11 @@
     .main-content-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .settings-grid {
         grid-template-columns: 1fr;
     }
-    
+
     #settings-feed {
         width: 100%;
         max-width: 400px;
@@ -382,22 +387,50 @@
     .status-overview {
         grid-template-columns: 1fr;
     }
-    
+
     .controls-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .detection-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .panel-header {
         flex-direction: column;
         gap: 15px;
         align-items: stretch;
     }
-    
+
     .detection-controls {
         justify-content: center;
+    }
+
+    .setting-help {
+        display: block;
+        color: #7f8c8d;
+        font-size: 0.75em;
+        margin-top: 2px;
+        font-style: italic;
+    }
+
+    .debug-display {
+        background: #2c3e50;
+        color: #ecf0f1;
+        padding: 10px;
+        border-radius: 5px;
+        font-family: 'Courier New', monospace;
+    }
+
+    .debug-content {
+        background: #34495e;
+        padding: 8px;
+        border-radius: 3px;
+        margin-top: 5px;
+    }
+
+    .btn-small {
+        padding: 4px 8px;
+        font-size: 0.75em;
     }
 }

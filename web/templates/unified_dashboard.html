@@ -148,16 +148,26 @@
                 
                 <div class="settings-controls">
                     <h4>🔧 Detection Parameters</h4>
+                    
                     <div class="setting-item">
-                        <label for="threshold-slider">Sensitivity:</label>
+                        <label for="threshold-slider">Motion Sensitivity:</label>
                         <input type="range" id="threshold-slider" min="1000" max="10000" value="5000">
                         <span id="threshold-value">5000</span>
+                        <small class="setting-help">Lower = more sensitive to small movements</small>
                     </div>
                     
                     <div class="setting-item">
                         <label for="size-slider">Min Object Size:</label>
                         <input type="range" id="size-slider" min="100" max="2000" value="500">
                         <span id="size-value">500</span>
+                        <small class="setting-help">Minimum size of moving objects to detect</small>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label for="timeout-slider">Recording Timeout:</label>
+                        <input type="range" id="timeout-slider" min="10" max="120" value="30">
+                        <span id="timeout-value">30</span> seconds
+                        <small class="setting-help">Stop recording after this many seconds of no motion</small>
                     </div>
                     
                     <div class="setting-item">
@@ -167,9 +177,18 @@
                         </div>
                     </div>
                     
+                    <div class="setting-item">
+                        <h5>🐛 Debug Info:</h5>
+                        <div id="debug-info" class="debug-display">
+                            <button class="btn btn-small" onclick="updateDebugInfo()">🔍 Show Debug</button>
+                            <div id="debug-content" style="display: none; margin-top: 10px; font-size: 12px;"></div>
+                        </div>
+                    </div>
+                    
                     <div class="setting-actions">
                         <button class="btn btn-success" onclick="saveSettings()">💾 Save Settings</button>
                         <button class="btn btn-secondary" onclick="testMotion()">🧪 Test Detection</button>
+                        <button class="btn btn-secondary" onclick="toggleDebugInfo()">🐛 Toggle Debug</button>
                     </div>
                 </div>
             </div>

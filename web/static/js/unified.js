@@ -469,3 +469,138 @@ function closeVideoModal() {
     videoPlayer.pause();
     videoPlayer.src = '';
 }
+
+// Add these functions to unified.js:
+
+async function loadCurrentSettings() {
+    try {
+        const data = await apiCall('/api/motion-settings');
+        
+        if (data.region) {
+            currentRegion = data.region;
+            
+            const canvas = document.getElementById('region-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const x1 = data.region.x1 * 400 / 640;
+            const y1 = data.region.y1 * 300 / 480;
+            const x2 = data.region.x2 * 400 / 640;
+            const y2 = data.region.y2 * 300 / 480;
+            
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+            ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+            
+            updateRegionInfo();
+        }
+        
+        // Load all settings with new timeout parameter
+        const thresholdSlider = document.getElementById('threshold-slider');
+        const sizeSlider = document.getElementById('size-slider');
+        const timeoutSlider = document.getElementById('timeout-slider');
+        const thresholdValue = document.getElementById('threshold-value');
+        const sizeValue = document.getElementById('size-value');
+        const timeoutValue = document.getElementById('timeout-value');
+        
+        if (thresholdSlider) {
+            thresholdSlider.value = data.motion_threshold || 5000;
+            thresholdValue.textContent = data.motion_threshold || 5000;
+            thresholdSlider.oninput = function() {
+                thresholdValue.textContent = this.value;
+            };
+        }
+        
+        if (sizeSlider) {
+            sizeSlider.value = data.min_contour_area || 500;
+            sizeValue.textContent = data.min_contour_area || 500;
+            sizeSlider.oninput = function() {
+                sizeValue.textContent = this.value;
+            };
+        }
+        
+        if (timeoutSlider) {
+            timeoutSlider.value = data.motion_timeout_seconds || 30;
+            timeoutValue.textContent = data.motion_timeout_seconds || 30;
+            timeoutSlider.oninput = function() {
+                timeoutValue.textContent = this.value;
+            };
+        }
+        
+    } catch (error) {
+        console.error('Failed to load settings:', error);
+    }
+}
+
+async function saveSettings() {
+    if (!currentRegion) {
+        showNotification('Please draw a motion detection region first', 'warning');
+        return;
+    }
+    
+    const settings = {
+        region: currentRegion,
+        motion_threshold: parseInt(document.getElementById('threshold-slider').value),
+        min_contour_area: parseInt(document.getElementById('size-slider').value),
+        motion_timeout_seconds: parseInt(document.getElementById('timeout-slider').value)
+    };
+    
+    try {
+        const data = await apiCall('/api/motion-settings', {
+            method: 'POST',
+            body: JSON.stringify(settings)
+        });
+        
+        showNotification(data.message || 'Settings saved!', 'success');
+        closeSettings();
+        updateDashboard();
+    } catch (error) {
+        showNotification('Failed to save settings', 'error');
+    }
+}
+
+async function updateDebugInfo() {
+    try {
+        const data = await apiCall('/api/motion-debug');
+        const debugContent = document.getElementById('debug-content');
+        
+        if (data.error) {
+            debugContent.innerHTML = `<span style="color: #e74c3c;">Error: ${data.error}</span>`;
+        } else {
+            debugContent.innerHTML = `
+                <div><strong>Motion Pixels:</strong> ${data.motion_pixels}</div>
+                <div><strong>Contours Found:</strong> ${data.contour_count}</div>
+                <div><strong>Largest Contour:</strong> ${data.largest_contour} px²</div>
+                <div><strong>Sensitivity Threshold:</strong> ${data.sensitivity_threshold}</div>
+                <div><strong>Min Required Size:</strong> ${data.min_contour_area} px²</div>
+                <div><strong>Motion Detected:</strong> <span style="color: ${data.motion_detected ? '#27ae60' : '#e74c3c'}">${data.motion_detected ? 'YES' : 'NO'}</span></div>
+            `;
+        }
+        
+        debugContent.style.display = 'block';
+        
+        // Auto-refresh debug info every 2 seconds
+        setTimeout(updateDebugInfo, 2000);
+        
+    } catch (error) {
+        console.error('Failed to get debug info:', error);
+        const debugContent = document.getElementById('debug-content');
+        debugContent.innerHTML = `<span style="color: #e74c3c;">Debug info unavailable</span>`;
+        debugContent.style.display = 'block';
+    }
+}
+
+function toggleDebugInfo() {
+    const debugContent = document.getElementById('debug-content');
+    if (debugContent.style.display === 'none' || !debugContent.style.display) {
+        updateDebugInfo();
+    } else {
+        debugContent.style.display = 'none';
+    }
+}
+
+function testMotion() {
+    showNotification('Wave your hand in the detection region and click "Toggle Debug" to see real-time sensitivity!', 'info');
+    toggleDebugInfo();
+}
