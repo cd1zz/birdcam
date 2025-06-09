@@ -1,11 +1,11 @@
-# services/capture_service.py
+# services/capture_service.py - FIXED VERSION
+
 import time
 import threading
 from collections import deque
 from typing import List, Optional, Callable
 from datetime import datetime, timedelta
 from pathlib import Path
-import numpy as np
 
 from core.models import CaptureSegment, SystemStatus
 from config.settings import CaptureConfig, MotionConfig
@@ -42,7 +42,7 @@ class CaptureService:
         self.current_segment: Optional[CaptureSegment] = None
         
         # Pre-motion buffer
-        buffer_frames = capture_config.fps * motion_config.motion_timeout_seconds
+        buffer_frames = capture_config.fps * motion_config.motion_timeout_seconds // 2  # 15 seconds at 10fps
         self.pre_motion_buffer = deque(maxlen=buffer_frames)
         
         # Sync queue
@@ -73,7 +73,7 @@ class CaptureService:
             self._finish_current_segment()
     
     def _capture_loop(self):
-        """Main capture loop"""
+        """Main capture loop - FIXED VERSION"""
         last_heartbeat = time.time()
         
         while self.is_running:
@@ -97,31 +97,49 @@ class CaptureService:
                 if not self.is_capturing:
                     self._start_recording()
             else:
-                # Maintain pre-motion buffer
-                self.pre_motion_buffer.append(frame.copy())
+                # Maintain pre-motion buffer only when NOT recording
+                if not self.is_capturing:
+                    self.pre_motion_buffer.append(frame.copy())
             
-            # Write frame if recording
+            # Write frame if recording (THIS IS THE KEY PART)
             if self.is_capturing:
                 self.video_writer.write_frame(frame)
                 self.frame_count += 1
                 
                 # Check if we should stop recording
-                if self._should_stop_recording(current_time):
+                should_stop = False
+                
+                # Stop after 30 seconds of no motion
+                if current_time - self.last_motion_time > self.motion_config.motion_timeout_seconds:
+                    print(f"📹 Stopping recording - no motion for {current_time - self.last_motion_time:.1f}s")
+                    should_stop = True
+                
+                # Or stop after max duration (5 minutes)
+                elif self.frame_count > self.motion_config.max_segment_duration * self.capture_config.fps:
+                    print(f"📹 Stopping recording - max duration reached ({self.frame_count} frames)")
+                    should_stop = True
+                
+                if should_stop:
                     self._finish_current_segment()
                     
-                    # Continue recording if recent motion
+                    # Start new segment if motion is still recent (within 60 seconds)
                     if current_time - self.last_motion_time < 60:
+                        print("📹 Starting new segment - motion still recent")
                         self._start_recording()
                     else:
+                        print("📹 Stopping capture - no recent motion")
                         self.is_capturing = False
                         self.frame_count = 0
             
-            # Heartbeat logging
+            # Heartbeat logging every 30 seconds
             if current_time - last_heartbeat > 30:
-                print(f"💓 Capture: Motion={has_motion}, Recording={self.is_capturing}")
+                motion_age = current_time - self.last_motion_time if self.last_motion_time > 0 else 999
+                print(f"💓 Capture: Motion={has_motion}, Recording={self.is_capturing}, "
+                      f"Last motion: {motion_age:.1f}s ago, Frames: {self.frame_count}")
                 last_heartbeat = current_time
             
-            time.sleep(1.0 / self.capture_config.fps)
+            # Small sleep to prevent overwhelming CPU
+            time.sleep(1.0 / self.capture_config.fps)  # Maintain proper FPS timing
     
     def _start_recording(self):
         """Start recording a new segment"""
@@ -131,23 +149,12 @@ class CaptureService:
         
         # Write pre-motion buffer
         if self.pre_motion_buffer:
-            print(f"Writing {len(self.pre_motion_buffer)} pre-motion frames")
+            print(f"📹 Writing {len(self.pre_motion_buffer)} pre-motion frames")
             self.video_writer.write_frames(list(self.pre_motion_buffer))
+            self.frame_count += len(self.pre_motion_buffer)
             self.pre_motion_buffer.clear()
         
         print(f"📹 Started recording: {self.current_segment.filename}")
-    
-    def _should_stop_recording(self, current_time: float) -> bool:
-        """Determine if we should stop the current recording"""
-        # Stop after motion timeout
-        if current_time - self.last_motion_time > self.motion_config.motion_timeout_seconds:
-            return True
-        
-        # Stop after max duration
-        if self.frame_count > self.motion_config.max_segment_duration * self.capture_config.fps:
-            return True
-        
-        return False
     
     def _finish_current_segment(self):
         """Finish the current recording segment"""
@@ -165,7 +172,8 @@ class CaptureService:
                 self.sync_queue.append(completed_segment.filename)
             
             print(f"✅ Completed: {completed_segment.filename} "
-                  f"({completed_segment.duration}s, {completed_segment.file_size/1024/1024:.1f}MB)")
+                  f"({completed_segment.duration}s, {self.frame_count} frames, "
+                  f"{completed_segment.file_size/1024/1024:.1f}MB)")
             
             if self.on_segment_completed:
                 self.on_segment_completed(completed_segment)
@@ -174,9 +182,11 @@ class CaptureService:
             filepath = self.video_writer.output_dir / completed_segment.filename
             if filepath.exists():
                 filepath.unlink()
-            print(f"🗑️ Deleted short segment: {completed_segment.filename}")
+            print(f"🗑️ Deleted short segment: {completed_segment.filename} "
+                  f"({completed_segment.duration}s, {self.frame_count} frames)")
         
         self.current_segment = None
+        self.frame_count = 0
     
     def sync_files(self):
         """Sync pending files to processing server"""
@@ -226,4 +236,3 @@ class CaptureService:
         """Get number of files pending sync"""
         with self.sync_lock:
             return len(self.sync_queue)
-
