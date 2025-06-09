@@ -112,9 +112,31 @@ class PiCaptureSystem:
         filename = f"segment_{timestamp.strftime('%Y%m%d_%H%M%S')}.mp4"
         filepath = self.raw_dir / filename
         
-        # Use H.264 codec for better browser compatibility
-        fourcc = cv2.VideoWriter_fourcc(*'H264')  # Changed from 'mp4v'
-        self.current_writer = cv2.VideoWriter(str(filepath), fourcc, 10.0, (640, 480))
+        # Try different codecs in order of preference
+        codecs_to_try = ['XVID', 'mp4v', 'MJPG']
+        self.current_writer = None
+        
+        for codec in codecs_to_try:
+            try:
+                fourcc = cv2.VideoWriter_fourcc(*codec)
+                self.current_writer = cv2.VideoWriter(str(filepath), fourcc, 10.0, (640, 480))
+                
+                # Test if the writer was created successfully
+                if self.current_writer.isOpened():
+                    print(f"✅ Using {codec} codec for recording")
+                    break
+                else:
+                    self.current_writer.release()
+                    self.current_writer = None
+            except Exception as e:
+                print(f"❌ Failed to use {codec} codec: {e}")
+                if self.current_writer:
+                    self.current_writer.release()
+                    self.current_writer = None
+        
+        if not self.current_writer or not self.current_writer.isOpened():
+            print("❌ Failed to initialize video writer with any codec")
+            return
         self.current_segment_start = timestamp
         self.current_filename = filename
         
@@ -534,20 +556,8 @@ def index():
                 const videoUrl = `http://192.168.1.136:8091/videos/${filename}`;
                 console.log('Video URL:', videoUrl);
                 
-                // Test if video URL is accessible
-                fetch(videoUrl, {method: 'HEAD'})
-                    .then(response => {
-                        console.log('Video URL response:', response.status);
-                        if (!response.ok) {
-                            alert(`Video not found: ${filename}\nStatus: ${response.status}`);
-                            return;
-                        }
-                        showVideoModal(videoUrl, filename);
-                    })
-                    .catch(error => {
-                        console.error('Error accessing video:', error);
-                        alert(`Cannot access video: ${error.message}`);
-                    });
+                // Skip CORS-blocked HEAD request, go directly to showing video
+                showVideoModal(videoUrl, filename);
             }
             
             function showVideoModal(videoUrl, filename) {
@@ -571,14 +581,42 @@ def index():
                         <h3 style="margin: 0;">📹 ${filename}</h3>
                         <button onclick="this.closest('.modal').remove()" style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">✕ Close</button>
                     </div>
-                    <video controls style="width: 100%; max-width: 800px;">
+                    <video controls style="width: 100%; max-width: 800px;" preload="metadata">
+                        <source src="${videoUrl}" type='video/mp4; codecs="mp4v.20.8, mp4a.40.2"'>
                         <source src="${videoUrl}" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
+                    <div style="margin-top: 10px;">
+                        <a href="${videoUrl}" target="_blank" style="background: #27ae60; color: white; padding: 8px 12px; text-decoration: none; border-radius: 5px; margin-right: 10px;">📥 Download Video</a>
+                        <a href="${videoUrl}" target="_blank" style="background: #3498db; color: white; padding: 8px 12px; text-decoration: none; border-radius: 5px;">🔗 Open in New Tab</a>
+                    </div>
+                    <div id="video-status" style="margin-top: 10px; font-size: 14px; color: #666;"></div>
                 `;
                 
                 modal.className = 'modal';
                 modal.appendChild(videoContainer);
+                document.body.appendChild(modal);
+                
+                // Add video event listeners for debugging
+                const video = videoContainer.querySelector('video');
+                const statusDiv = videoContainer.querySelector('#video-status');
+                
+                video.addEventListener('loadstart', () => {
+                    statusDiv.textContent = 'Loading video...';
+                });
+                
+                video.addEventListener('loadedmetadata', () => {
+                    statusDiv.textContent = `Video loaded: ${video.duration.toFixed(1)}s duration`;
+                });
+                
+                video.addEventListener('error', (e) => {
+                    console.error('Video error:', e);
+                    statusDiv.innerHTML = '<span style="color: red;">❌ Error loading video. Check console for details.</span>';
+                });
+                
+                video.addEventListener('canplay', () => {
+                    statusDiv.textContent = 'Video ready to play';
+                });
                 document.body.appendChild(modal);
                 
                 // Close on background click
