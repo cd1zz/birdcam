@@ -692,6 +692,8 @@ def api_process_now():
         return jsonify({'message': 'Processing queue started'})
     return jsonify({'error': 'Processor not initialized'})
 
+
+
 if __name__ == '__main__':
     initialize_processor()
     app.run(host='0.0.0.0', port=8091, threaded=True, debug=False)

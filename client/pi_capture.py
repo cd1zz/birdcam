@@ -1149,8 +1149,19 @@ def api_process_server_queue():
 
 @app.route('/api/motion-settings', methods=['GET'])
 def api_get_motion_settings():
-    """Get current motion detection settings"""
+    """Get current motion detection settings with debugging"""
     if capture_system:
+        # Get from database
+        conn = sqlite3.connect(capture_system.db_path)
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM motion_settings ORDER BY id DESC LIMIT 1')
+        db_settings = cursor.fetchone()
+        conn.close()
+        
+        print(f"🐛 DEBUG: Database settings: {db_settings}")
+        print(f"🐛 DEBUG: In-memory region: {capture_system.motion_region}")
+        print(f"🐛 DEBUG: In-memory threshold: {capture_system.motion_threshold}")
+        
         settings = {
             'region': None,
             'motion_threshold': capture_system.motion_threshold,
@@ -1161,30 +1172,104 @@ def api_get_motion_settings():
             x1, y1, x2, y2 = capture_system.motion_region
             settings['region'] = {'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2}
         
+        print(f"🐛 DEBUG: Returning settings: {settings}")
         return jsonify(settings)
     return jsonify({'error': 'System not initialized'})
 
 @app.route('/api/motion-settings', methods=['POST'])
 def api_set_motion_settings():
-    """Save motion detection settings"""
+    """Save motion detection settings with enhanced debugging"""
     if not capture_system:
         return jsonify({'error': 'System not initialized'}), 500
     
     try:
         data = request.get_json()
+        print(f"🐛 DEBUG: Received settings data: {data}")
+        
         region_data = data.get('region')
         motion_threshold = data.get('motion_threshold', 5000)
         min_contour_area = data.get('min_contour_area', 500)
         
-        if region_data:
+        print(f"🐛 DEBUG: Parsed values - region: {region_data}, threshold: {motion_threshold}, min_area: {min_contour_area}")
+        
+        if region_data and all(k in region_data for k in ['x1', 'y1', 'x2', 'y2']):
             region = (region_data['x1'], region_data['y1'], region_data['x2'], region_data['y2'])
-            capture_system.save_motion_settings(region, motion_threshold, min_contour_area)
-            return jsonify({'message': 'Motion settings saved successfully'})
+            print(f"🐛 DEBUG: Final region tuple: {region}")
+            
+            # Save to database with debugging
+            conn = sqlite3.connect(capture_system.db_path)
+            cursor = conn.cursor()
+            
+            # Check current settings first
+            cursor.execute('SELECT * FROM motion_settings ORDER BY id DESC LIMIT 1')
+            old_settings = cursor.fetchone()
+            print(f"🐛 DEBUG: Previous settings: {old_settings}")
+            
+            # Clear old settings to avoid confusion
+            cursor.execute('DELETE FROM motion_settings')
+            
+            # Insert new settings
+            cursor.execute('''
+                INSERT INTO motion_settings (region_x1, region_y1, region_x2, region_y2, 
+                                           motion_threshold, min_contour_area)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (region[0], region[1], region[2], region[3], motion_threshold, min_contour_area))
+            
+            conn.commit()
+            
+            # Verify the insert worked
+            cursor.execute('SELECT * FROM motion_settings ORDER BY id DESC LIMIT 1')
+            new_settings = cursor.fetchone()
+            print(f"🐛 DEBUG: New settings saved: {new_settings}")
+            
+            conn.close()
+            
+            # Update current settings in memory
+            capture_system.motion_region = region
+            capture_system.motion_threshold = motion_threshold
+            capture_system.min_contour_area = min_contour_area
+            
+            print(f"🐛 DEBUG: Updated in-memory settings - region: {capture_system.motion_region}")
+            
+            return jsonify({
+                'message': 'Motion settings saved successfully',
+                'saved_region': {'x1': region[0], 'y1': region[1], 'x2': region[2], 'y2': region[3]},
+                'debug_info': {
+                    'received': region_data,
+                    'converted': region,
+                    'in_memory': capture_system.motion_region
+                }
+            })
         else:
-            return jsonify({'error': 'Invalid region data'}), 400
+            print(f"🐛 DEBUG: Invalid region data received: {region_data}")
+            return jsonify({'error': 'Invalid region data - missing coordinates'}), 400
             
     except Exception as e:
+        print(f"🐛 DEBUG: Exception occurred: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': f'Failed to save settings: {str(e)}'}), 500
+
+@app.route('/api/debug-motion')
+def api_debug_motion():
+    """Debug endpoint to check motion detection state"""
+    if not capture_system:
+        return jsonify({'error': 'System not initialized'})
+    
+    # Get all settings from database
+    conn = sqlite3.connect(capture_system.db_path)
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM motion_settings ORDER BY id DESC LIMIT 5')
+    all_settings = cursor.fetchall()
+    conn.close()
+    
+    return jsonify({
+        'in_memory_region': capture_system.motion_region,
+        'in_memory_threshold': capture_system.motion_threshold,
+        'in_memory_min_area': capture_system.min_contour_area,
+        'database_settings': all_settings,
+        'detection_active': hasattr(capture_system, 'background_subtractor')
+    })
 
 @app.route('/live_feed')
 def live_feed():
