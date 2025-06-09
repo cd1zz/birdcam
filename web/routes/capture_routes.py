@@ -206,7 +206,7 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
         """Proxy video requests to the processing server."""
         try:
             url = f"{sync_service.base_url}/videos/{filename}"
-            resp = requests.get(url, stream=True, timeout=10)
+            resp = requests.get(url, stream=True)  # No timeout to avoid truncated streams
 
             if resp.status_code == 200:
                 return Response(
@@ -223,7 +223,7 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
         """Proxy thumbnail requests to the processing server."""
         try:
             url = f"{sync_service.base_url}/thumbnails/{filename}"
-            resp = requests.get(url, stream=True, timeout=10)
+            resp = requests.get(url, stream=True)  # No timeout to avoid truncated streams
 
             if resp.status_code == 200:
                 return Response(
