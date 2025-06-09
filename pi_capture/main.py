@@ -19,6 +19,7 @@ from services.file_sync import FileSyncService
 from services.capture_service import CaptureService
 from web.app import create_capture_app
 
+
 def setup_services(config):
     """Initialize all services with settings persistence"""
     print("🔧 Setting up services...")
@@ -32,6 +33,10 @@ def setup_services(config):
     # Create tables
     video_repo.create_table()
     settings_repo.create_table()
+    
+    # ADDED: Migrate existing database if needed
+    settings_repo.migrate_settings_table()
+    
     print("✅ Database ready")
     
     # Load saved motion settings
@@ -45,52 +50,17 @@ def setup_services(config):
         )
         config.motion.threshold = saved_settings['motion_threshold']
         config.motion.min_contour_area = saved_settings['min_contour_area']
-        print(f"✅ Loaded saved settings: region={config.motion.region}, threshold={config.motion.threshold}")
+        config.motion.motion_timeout_seconds = saved_settings['motion_timeout_seconds']  # ADDED
+        print(f"✅ Loaded saved settings: region={config.motion.region}, "
+              f"threshold={config.motion.threshold}, timeout={config.motion.motion_timeout_seconds}s")
     else:
         print("📋 No saved settings found, using defaults")
     
-    # Core services
+    # Rest of the function remains the same...
     print("🎯 Setting up motion detector...")
     motion_detector = MotionDetector(config.motion)
     print("✅ Motion detector ready")
     
-    print("📹 Setting up camera manager...")
-    camera_manager = CameraManager(config.capture)
-    print("✅ Camera manager ready")
-    
-    # Video writing
-    print("🎬 Setting up video writer...")
-    raw_dir = config.processing.storage_path / "raw_footage"
-    video_writer = VideoWriter(
-        raw_dir, 
-        config.capture.fps, 
-        config.capture.resolution
-    )
-    print("✅ Video writer ready")
-    
-    # Sync service
-    print("🔄 Setting up sync service...")
-    sync_service = FileSyncService(
-        config.sync.processing_server_host,
-        config.sync.processing_server_port,
-        config.sync.upload_timeout_seconds
-    )
-    print("✅ Sync service ready")
-    
-    # Main capture service
-    print("🚀 Setting up capture service...")
-    capture_service = CaptureService(
-        config.capture,
-        config.motion,
-        camera_manager,
-        motion_detector,
-        video_writer,
-        sync_service,
-        video_repo
-    )
-    print("✅ Capture service ready")
-    
-    return capture_service, sync_service, settings_repo
 
 def setup_scheduler(capture_service, config):
     """Setup scheduled tasks"""
