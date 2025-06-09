@@ -1,6 +1,7 @@
-# database/repositories/video_repository.py
+# database/repositories/video_repository.py - FIXED VERSION
 from typing import List, Optional
 from datetime import datetime
+from pathlib import Path  # ← ADD THIS IMPORT
 from core.models import VideoFile, ProcessingStatus
 from .base import BaseRepository
 
@@ -81,6 +82,35 @@ class VideoRepository(BaseRepository):
         with self.db_manager.get_connection() as conn:
             cursor = conn.execute('SELECT COUNT(*) FROM videos WHERE status = ?', ('completed',))
             return cursor.fetchone()[0]
+    
+    def get_total_birds(self) -> int:
+        """Get total number of birds found across all videos"""
+        with self.db_manager.get_connection() as conn:
+            cursor = conn.execute('SELECT SUM(bird_count) FROM videos WHERE status = ?', ('completed',))
+            result = cursor.fetchone()[0]
+            return result if result else 0
+    
+    def get_today_birds(self) -> int:
+        """Get number of birds found today"""
+        from datetime import date
+        today = date.today()
+        with self.db_manager.get_connection() as conn:
+            cursor = conn.execute('''
+                SELECT SUM(bird_count) FROM videos 
+                WHERE status = ? AND DATE(received_time) = ?
+            ''', ('completed', today))
+            result = cursor.fetchone()[0]
+            return result if result else 0
+    
+    def get_average_processing_time(self) -> float:
+        """Get average processing time for completed videos"""
+        with self.db_manager.get_connection() as conn:
+            cursor = conn.execute('''
+                SELECT AVG(processing_time) FROM videos 
+                WHERE status = ? AND processing_time IS NOT NULL
+            ''', ('completed',))
+            result = cursor.fetchone()[0]
+            return round(result, 2) if result else 0.0
     
     def _row_to_video(self, row) -> VideoFile:
         return VideoFile(
