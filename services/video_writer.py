@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import Optional
 from core.models import CaptureSegment
 from datetime import datetime
+from typing import Tuple
+import numpy as np
 
 class VideoWriter:
     def __init__(self, output_dir: Path, fps: int = 10, resolution: Tuple[int, int] = (640, 480)):
