@@ -112,8 +112,8 @@ class PiCaptureSystem:
         filename = f"segment_{timestamp.strftime('%Y%m%d_%H%M%S')}.mp4"
         filepath = self.raw_dir / filename
         
-        # Use efficient codec
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        # Use H.264 codec for better browser compatibility
+        fourcc = cv2.VideoWriter_fourcc(*'H264')  # Changed from 'mp4v'
         self.current_writer = cv2.VideoWriter(str(filepath), fourcc, 10.0, (640, 480))
         self.current_segment_start = timestamp
         self.current_filename = filename
