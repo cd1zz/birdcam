@@ -4,7 +4,7 @@ import time
 import threading
 import numpy as np
 from datetime import datetime, timedelta
-from flask import Flask, Response, jsonify, render_template_string
+from flask import Flask, Response, jsonify, render_template_string, request
 import sqlite3
 import json
 from pathlib import Path
