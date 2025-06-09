@@ -5,7 +5,8 @@ Routes for Pi Capture System with Unified Dashboard
 import threading
 import cv2
 import time
-from flask import request, jsonify, Response, render_template, send_from_directory
+import requests
+from flask import request, jsonify, Response, render_template, send_from_directory, stream_with_context
 from core.models import MotionRegion
 from database.repositories.settings_repository import SettingsRepository
 
@@ -202,16 +203,34 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
     
     @app.route('/videos/<filename>')
     def serve_video(filename):
-        """Proxy video requests to processing server"""
+        """Proxy video requests to the processing server."""
         try:
-            # This should proxy to the processing server
-            # For now, return 404 since videos are on processing server
-            return "Video served by processing server", 404
+            url = f"{sync_service.base_url}/videos/{filename}"
+            resp = requests.get(url, stream=True, timeout=10)
+
+            if resp.status_code == 200:
+                return Response(
+                    stream_with_context(resp.iter_content(chunk_size=8192)),
+                    content_type=resp.headers.get("Content-Type", "video/mp4"),
+                )
+            return resp.content, resp.status_code
+
         except Exception as e:
             return f"Error: {str(e)}", 500
-    
+
     @app.route('/thumbnails/<filename>')
     def serve_thumbnail(filename):
-        """Proxy thumbnail requests to processing server"""
-        # This should proxy to the processing server
-        return "Thumbnail served by processing server", 404
+        """Proxy thumbnail requests to the processing server."""
+        try:
+            url = f"{sync_service.base_url}/thumbnails/{filename}"
+            resp = requests.get(url, stream=True, timeout=10)
+
+            if resp.status_code == 200:
+                return Response(
+                    stream_with_context(resp.iter_content(chunk_size=8192)),
+                    content_type=resp.headers.get("Content-Type", "image/jpeg"),
+                )
+            return resp.content, resp.status_code
+
+        except Exception as e:
+            return f"Error: {str(e)}", 500
