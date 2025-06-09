@@ -45,11 +45,16 @@ class SettingsRepository(BaseRepository):
             row = cursor.fetchone()
             
             if row and all(coord is not None for coord in [row['region_x1'], row['region_y1'], row['region_x2'], row['region_y2']]):
+                timeout = 30
+                # sqlite3.Row doesn't support `.get`, so check the keys first
+                if 'motion_timeout_seconds' in row.keys():
+                    timeout = row['motion_timeout_seconds']
+
                 return {
                     'region': MotionRegion(row['region_x1'], row['region_y1'], row['region_x2'], row['region_y2']),
                     'motion_threshold': row['motion_threshold'],
                     'min_contour_area': row['min_contour_area'],
-                    'motion_timeout_seconds': row.get('motion_timeout_seconds', 30),  # Default to 30 if column doesn't exist
+                    'motion_timeout_seconds': timeout,
                     'updated_at': row['updated_at']
                 }
         
