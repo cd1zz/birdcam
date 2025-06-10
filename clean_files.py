@@ -2,6 +2,7 @@
 """
 Clean reset script - removes all old videos and databases for fresh start
 Works for both Pi (bird_footage) and Processing Server (bird_processing)
+Updated for new detections/no_detections structure
 """
 import shutil
 from pathlib import Path
@@ -21,10 +22,12 @@ def clean_processing_server():
     shutil.rmtree(base_path)
     print(f"🗑️ Removed {base_path}")
     
-    # Recreate clean directory structure
+    # Recreate clean directory structure with new layout
     directories = [
         base_path / "incoming",
-        base_path / "processed", 
+        base_path / "processed",
+        base_path / "processed" / "detections",      # NEW: Videos WITH detections
+        base_path / "processed" / "no_detections",   # NEW: Videos WITHOUT detections
         base_path / "thumbnails"
     ]
     
@@ -87,11 +90,20 @@ def clean_reset():
         return
     
     print(f"✅ Clean reset complete for: {system_type}")
-    print("🚀 Ready for fresh data with H.264 conversion")
+    print("🚀 Ready for fresh data with:")
+    print("   📂 detections/ and no_detections/ directories")
+    print("   🎬 H.264 video conversion")
+    print("   🎯 Multi-animal detection support")
+    print("   ⚙️ .env configuration")
 
 if __name__ == '__main__':
-    print("🧹 Bird Processing System - Clean Reset")
+    print("🧹 Animal Detection System - Clean Reset")
     print("This will remove ALL old videos and database data.")
+    print("")
+    print("📂 New directory structure:")
+    print("   bird_processing/processed/detections/     (videos WITH animals)")
+    print("   bird_processing/processed/no_detections/  (videos WITHOUT animals)")
+    print("")
     
     confirm = input("Are you sure you want to proceed? (yes/no): ").lower().strip()
     
