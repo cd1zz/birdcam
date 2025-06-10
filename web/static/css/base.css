@@ -61,30 +61,36 @@ body {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #2563eb;
     color: white;
+    border: 1px solid #1d4ed8;
 }
 
 .btn-primary:hover {
-    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    background: #1d4ed8;
+    border-color: #1e40af;
 }
 
 .btn-secondary {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: #64748b;
     color: white;
+    border: 1px solid #475569;
 }
 
 .btn-secondary:hover {
-    background: linear-gradient(135deg, #ee82e9 0%, #f3455a 100%);
+    background: #475569;
+    border-color: #334155;
 }
 
 .btn-success {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    background: #059669;
     color: white;
+    border: 1px solid #047857;
 }
 
 .btn-success:hover {
-    background: linear-gradient(135deg, #3d9bec 0%, #00e0ec 100%);
+    background: #047857;
+    border-color: #065f46;
 }
 
 /* Status Indicators */
@@ -211,5 +217,3 @@ body {
         font-size: 13px;
     }
 }
-
-
