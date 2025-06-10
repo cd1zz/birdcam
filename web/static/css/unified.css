@@ -69,11 +69,12 @@
     margin-bottom: 25px;
 }
 
-/* Camera Section - Left Column */
+/* Camera Section - Left Column with side-by-side layout */
 .camera-section {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+    display: grid;
+    grid-template-columns: 1fr 250px;
+    gap: 15px;
+    align-items: start;
 }
 
 .camera-panel {
@@ -227,7 +228,6 @@
     transition: all 0.3s ease;
     cursor: pointer;
 }
-
 .detection-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
@@ -442,6 +442,7 @@
     }
     
     .camera-section {
+        grid-template-columns: 1fr;
         gap: 15px;
     }
     
