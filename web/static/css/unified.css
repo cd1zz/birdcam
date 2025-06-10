@@ -211,11 +211,22 @@
     background: #f8f9fa;
     transition: all 0.3s ease;
     cursor: pointer;
+    position: relative;
 }
 .detection-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
     border-color: #667eea;
+}
+
+.delete-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1em;
 }
 
 .detection-card img {

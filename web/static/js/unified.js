@@ -136,7 +136,7 @@ function updateDetectionGrid(detections) {
     
     grid.innerHTML = detections.map(detection => {
         const confidence = detection.confidence * 100;
-        const confidenceClass = confidence >= 80 ? 'confidence-high' : 
+        const confidenceClass = confidence >= 80 ? 'confidence-high' :
                                confidence >= 60 ? 'confidence-medium' : 'confidence-low';
         
         // Direct thumbnail URL to processing server - much faster!
@@ -144,8 +144,9 @@ function updateDetectionGrid(detections) {
         
         return `
             <div class="detection-card" onclick="viewVideo('${detection.filename}')">
-                <img src="${thumbnailUrl}" 
-                     alt="${detection.species || 'Detection'}" 
+                <button class="delete-btn" onclick="deleteDetection(event, ${detection.id})">🗑️</button>
+                <img src="${thumbnailUrl}"
+                     alt="${detection.species || 'Detection'}"
                      onerror="this.style.display='none'">
                 <div class="detection-info">
                     <div class="detection-meta">
@@ -194,6 +195,25 @@ async function processNow() {
 
 function refreshDetections() {
     updateDetections();
+}
+
+async function deleteDetection(event, id) {
+    event.stopPropagation();
+    if (!confirm('Delete this detection?')) return;
+    try {
+        const data = await apiCall('/api/delete-detection', {
+            method: 'POST',
+            body: JSON.stringify({ detection_id: id })
+        });
+        if (data.message) {
+            showNotification(data.message, 'success');
+            updateDetections();
+        } else {
+            showNotification(data.error || 'Delete failed', 'error');
+        }
+    } catch (error) {
+        showNotification('Delete failed', 'error');
+    }
 }
 
 function handleImageError(img) {

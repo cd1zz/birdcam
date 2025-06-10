@@ -319,3 +319,31 @@ class ProcessingService:
         except Exception as e:
             print(f"Failed to generate thumbnail: {e}")
             return None
+
+    def delete_detection(self, detection_id: int) -> bool:
+        """Delete a detection and associated video/thumbnail files"""
+        detection = self.detection_repo.get_by_id(detection_id)
+        if not detection:
+            return False
+
+        video = self.video_repo.get_by_id(detection.video_id)
+        if not video:
+            return False
+
+        # Remove video file from all possible directories
+        deleted = False
+        for directory in [self.detections_dir, self.no_detections_dir, self.incoming_dir]:
+            file_path = directory / video.filename
+            if file_path.exists():
+                file_path.unlink()
+                deleted = True
+
+        # Remove associated thumbnails
+        for thumb in self.thumbnails_dir.glob(f"{video.filename}_*.jpg"):
+            thumb.unlink()
+
+        # Remove database records
+        self.detection_repo.delete_by_video_id(video.id)
+        self.video_repo.delete(video.id)
+
+        return deleted

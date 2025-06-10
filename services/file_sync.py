@@ -111,6 +111,19 @@ class FileSyncService:
         except Exception as e:
             print(f"⚠️ Could not trigger processing: {e}")
             return False
+
+    def delete_server_detection(self, detection_id: int) -> bool:
+        """Request server to delete a detection"""
+        try:
+            response = self._post_request(
+                '/api/delete-detection',
+                json={'detection_id': detection_id},
+                headers={'Content-Type': 'application/json'}
+            )
+            return response.status_code == 200
+        except Exception as e:
+            print(f"⚠️ Could not delete detection: {e}")
+            return False
     
     def get_server_motion_settings(self) -> Optional[Dict[str, Any]]:
         """Get motion detection settings from server"""

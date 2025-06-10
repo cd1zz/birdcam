@@ -56,8 +56,22 @@ class DetectionRepository(BaseRepository):
     
     def update_thumbnail_path(self, detection_id: int, thumbnail_path: str):
         with self.db_manager.get_connection() as conn:
-            conn.execute('UPDATE detections SET thumbnail_path = ? WHERE id = ?', 
+            conn.execute('UPDATE detections SET thumbnail_path = ? WHERE id = ?',
                         (thumbnail_path, detection_id))
+
+    def get_by_id(self, detection_id: int) -> Optional[BirdDetection]:
+        with self.db_manager.get_connection() as conn:
+            cursor = conn.execute('SELECT * FROM detections WHERE id = ?', (detection_id,))
+            row = cursor.fetchone()
+            return self._row_to_detection(row) if row else None
+
+    def delete(self, detection_id: int):
+        with self.db_manager.get_connection() as conn:
+            conn.execute('DELETE FROM detections WHERE id = ?', (detection_id,))
+
+    def delete_by_video_id(self, video_id: int):
+        with self.db_manager.get_connection() as conn:
+            conn.execute('DELETE FROM detections WHERE video_id = ?', (video_id,))
     
     def _row_to_detection(self, row) -> BirdDetection:
         return BirdDetection(

@@ -59,10 +59,11 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
     def api_recent_detections():
         detections_data = detection_repo.get_recent_with_thumbnails()
         detections = []
-        
+
         for item in detections_data:
             detection = item['detection']
             detections.append({
+                'id': detection.id,
                 'filename': item['filename'],
                 'received_time': item['received_time'],
                 'timestamp': detection.timestamp,
@@ -88,6 +89,20 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
         try:
             threading.Thread(target=processing_service.cleanup_old_videos, daemon=True).start()
             return jsonify({'message': 'Cleanup started'})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/delete-detection', methods=['POST'])
+    def api_delete_detection():
+        data = request.get_json()
+        detection_id = data.get('detection_id') if data else None
+        if detection_id is None:
+            return jsonify({'error': 'detection_id required'}), 400
+        try:
+            deleted = processing_service.delete_detection(int(detection_id))
+            if deleted:
+                return jsonify({'message': 'Detection deleted'})
+            return jsonify({'error': 'Detection not found'}), 404
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     
