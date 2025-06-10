@@ -61,38 +61,83 @@
     color: #2c3e50;
 }
 
-/* Live Feed Section - Centered */
-.live-feed-section {
+/* Main Dashboard Grid - Two Column Layout */
+.main-dashboard-grid {
+    display: grid;
+    grid-template-columns: 40% 60%;
+    gap: 25px;
     margin-bottom: 25px;
-    margin-top: 10px; /* Reduced gap from detections section */
 }
 
-.live-feed-panel {
-    margin: 0 auto;
-    text-align: center;
+/* Camera Section - Left Column */
+.camera-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
-.live-feed-container {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
+.camera-panel {
+    flex: 1;
+}
+
+.camera-panel .live-feed-container {
     position: relative;
-    width: 100%;
-    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 15px 0;
 }
 
-.live-feed-container img {
-    display: block !important;
-    margin: 0 auto !important;
-    max-width: 500px;
+.camera-panel .live-feed-container img {
+    width: 100%;
+    max-width: 100%;
     height: auto;
     border: 2px solid #ddd;
     border-radius: 10px;
     transition: border-color 0.3s ease;
 }
 
-.live-feed-container img:hover {
+.camera-panel .live-feed-container img:hover {
     border-color: #2563eb;
+}
+
+.controls-panel {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.controls-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.controls-grid .btn {
+    margin: 0;
+    padding: 12px;
+    font-size: 0.9em;
+}
+
+/* Detections Section - Right Column */
+.detections-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.detections-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 600px;
+}
+
+.detection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 15px;
+    flex: 1;
+    overflow-y: auto;
+    max-height: 550px;
+    padding-right: 10px;
 }
 
 .feed-overlay {
@@ -141,39 +186,6 @@
     font-size: 0.9em;
 }
 
-/* Controls Section - Centered */
-.controls-section {
-    margin-bottom: 25px;
-}
-
-.controls-section .panel {
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.controls-panel {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-}
-
-.controls-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-}
-
-.controls-grid .btn {
-    margin: 0;
-    padding: 12px;
-    font-size: 0.9em;
-}
-
-/* Detections Section - Reduced bottom margin */
-.detections-section {
-    width: 100%;
-    margin-bottom: 10px; /* Reduced from default 25px */
-    min-height: 400px;
-}
-
 .panel-header {
     display: flex;
     justify-content: space-between;
@@ -205,15 +217,6 @@
 .btn-small {
     padding: 6px 12px;
     font-size: 0.8em;
-}
-
-.detection-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 15px;
-    max-height: 600px;
-    overflow-y: auto;
-    padding-right: 10px;
 }
 
 .detection-card {
@@ -413,9 +416,12 @@
 
 /* Responsive Design */
 @media (max-width: 1200px) {
-    .live-feed-section .panel,
-    .controls-section .panel {
-        max-width: 100%;
+    .main-dashboard-grid {
+        grid-template-columns: 45% 55%;
+    }
+    
+    .detection-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     }
 
     .settings-grid {
@@ -430,15 +436,29 @@
 }
 
 @media (max-width: 768px) {
+    .main-dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .camera-section {
+        gap: 15px;
+    }
+    
+    .detections-panel {
+        min-height: 400px;
+    }
+    
+    .detection-grid {
+        grid-template-columns: 1fr;
+        max-height: 400px;
+    }
+
     .status-overview {
         grid-template-columns: 1fr;
     }
 
     .controls-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .detection-grid {
         grid-template-columns: 1fr;
     }
 
