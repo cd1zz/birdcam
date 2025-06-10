@@ -54,7 +54,7 @@
                 </div>
                 <div class="mini-stat">
                     <span class="mini-number" id="total-birds">-</span>
-                    <span class="mini-label">Birds</span>
+                    <span class="mini-label">Detections</span>
                 </div>
             </div>
         </div>
@@ -65,7 +65,7 @@
         <div class="status-grid-mini">
             <div class="mini-stat">
                 <span class="mini-number" id="today-birds">-</span>
-                <span class="mini-label">Birds Today</span>
+                <span class="mini-label">Today's Detections</span>
             </div>
             <div class="mini-stat">
                 <span class="mini-number" id="avg-time">-</span>
@@ -106,11 +106,11 @@
         </div>
     </div>
     
-    <!-- Bird Detections Section -->
+    <!-- Detections Section -->
     <div class="detections-section">
         <div class="panel">
             <div class="panel-header">
-                <h3>🐦 Recent Bird Detections</h3>
+                <h3>🎯 Recent Detections</h3>
                 <div class="detection-controls">
                     <span id="detection-count" class="count-badge">0 detections</span>
                     <button class="btn btn-small" onclick="refreshDetections()">🔄</button>
@@ -220,5 +220,10 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Inject processing server URL from Flask config -->
+<script>
+    const PROCESSING_SERVER_URL = '{{ processing_server_url }}';
+    console.log('🔧 Processing server URL loaded from config:', PROCESSING_SERVER_URL);
+</script>
 <script src="{{ url_for('static', filename='js/unified.js') }}"></script>
 {% endblock %}

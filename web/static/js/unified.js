@@ -89,8 +89,8 @@ function updateServerStatus(data) {
         // Update server stats
         document.getElementById('server-processed').textContent = server.processed_videos || '-';
         document.getElementById('server-queue').textContent = server.queue_size || '-';
-        document.getElementById('total-birds').textContent = server.total_birds || '-';
-        document.getElementById('today-birds').textContent = server.today_birds || '-';
+        document.getElementById('total-birds').textContent = server.total_detections || '-';
+        document.getElementById('today-birds').textContent = server.today_detections || '-';
         document.getElementById('avg-time').textContent = server.avg_processing_time || '-';
         
     } else {
@@ -127,7 +127,7 @@ function updateDetectionGrid(detections) {
     countBadge.textContent = `${detections.length} detection${detections.length !== 1 ? 's' : ''}`;
     
     if (!detections || detections.length === 0) {
-        grid.innerHTML = '<div class="loading-message">No recent bird detections</div>';
+        grid.innerHTML = '<div class="loading-message">No recent detections</div>';
         return;
     }
     
@@ -139,9 +139,13 @@ function updateDetectionGrid(detections) {
         return `
             <div class="detection-card" onclick="viewVideo('${detection.filename}')">
                 <img src="/thumbnails/${detection.thumbnail}" 
-                     alt="Bird detection" 
+                     alt="${detection.species || 'Detection'}" 
                      onerror="this.style.display='none'">
                 <div class="detection-info">
+                    <div class="detection-meta">
+                        <span><strong>Type:</strong></span>
+                        <span class="detection-type">${(detection.species || 'Detection').toUpperCase()}</span>
+                    </div>
                     <div class="detection-meta">
                         <span><strong>Confidence:</strong></span>
                         <span class="${confidenceClass}">${confidence.toFixed(1)}%</span>
@@ -355,147 +359,6 @@ async function loadCurrentSettings() {
             updateRegionInfo();
         }
         
-        const thresholdSlider = document.getElementById('threshold-slider');
-        const sizeSlider = document.getElementById('size-slider');
-        const thresholdValue = document.getElementById('threshold-value');
-        const sizeValue = document.getElementById('size-value');
-        
-        if (thresholdSlider) {
-            thresholdSlider.value = data.motion_threshold || 5000;
-            thresholdValue.textContent = data.motion_threshold || 5000;
-            thresholdSlider.oninput = function() {
-                thresholdValue.textContent = this.value;
-            };
-        }
-        
-        if (sizeSlider) {
-            sizeSlider.value = data.min_contour_area || 500;
-            sizeValue.textContent = data.min_contour_area || 500;
-            sizeSlider.oninput = function() {
-                sizeValue.textContent = this.value;
-            };
-        }
-        
-    } catch (error) {
-        console.error('Failed to load settings:', error);
-    }
-}
-
-async function saveSettings() {
-    if (!currentRegion) {
-        showNotification('Please draw a motion detection region first', 'warning');
-        return;
-    }
-    
-    const settings = {
-        region: currentRegion,
-        motion_threshold: parseInt(document.getElementById('threshold-slider').value),
-        min_contour_area: parseInt(document.getElementById('size-slider').value)
-    };
-    
-    try {
-        const data = await apiCall('/api/motion-settings', {
-            method: 'POST',
-            body: JSON.stringify(settings)
-        });
-        
-        showNotification(data.message || 'Settings saved!', 'success');
-        closeSettings();
-        updateDashboard();
-    } catch (error) {
-        showNotification('Failed to save settings', 'error');
-    }
-}
-
-function testMotion() {
-    showNotification('Wave your hand in the detection region and watch the live feed!', 'info');
-}
-
-// Video viewing functions
-function viewVideo(filename) {
-    const videoUrl = `/videos/${filename}`;
-    showVideoModal(videoUrl, filename);
-}
-
-function showVideoModal(videoUrl, filename) {
-    const modal = document.getElementById('video-modal');
-    const videoPlayer = document.getElementById('video-player');
-    const videoTitle = document.getElementById('video-title');
-    const downloadLink = document.getElementById('download-link');
-    const newTabLink = document.getElementById('new-tab-link');
-    const videoDetails = document.getElementById('video-details');
-    
-    videoPlayer.src = videoUrl;
-    videoTitle.textContent = `📹 ${filename}`;
-    
-    if (downloadLink) {
-        downloadLink.href = videoUrl;
-        downloadLink.download = filename;
-    }
-    
-    if (newTabLink) {
-        newTabLink.href = videoUrl;
-    }
-    
-    videoPlayer.addEventListener('loadedmetadata', () => {
-        if (videoDetails) {
-            videoDetails.innerHTML = `
-                <strong>Duration:</strong> ${formatDuration(videoPlayer.duration)}<br>
-                <strong>Resolution:</strong> ${videoPlayer.videoWidth}x${videoPlayer.videoHeight}<br>
-                <strong>File:</strong> ${filename}
-            `;
-        }
-    });
-    
-    videoPlayer.addEventListener('error', (e) => {
-        console.error('Video error:', e);
-        if (videoDetails) {
-            videoDetails.innerHTML = '<span style="color: red;">❌ Error loading video</span>';
-        }
-    });
-    
-    modal.style.display = 'flex';
-    
-    modal.onclick = (e) => {
-        if (e.target === modal) closeVideoModal();
-    };
-}
-
-function closeVideoModal() {
-    const modal = document.getElementById('video-modal');
-    const videoPlayer = document.getElementById('video-player');
-    
-    modal.style.display = 'none';
-    videoPlayer.pause();
-    videoPlayer.src = '';
-}
-
-// Add these functions to unified.js:
-
-async function loadCurrentSettings() {
-    try {
-        const data = await apiCall('/api/motion-settings');
-        
-        if (data.region) {
-            currentRegion = data.region;
-            
-            const canvas = document.getElementById('region-canvas');
-            const ctx = canvas.getContext('2d');
-            
-            const x1 = data.region.x1 * 400 / 640;
-            const y1 = data.region.y1 * 300 / 480;
-            const x2 = data.region.x2 * 400 / 640;
-            const y2 = data.region.y2 * 300 / 480;
-            
-            ctx.strokeStyle = '#00ff00';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-            ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
-            ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
-            
-            updateRegionInfo();
-        }
-        
         // Load all settings with new timeout parameter
         const thresholdSlider = document.getElementById('threshold-slider');
         const sizeSlider = document.getElementById('size-slider');
@@ -560,6 +423,73 @@ async function saveSettings() {
     }
 }
 
+function testMotion() {
+    showNotification('Wave your hand in the detection region and watch the live feed!', 'info');
+}
+
+// **UPDATED: Video streaming using template-injected URL**
+function viewVideo(filename) {
+    // Use the processing server URL injected by the template
+    const videoUrl = `${PROCESSING_SERVER_URL}/videos/${filename}`;
+    console.log(`🎬 Loading video from configured server: ${videoUrl}`);
+    showVideoModal(videoUrl, filename);
+}
+
+function showVideoModal(videoUrl, filename) {
+    const modal = document.getElementById('video-modal');
+    const videoPlayer = document.getElementById('video-player');
+    const videoTitle = document.getElementById('video-title');
+    const downloadLink = document.getElementById('download-link');
+    const newTabLink = document.getElementById('new-tab-link');
+    const videoDetails = document.getElementById('video-details');
+    
+    videoPlayer.src = videoUrl;
+    videoTitle.textContent = `📹 ${filename}`;
+    
+    if (downloadLink) {
+        downloadLink.href = videoUrl;
+        downloadLink.download = filename;
+    }
+    
+    if (newTabLink) {
+        newTabLink.href = videoUrl;
+    }
+    
+    videoPlayer.addEventListener('loadedmetadata', () => {
+        if (videoDetails) {
+            videoDetails.innerHTML = `
+                <strong>Duration:</strong> ${formatDuration(videoPlayer.duration)}<br>
+                <strong>Resolution:</strong> ${videoPlayer.videoWidth}x${videoPlayer.videoHeight}<br>
+                <strong>File:</strong> ${filename}<br>
+                <strong>Source:</strong> ${PROCESSING_SERVER_URL}
+            `;
+        }
+        console.log(`✅ Video loaded successfully from: ${PROCESSING_SERVER_URL}`);
+    });
+    
+    videoPlayer.addEventListener('error', (e) => {
+        console.error('Video error:', e);
+        if (videoDetails) {
+            videoDetails.innerHTML = '<span style="color: red;">❌ Error loading video from processing server</span>';
+        }
+    });
+    
+    modal.style.display = 'flex';
+    
+    modal.onclick = (e) => {
+        if (e.target === modal) closeVideoModal();
+    };
+}
+
+function closeVideoModal() {
+    const modal = document.getElementById('video-modal');
+    const videoPlayer = document.getElementById('video-player');
+    
+    modal.style.display = 'none';
+    videoPlayer.pause();
+    videoPlayer.src = '';
+}
+
 async function updateDebugInfo() {
     try {
         const data = await apiCall('/api/motion-debug');
@@ -598,9 +528,4 @@ function toggleDebugInfo() {
     } else {
         debugContent.style.display = 'none';
     }
-}
-
-function testMotion() {
-    showNotification('Wave your hand in the detection region and click "Toggle Debug" to see real-time sensitivity!', 'info');
-    toggleDebugInfo();
 }

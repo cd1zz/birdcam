@@ -14,7 +14,9 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
     
     @app.route('/')
     def dashboard():
-        return render_template('unified_dashboard.html')
+        # Pass processing server URL to template
+        processing_server_url = f"http://{sync_service.server_host}:{sync_service.server_port}"
+        return render_template('unified_dashboard.html', processing_server_url=processing_server_url)
     
     @app.route('/api/status')
     def api_status():
@@ -74,7 +76,7 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
                 } if region else None,
                 'motion_threshold': capture_service.motion_detector.config.threshold,
                 'min_contour_area': capture_service.motion_detector.config.min_contour_area,
-                'motion_timeout_seconds': capture_service.motion_config.motion_timeout_seconds,  # NEW
+                'motion_timeout_seconds': capture_service.motion_config.motion_timeout_seconds,
                 'source': 'current'
             }
             
@@ -106,7 +108,7 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
             region_data = data.get('region')
             motion_threshold = data.get('motion_threshold', 5000)
             min_contour_area = data.get('min_contour_area', 500)
-            motion_timeout_seconds = data.get('motion_timeout_seconds', 30)  # NEW
+            motion_timeout_seconds = data.get('motion_timeout_seconds', 30)
             
             if not region_data or not all(k in region_data for k in ['x1', 'y1', 'x2', 'y2']):
                 return jsonify({'error': 'Invalid region data'}), 400
@@ -120,12 +122,12 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
             capture_service.motion_detector.set_motion_region(region)
             capture_service.motion_detector.config.threshold = motion_threshold
             capture_service.motion_detector.config.min_contour_area = min_contour_area
-            capture_service.motion_detector.config.motion_timeout_seconds = motion_timeout_seconds  # NEW
+            capture_service.motion_detector.config.motion_timeout_seconds = motion_timeout_seconds
             
             # IMPORTANT: Update the capture service timeout too
             capture_service.motion_config.motion_timeout_seconds = motion_timeout_seconds
             
-            # Save to database for persistence (extend settings_repo to save timeout)
+            # Save to database for persistence
             settings_repo.save_motion_settings(region, motion_threshold, min_contour_area, motion_timeout_seconds)
             
             # Try to update server settings too
