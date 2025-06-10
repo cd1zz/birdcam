@@ -62,6 +62,19 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
         except Exception as e:
             print(f"Error getting server detections: {e}")
             return jsonify({'detections': [], 'error': str(e)})
+
+    @app.route('/api/delete-detection', methods=['POST'])
+    def api_delete_detection():
+        data = request.get_json()
+        detection_id = data.get('detection_id') if data else None
+        if detection_id is None:
+            return jsonify({'error': 'detection_id required'}), 400
+        try:
+            if sync_service.delete_server_detection(int(detection_id)):
+                return jsonify({'message': 'Detection deleted'})
+            return jsonify({'error': 'Failed to delete detection'}), 500
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
     
     @app.route('/api/motion-settings', methods=['GET'])
     def api_get_motion_settings():

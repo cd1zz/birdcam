@@ -106,11 +106,15 @@ class VideoRepository(BaseRepository):
         """Get average processing time for completed videos"""
         with self.db_manager.get_connection() as conn:
             cursor = conn.execute('''
-                SELECT AVG(processing_time) FROM videos 
+                SELECT AVG(processing_time) FROM videos
                 WHERE status = ? AND processing_time IS NOT NULL
             ''', ('completed',))
             result = cursor.fetchone()[0]
             return round(result, 2) if result else 0.0
+
+    def delete(self, video_id: int):
+        with self.db_manager.get_connection() as conn:
+            conn.execute('DELETE FROM videos WHERE id = ?', (video_id,))
     
     def _row_to_video(self, row) -> VideoFile:
         return VideoFile(
