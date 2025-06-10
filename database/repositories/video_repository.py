@@ -1,7 +1,7 @@
-# database/repositories/video_repository.py - FIXED VERSION
+# database/repositories/video_repository.py
 from typing import List, Optional
 from datetime import datetime
-from pathlib import Path  # ← ADD THIS IMPORT
+from pathlib import Path
 from core.models import VideoFile, ProcessingStatus
 from .base import BaseRepository
 
@@ -20,7 +20,7 @@ class VideoRepository(BaseRepository):
                     received_time TIMESTAMP NOT NULL,
                     status TEXT NOT NULL DEFAULT 'pending',
                     processing_time REAL,
-                    bird_count INTEGER DEFAULT 0,
+                    detection_count INTEGER DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
@@ -56,7 +56,7 @@ class VideoRepository(BaseRepository):
             return [self._row_to_video(row) for row in cursor.fetchall()]
     
     def update_status(self, video_id: int, status: ProcessingStatus, 
-                     processing_time: Optional[float] = None, bird_count: Optional[int] = None):
+                     processing_time: Optional[float] = None, detection_count: Optional[int] = None):
         fields = ['status = ?']
         values = [status.value]
         
@@ -64,9 +64,9 @@ class VideoRepository(BaseRepository):
             fields.append('processing_time = ?')
             values.append(processing_time)
         
-        if bird_count is not None:
-            fields.append('bird_count = ?')
-            values.append(bird_count)
+        if detection_count is not None:
+            fields.append('detection_count = ?')
+            values.append(detection_count)
         
         values.append(video_id)
         
@@ -83,20 +83,20 @@ class VideoRepository(BaseRepository):
             cursor = conn.execute('SELECT COUNT(*) FROM videos WHERE status = ?', ('completed',))
             return cursor.fetchone()[0]
     
-    def get_total_birds(self) -> int:
-        """Get total number of birds found across all videos"""
+    def get_total_detections(self) -> int:
+        """Get total number of detections found across all videos"""
         with self.db_manager.get_connection() as conn:
-            cursor = conn.execute('SELECT SUM(bird_count) FROM videos WHERE status = ?', ('completed',))
+            cursor = conn.execute('SELECT SUM(detection_count) FROM videos WHERE status = ?', ('completed',))
             result = cursor.fetchone()[0]
             return result if result else 0
     
-    def get_today_birds(self) -> int:
-        """Get number of birds found today"""
+    def get_today_detections(self) -> int:
+        """Get number of detections found today"""
         from datetime import date
         today = date.today()
         with self.db_manager.get_connection() as conn:
             cursor = conn.execute('''
-                SELECT SUM(bird_count) FROM videos 
+                SELECT SUM(detection_count) FROM videos 
                 WHERE status = ? AND DATE(received_time) = ?
             ''', ('completed', today))
             result = cursor.fetchone()[0]
@@ -125,6 +125,6 @@ class VideoRepository(BaseRepository):
             received_time=datetime.fromisoformat(row['received_time']),
             status=ProcessingStatus(row['status']),
             processing_time=row['processing_time'],
-            bird_count=row['bird_count'],
+            bird_count=row['detection_count'],  # For backward compatibility
             created_at=datetime.fromisoformat(row['created_at'])
         )

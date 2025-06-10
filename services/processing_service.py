@@ -33,19 +33,19 @@ class ProcessingService:
         # Directories
         self.incoming_dir = config.storage_path / "incoming"
         self.processed_dir = config.storage_path / "processed"
-        self.birds_dir = config.storage_path / "processed" / "birds"
-        self.no_birds_dir = config.storage_path / "processed" / "no_birds"
+        self.detections_dir = config.storage_path / "processed" / "detections"
+        self.no_detections_dir = config.storage_path / "processed" / "no_detections"
         self.thumbnails_dir = config.storage_path / "thumbnails"
         
         # Create all directories
-        for directory in [self.incoming_dir, self.processed_dir, self.birds_dir, 
-                         self.no_birds_dir, self.thumbnails_dir]:
+        for directory in [self.incoming_dir, self.processed_dir, self.detections_dir, 
+                         self.no_detections_dir, self.thumbnails_dir]:
             directory.mkdir(parents=True, exist_ok=True)
         
         print(f"📁 Directory structure created:")
         print(f"   📥 Incoming: {self.incoming_dir}")
-        print(f"   🐦 Birds: {self.birds_dir}")
-        print(f"   📹 No Birds: {self.no_birds_dir}")
+        print(f"   🎯 Detections: {self.detections_dir}")
+        print(f"   📹 No Detections: {self.no_detections_dir}")
         print(f"   🖼️ Thumbnails: {self.thumbnails_dir}")
     
     def receive_video(self, file_data: bytes, filename: str) -> str:
@@ -132,32 +132,32 @@ class ProcessingService:
         
         current_time = datetime.now()
         
-        # Bird videos: keep for bird_retention_days (default 30 days)
-        bird_cutoff = current_time - timedelta(days=self.config.bird_retention_days)
+        # Detection videos: keep for detection_retention_days
+        detection_cutoff = current_time - timedelta(days=self.config.detection_retention_days)
         
-        # No-bird videos: keep for no_bird_retention_days (default 7 days)
-        no_bird_cutoff = current_time - timedelta(days=self.config.no_bird_retention_days)
+        # No-detection videos: keep for no_detection_retention_days  
+        no_detection_cutoff = current_time - timedelta(days=self.config.no_detection_retention_days)
         
-        # Clean bird videos
-        bird_count = 0
-        for video_file in self.birds_dir.glob("*.mp4"):
+        # Clean detection videos
+        detection_count = 0
+        for video_file in self.detections_dir.glob("*.mp4"):
             file_time = datetime.fromtimestamp(video_file.stat().st_mtime)
-            if file_time < bird_cutoff:
+            if file_time < detection_cutoff:
                 video_file.unlink()
-                bird_count += 1
-                print(f"🗑️ Cleaned old bird video: {video_file.name}")
+                detection_count += 1
+                print(f"🗑️ Cleaned old detection video: {video_file.name}")
         
-        # Clean no-bird videos
-        no_bird_count = 0
-        for video_file in self.no_birds_dir.glob("*.mp4"):
+        # Clean no-detection videos
+        no_detection_count = 0
+        for video_file in self.no_detections_dir.glob("*.mp4"):
             file_time = datetime.fromtimestamp(video_file.stat().st_mtime)
-            if file_time < no_bird_cutoff:
+            if file_time < no_detection_cutoff:
                 video_file.unlink()
-                no_bird_count += 1
-                print(f"🗑️ Cleaned old no-bird video: {video_file.name}")
+                no_detection_count += 1
+                print(f"🗑️ Cleaned old no-detection video: {video_file.name}")
         
-        if bird_count > 0 or no_bird_count > 0:
-            print(f"🧹 Cleanup complete: {bird_count} bird videos, {no_bird_count} no-bird videos removed")
+        if detection_count > 0 or no_detection_count > 0:
+            print(f"🧹 Cleanup complete: {detection_count} detection videos, {no_detection_count} no-detection videos removed")
         else:
             print("🧹 Cleanup complete: no old videos to remove")
     
@@ -191,7 +191,7 @@ class ProcessingService:
         print("✅ Batch processing complete")
     
     def _process_single_video(self, video: VideoFile):
-        """Process a single video for bird detection"""
+        """Process a single video for animal/object detection"""
         video_path = self.incoming_dir / video.filename
         if not video_path.exists():
             return
@@ -219,7 +219,7 @@ class ProcessingService:
             if not ret:
                 break
             
-            if frame_number % self.config.process_every_nth_frame == 0:
+            if frame_number % self.config.detection.process_every_nth_frame == 0:
                 timestamp = frame_number / fps if fps > 0 else frame_number * 0.1
                 
                 # Run detection
@@ -233,7 +233,7 @@ class ProcessingService:
                         timestamp=timestamp,
                         confidence=detection_data['confidence'],
                         bbox=tuple(detection_data['bbox']),
-                        species='bird'
+                        species=detection_data['class']  # Now stores actual detection class
                     )
                     
                     # Store frame for thumbnail generation
@@ -251,20 +251,26 @@ class ProcessingService:
         processing_time = time.time() - start_time
         
         # Determine destination based on detections
-        has_birds = len(detections) > 0
-        destination_dir = self.birds_dir if has_birds else self.no_birds_dir
-        category = "🐦 BIRDS" if has_birds else "📹 NO BIRDS"
+        has_detections = len(detections) > 0
+        destination_dir = self.detections_dir if has_detections else self.no_detections_dir
+        category = "🎯 DETECTIONS" if has_detections else "📹 NO DETECTIONS"
+        
+        # Get unique detection classes for logging
+        detection_classes = set()
+        if has_detections:
+            detection_classes = {detection[1]['class'] for detection in detections}
         
         # Save detections to database (only if there are any)
-        if has_birds:
+        if has_detections:
             for detection, detection_data in detections:
                 detection_id = self.detection_repo.create(detection)
                 
                 # Generate thumbnail for first few detections
-                if len([d for d, _ in detections[:self.config.max_thumbnails_per_video]]) <= self.config.max_thumbnails_per_video:
+                if len([d for d, _ in detections[:self.config.detection.max_thumbnails_per_video]]) <= self.config.detection.max_thumbnails_per_video:
                     thumbnail_path = self._generate_thumbnail(
                         detection_data['frame'], detection.bbox, 
-                        video.filename, detection_id, detection.confidence, detection.timestamp
+                        video.filename, detection_id, detection.confidence, 
+                        detection.timestamp, detection_data['class']
                     )
                     if thumbnail_path:
                         self.detection_repo.update_thumbnail_path(detection_id, thumbnail_path)
@@ -284,16 +290,22 @@ class ProcessingService:
         if not conversion_success:
             print(f"⚠️ Warning: {video.filename} conversion failed - video may not stream properly in browsers")
         
-        retention_days = self.config.bird_retention_days if has_birds else self.config.no_bird_retention_days
-        print(f"✅ {video.filename}: {len(detections)} birds found in {processing_time:.1f}s")
+        retention_days = self.config.detection_retention_days if has_detections else self.config.no_detection_retention_days
+        
+        if has_detections:
+            classes_str = ', '.join(sorted(detection_classes))
+            print(f"✅ {video.filename}: {len(detections)} detections found ({classes_str}) in {processing_time:.1f}s")
+        else:
+            print(f"✅ {video.filename}: no detections found in {processing_time:.1f}s")
+        
         print(f"   📂 Stored in: {category} (kept for {retention_days} days)")
     
-    def _generate_thumbnail(self, frame, bbox, video_filename, detection_id, confidence, timestamp):
+    def _generate_thumbnail(self, frame, bbox, video_filename, detection_id, confidence, timestamp, detection_class):
         """Generate thumbnail for detection"""
         try:
             # Draw bounding box
             cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2)
-            cv2.putText(frame, f"Bird {confidence:.2f}", 
+            cv2.putText(frame, f"{detection_class.title()} {confidence:.2f}", 
                        (bbox[0], bbox[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
             cv2.putText(frame, f"t={timestamp:.1f}s", 
                        (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)

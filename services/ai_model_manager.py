@@ -1,12 +1,12 @@
 # services/ai_model_manager.py
 import torch
 import warnings
-from typing import Optional
+from typing import Optional, List, Dict
+from config.settings import DetectionConfig
 
 class AIModelManager:
-    def __init__(self, model_name: str = 'yolov5n', confidence: float = 0.35):
-        self.model_name = model_name
-        self.confidence = confidence
+    def __init__(self, detection_config: DetectionConfig):
+        self.detection_config = detection_config
         self.model = None
         self.device = None
         self._determine_device()
@@ -21,15 +21,23 @@ class AIModelManager:
         if self.model is not None:
             return
         
+        print(f"🤖 Loading {self.detection_config.model_name} model...")
+        print(f"🎯 Detection classes: {', '.join(self.detection_config.classes)}")
+        for cls in self.detection_config.classes:
+            confidence = self.detection_config.get_confidence(cls)
+            print(f"   {cls}: {confidence:.2f} confidence threshold")
+        
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=FutureWarning)
-            self.model = torch.hub.load('ultralytics/yolov5', self.model_name, force_reload=False)
-            self.model.conf = self.confidence
+            self.model = torch.hub.load('ultralytics/yolov5', self.detection_config.model_name, force_reload=False)
             
             if self.device == 'cuda':
                 self.model = self.model.cuda()
+                print(f"🚀 Using GPU: {torch.cuda.get_device_name()}")
+            else:
+                print("💻 Using CPU for inference")
     
-    def predict(self, frame) -> list:
+    def predict(self, frame) -> List[Dict]:
         if self.model is None:
             raise RuntimeError("Model not loaded. Call load_model() first.")
         
@@ -41,12 +49,18 @@ class AIModelManager:
         results_df = results.pandas().xyxy[0]
         
         for _, row in results_df.iterrows():
-            if row['name'] == 'bird' and row['confidence'] > self.confidence:
+            detection_class = row['name']
+            confidence = float(row['confidence'])
+            
+            # Check if this detection class is enabled and meets confidence threshold
+            if (detection_class in self.detection_config.classes and 
+                confidence >= self.detection_config.get_confidence(detection_class)):
+                
                 detections.append({
-                    'confidence': float(row['confidence']),
+                    'confidence': confidence,
                     'bbox': [int(row['xmin']), int(row['ymin']), 
                             int(row['xmax']), int(row['ymax'])],
-                    'class': row['name']
+                    'class': detection_class
                 })
         
         return detections

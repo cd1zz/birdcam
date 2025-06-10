@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AI Processing Server Entry Point with Bird/No-Bird Separation and Cleanup
+AI Processing Server Entry Point with Multi-Detection Support
 """
 import schedule
 import threading
@@ -31,11 +31,8 @@ def setup_services(config):
         print("✅ Database initialized")
         
         print("🤖 Setting up AI model manager...")
-        # AI services
-        model_manager = AIModelManager(
-            config.processing.model_name,
-            config.processing.confidence_threshold
-        )
+        # AI services - now uses detection config
+        model_manager = AIModelManager(config.processing.detection)
         print("✅ AI model manager ready")
         
         print("⚙️ Setting up processing service...")
@@ -76,23 +73,33 @@ def setup_scheduler(processing_service, config):
         print("✅ Scheduler started:")
         print(f"   🔄 Auto-process: every 30 minutes")
         print(f"   🧹 Cleanup: daily at 3:00 AM")
-        print(f"   🐦 Bird videos kept: {config.processing.bird_retention_days} days")
-        print(f"   📹 No-bird videos kept: {config.processing.no_bird_retention_days} days")
+        print(f"   🎯 Detection videos kept: {config.processing.detection_retention_days} days")
+        print(f"   📹 No-detection videos kept: {config.processing.no_detection_retention_days} days")
         
     except Exception as e:
         print(f"❌ Failed to setup scheduler: {e}")
         raise
 
 def main():
-    print("🧠 Starting AI Processing Server with Bird Separation...")
+    print("🧠 Starting AI Processing Server with Multi-Detection Support...")
     
     try:
         # Load configuration
         print("📋 Loading configuration...")
         config = load_processing_config()
         print(f"✅ Configuration loaded - Storage: {config.processing.storage_path}")
-        print(f"🐦 Bird retention: {config.processing.bird_retention_days} days")
-        print(f"📹 No-bird retention: {config.processing.no_bird_retention_days} days")
+        print(f"🎯 Detection classes: {', '.join(config.processing.detection.classes)}")
+        print(f"🤖 Model: {config.processing.detection.model_name}")
+        
+        # Show detection confidence settings
+        print("🎛️ Confidence thresholds:")
+        for detection_class in config.processing.detection.classes:
+            confidence = config.processing.detection.get_confidence(detection_class)
+            print(f"   {detection_class}: {confidence:.2f}")
+        
+        print(f"📅 Retention policies:")
+        print(f"   🎯 Detection videos: {config.processing.detection_retention_days} days")
+        print(f"   📹 No-detection videos: {config.processing.no_detection_retention_days} days")
         
         # Setup services
         processing_service, video_repo, detection_repo = setup_services(config)
@@ -107,8 +114,7 @@ def main():
         print(f"✅ Processing server ready!")
         print(f"🌐 Web interface: http://0.0.0.0:{config.web.processing_port}")
         print(f"💾 Storage path: {config.processing.storage_path}")
-        print(f"🤖 Model: {config.processing.model_name}")
-        print(f"📂 Videos will be sorted into birds/ and no_birds/ directories")
+        print(f"📂 Videos will be sorted into detections/ and no_detections/ directories")
         print("📡 Waiting for videos to process...")
         
         app.run(
