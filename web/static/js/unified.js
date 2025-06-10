@@ -5,6 +5,9 @@ let currentRegion = null;
 let isDrawing = false;
 let startX, startY;
 
+// PROCESSING_SERVER_URL is now injected by the template
+// No hardcoded URL needed!
+
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
     updateDashboard();
@@ -136,9 +139,12 @@ function updateDetectionGrid(detections) {
         const confidenceClass = confidence >= 80 ? 'confidence-high' : 
                                confidence >= 60 ? 'confidence-medium' : 'confidence-low';
         
+        // Direct thumbnail URL to processing server - much faster!
+        const thumbnailUrl = `${PROCESSING_SERVER_URL}/thumbnails/${detection.thumbnail}`;
+        
         return `
             <div class="detection-card" onclick="viewVideo('${detection.filename}')">
-                <img src="/thumbnails/${detection.thumbnail}" 
+                <img src="${thumbnailUrl}" 
                      alt="${detection.species || 'Detection'}" 
                      onerror="this.style.display='none'">
                 <div class="detection-info">
