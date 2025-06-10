@@ -79,6 +79,19 @@
     </div>
 </div>
 
+<!-- Detections Section - Above Live Feed -->
+<div class="detections-section">
+    <div class="panel">
+        <div class="panel-header">
+            <h3>🎯 Recent Detections</h3>
+            <div class="detection-controls">
+                <span id="detection-count" class="count-badge">0 detections</span>
+                <button class="btn btn-small" onclick="refreshDetections()">🔄</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Live Feed Section - Centered -->
 <div class="live-feed-section">
     <div class="panel live-feed-panel">
@@ -103,23 +116,6 @@
             <button class="btn btn-success" onclick="processNow()">🧠 Process Queue</button>
             <button class="btn btn-secondary" onclick="showSettings()">⚙️ Motion Settings</button>
             <button class="btn btn-secondary" onclick="location.reload()">🔄 Refresh</button>
-        </div>
-    </div>
-</div>
-
-<!-- Detections Section - Full Width Below Everything -->
-<div class="detections-section">
-    <div class="panel">
-        <div class="panel-header">
-            <h3>🎯 Recent Detections</h3>
-            <div class="detection-controls">
-                <span id="detection-count" class="count-badge">0 detections</span>
-                <button class="btn btn-small" onclick="refreshDetections()">🔄</button>
-            </div>
-        </div>
-        
-        <div id="detection-grid" class="detection-grid">
-            <div class="loading-message">Loading detections...</div>
         </div>
     </div>
 </div>
