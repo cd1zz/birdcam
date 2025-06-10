@@ -1,6 +1,6 @@
-# web/routes/processing_routes.py - FIXED VERSION
+# web/routes/processing_routes.py
 """
-Routes for Processing Server
+Routes for Processing Server with Bird/No-Bird Separation
 """
 import threading
 from flask import request, jsonify, render_template, send_from_directory
@@ -80,6 +80,15 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     
+    @app.route('/api/cleanup-now', methods=['POST'])
+    def api_cleanup_now():
+        """Manually trigger video cleanup"""
+        try:
+            threading.Thread(target=processing_service.cleanup_old_videos, daemon=True).start()
+            return jsonify({'message': 'Cleanup started'})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
     @app.route('/api/motion-settings', methods=['GET'])
     def api_get_motion_settings():
         """Get motion detection settings (placeholder for processing server)"""
@@ -102,16 +111,29 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
     
     @app.route('/videos/<filename>')
     def serve_video(filename):
-        # Check processed directory first
-        processed_path = config.processing.storage_path / "processed" / filename
-        if processed_path.exists():
-            return send_from_directory(config.processing.storage_path / "processed", filename)
+        """Serve video files from birds or no_birds directories"""
+        # Check birds directory first (most likely to be accessed)
+        birds_path = config.processing.storage_path / "processed" / "birds" / filename
+        if birds_path.exists():
+            print(f"📹 Serving bird video: {filename}")
+            return send_from_directory(config.processing.storage_path / "processed" / "birds", filename)
         
-        # Then check incoming directory
+        # Then check no_birds directory
+        no_birds_path = config.processing.storage_path / "processed" / "no_birds" / filename
+        if no_birds_path.exists():
+            print(f"📹 Serving no-bird video: {filename}")
+            return send_from_directory(config.processing.storage_path / "processed" / "no_birds", filename)
+        
+        # Finally check incoming directory (for videos not yet processed)
         incoming_path = config.processing.storage_path / "incoming" / filename
         if incoming_path.exists():
+            print(f"📹 Serving incoming video: {filename}")
             return send_from_directory(config.processing.storage_path / "incoming", filename)
         
+        print(f"❌ Video not found: {filename}")
+        print(f"   Checked: {birds_path}")
+        print(f"   Checked: {no_birds_path}")
+        print(f"   Checked: {incoming_path}")
         return "Video not found", 404
     
     @app.route('/thumbnails/<filename>')

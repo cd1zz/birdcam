@@ -37,6 +37,8 @@ class ProcessingConfig:
     confidence_threshold: float = 0.35
     process_every_nth_frame: int = 3
     max_thumbnails_per_video: int = 5
+    bird_retention_days: int = 30  # Keep bird videos for 30 days
+    no_bird_retention_days: int = 7  # Keep no-bird videos for 7 days
     
     def __post_init__(self):
         # Resolve storage path to an absolute location to avoid issues with
@@ -49,7 +51,7 @@ class SyncConfig:
     processing_server_host: str
     processing_server_port: int = 8091
     sync_interval_minutes: int = 15
-    cleanup_days: int = 3
+    cleanup_days: int = 3  # Pi cleanup (all videos regardless of birds)
     upload_timeout_seconds: int = 300
 
 @dataclass
@@ -90,11 +92,19 @@ def load_processing_config() -> AppConfig:
     """Load configuration for processing server"""
     base_path = Path(os.getenv('STORAGE_PATH', './bird_processing'))
     
+    # Allow customization of retention periods via environment variables
+    bird_retention = int(os.getenv('BIRD_RETENTION_DAYS', '30'))
+    no_bird_retention = int(os.getenv('NO_BIRD_RETENTION_DAYS', '7'))
+    
     return AppConfig(
         database=DatabaseConfig(path=base_path / "processing.db"),
         capture=CaptureConfig(stream_url=""),  # Not used on processing server
         motion=MotionConfig(),  # Not used on processing server
-        processing=ProcessingConfig(storage_path=base_path),
+        processing=ProcessingConfig(
+            storage_path=base_path,
+            bird_retention_days=bird_retention,
+            no_bird_retention_days=no_bird_retention
+        ),
         sync=SyncConfig(processing_server_host="localhost"),  # Not used on processing server
         web=WebConfig()
     )

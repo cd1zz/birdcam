@@ -33,10 +33,20 @@ class ProcessingService:
         # Directories
         self.incoming_dir = config.storage_path / "incoming"
         self.processed_dir = config.storage_path / "processed"
+        self.birds_dir = config.storage_path / "processed" / "birds"
+        self.no_birds_dir = config.storage_path / "processed" / "no_birds"
         self.thumbnails_dir = config.storage_path / "thumbnails"
         
-        for directory in [self.incoming_dir, self.processed_dir, self.thumbnails_dir]:
+        # Create all directories
+        for directory in [self.incoming_dir, self.processed_dir, self.birds_dir, 
+                         self.no_birds_dir, self.thumbnails_dir]:
             directory.mkdir(parents=True, exist_ok=True)
+        
+        print(f"📁 Directory structure created:")
+        print(f"   📥 Incoming: {self.incoming_dir}")
+        print(f"   🐦 Birds: {self.birds_dir}")
+        print(f"   📹 No Birds: {self.no_birds_dir}")
+        print(f"   🖼️ Thumbnails: {self.thumbnails_dir}")
     
     def receive_video(self, file_data: bytes, filename: str) -> str:
         """Receive and store uploaded video file"""
@@ -67,11 +77,10 @@ class ProcessingService:
         
         return unique_filename
     
-    def convert_to_h264_for_web(self, filename):
+    def convert_to_h264_for_web(self, file_path: Path):
         """Convert videos to H.264 for web browser compatibility"""
-        file_path = self.processed_dir / filename
         if not file_path.exists():
-            print(f"❌ File not found for conversion: {filename}")
+            print(f"❌ File not found for conversion: {file_path}")
             return False
         
         try:
@@ -84,10 +93,10 @@ class ProcessingService:
             
             codec = result.stdout.strip()
             if codec == 'h264':
-                print(f"✅ {filename} already uses H.264")
+                print(f"✅ {file_path.name} already uses H.264")
                 return True
                 
-            print(f"🔄 Converting {filename} from {codec} to H.264 for web compatibility...")
+            print(f"🔄 Converting {file_path.name} from {codec} to H.264 for web compatibility...")
             
             # Create temporary output file
             temp_path = file_path.with_suffix('.h264.mp4')
@@ -105,17 +114,52 @@ class ProcessingService:
             file_path.unlink()
             temp_path.rename(file_path)
             
-            print(f"✅ Converted {filename} to H.264")
+            print(f"✅ Converted {file_path.name} to H.264")
             return True
             
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
-            print(f"❌ Failed to convert {filename}: {e}")
+            print(f"❌ Failed to convert {file_path.name}: {e}")
             if 'temp_path' in locals() and temp_path.exists():
                 temp_path.unlink()
             return False
         except Exception as e:
-            print(f"❌ Unexpected error converting {filename}: {e}")
+            print(f"❌ Unexpected error converting {file_path.name}: {e}")
             return False
+    
+    def cleanup_old_videos(self):
+        """Clean up old videos based on retention policies"""
+        from datetime import datetime, timedelta
+        
+        current_time = datetime.now()
+        
+        # Bird videos: keep for bird_retention_days (default 30 days)
+        bird_cutoff = current_time - timedelta(days=self.config.bird_retention_days)
+        
+        # No-bird videos: keep for no_bird_retention_days (default 7 days)
+        no_bird_cutoff = current_time - timedelta(days=self.config.no_bird_retention_days)
+        
+        # Clean bird videos
+        bird_count = 0
+        for video_file in self.birds_dir.glob("*.mp4"):
+            file_time = datetime.fromtimestamp(video_file.stat().st_mtime)
+            if file_time < bird_cutoff:
+                video_file.unlink()
+                bird_count += 1
+                print(f"🗑️ Cleaned old bird video: {video_file.name}")
+        
+        # Clean no-bird videos
+        no_bird_count = 0
+        for video_file in self.no_birds_dir.glob("*.mp4"):
+            file_time = datetime.fromtimestamp(video_file.stat().st_mtime)
+            if file_time < no_bird_cutoff:
+                video_file.unlink()
+                no_bird_count += 1
+                print(f"🗑️ Cleaned old no-bird video: {video_file.name}")
+        
+        if bird_count > 0 or no_bird_count > 0:
+            print(f"🧹 Cleanup complete: {bird_count} bird videos, {no_bird_count} no-bird videos removed")
+        else:
+            print("🧹 Cleanup complete: no old videos to remove")
     
     def process_pending_videos(self):
         """Process all pending videos"""
@@ -206,18 +250,24 @@ class ProcessingService:
         cap.release()
         processing_time = time.time() - start_time
         
-        # Save detections to database
-        for detection, detection_data in detections:
-            detection_id = self.detection_repo.create(detection)
-            
-            # Generate thumbnail for first few detections
-            if len([d for d, _ in detections[:self.config.max_thumbnails_per_video]]) <= self.config.max_thumbnails_per_video:
-                thumbnail_path = self._generate_thumbnail(
-                    detection_data['frame'], detection.bbox, 
-                    video.filename, detection_id, detection.confidence, detection.timestamp
-                )
-                if thumbnail_path:
-                    self.detection_repo.update_thumbnail_path(detection_id, thumbnail_path)
+        # Determine destination based on detections
+        has_birds = len(detections) > 0
+        destination_dir = self.birds_dir if has_birds else self.no_birds_dir
+        category = "🐦 BIRDS" if has_birds else "📹 NO BIRDS"
+        
+        # Save detections to database (only if there are any)
+        if has_birds:
+            for detection, detection_data in detections:
+                detection_id = self.detection_repo.create(detection)
+                
+                # Generate thumbnail for first few detections
+                if len([d for d, _ in detections[:self.config.max_thumbnails_per_video]]) <= self.config.max_thumbnails_per_video:
+                    thumbnail_path = self._generate_thumbnail(
+                        detection_data['frame'], detection.bbox, 
+                        video.filename, detection_id, detection.confidence, detection.timestamp
+                    )
+                    if thumbnail_path:
+                        self.detection_repo.update_thumbnail_path(detection_id, thumbnail_path)
         
         # Update video record
         self.video_repo.update_status(
@@ -225,16 +275,18 @@ class ProcessingService:
             processing_time, len(detections)
         )
         
-        # Move processed video
-        processed_path = self.processed_dir / video.filename
+        # Move processed video to appropriate directory
+        processed_path = destination_dir / video.filename
         video_path.rename(processed_path)
         
         # Convert to H.264 for web browser compatibility
-        conversion_success = self.convert_to_h264_for_web(video.filename)
+        conversion_success = self.convert_to_h264_for_web(processed_path)
         if not conversion_success:
             print(f"⚠️ Warning: {video.filename} conversion failed - video may not stream properly in browsers")
         
+        retention_days = self.config.bird_retention_days if has_birds else self.config.no_bird_retention_days
         print(f"✅ {video.filename}: {len(detections)} birds found in {processing_time:.1f}s")
+        print(f"   📂 Stored in: {category} (kept for {retention_days} days)")
     
     def _generate_thumbnail(self, frame, bbox, video_filename, detection_id, confidence, timestamp):
         """Generate thumbnail for detection"""
