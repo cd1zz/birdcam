@@ -61,24 +61,12 @@
     color: #2c3e50;
 }
 
-/* Main Dashboard Grid - Two Column Layout */
-.main-dashboard-grid {
+/* Camera and Controls Row - Side by Side */
+.camera-controls-row {
     display: grid;
-    grid-template-columns: 40% 60%;
+    grid-template-columns: 1fr 300px;
     gap: 25px;
     margin-bottom: 25px;
-}
-
-/* Camera Section - Left Column with side-by-side layout */
-.camera-section {
-    display: grid;
-    grid-template-columns: 1fr 250px;
-    gap: 15px;
-    align-items: start;
-}
-
-.camera-panel {
-    flex: 1;
 }
 
 .camera-panel .live-feed-container {
@@ -108,7 +96,7 @@
 
 .controls-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 10px;
 }
 
@@ -118,26 +106,22 @@
     font-size: 0.9em;
 }
 
-/* Detections Section - Right Column */
+/* Detections Section - Full Width Bottom Row */
 .detections-section {
-    display: flex;
-    flex-direction: column;
+    width: 100%;
+    margin-bottom: 25px;
 }
 
 .detections-panel {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 600px;
+    min-height: 400px;
 }
 
 .detection-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 15px;
-    flex: 1;
+    max-height: 500px;
     overflow-y: auto;
-    max-height: 550px;
     padding-right: 10px;
 }
 
@@ -416,12 +400,12 @@
 
 /* Responsive Design */
 @media (max-width: 1200px) {
-    .main-dashboard-grid {
-        grid-template-columns: 45% 55%;
+    .camera-controls-row {
+        grid-template-columns: 1fr 280px;
     }
     
     .detection-grid {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     }
 
     .settings-grid {
@@ -436,18 +420,17 @@
 }
 
 @media (max-width: 768px) {
-    .main-dashboard-grid {
+    .camera-controls-row {
         grid-template-columns: 1fr;
         gap: 15px;
     }
     
-    .camera-section {
-        grid-template-columns: 1fr;
-        gap: 15px;
+    .controls-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
     
     .detections-panel {
-        min-height: 400px;
+        min-height: 300px;
     }
     
     .detection-grid {
@@ -456,10 +439,6 @@
     }
 
     .status-overview {
-        grid-template-columns: 1fr;
-    }
-
-    .controls-grid {
         grid-template-columns: 1fr;
     }
 

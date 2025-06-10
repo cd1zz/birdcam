@@ -79,47 +79,44 @@
     </div>
 </div>
 
-<!-- Main Content - Two Column Layout -->
-<div class="main-dashboard-grid">
-    <!-- Left Column: Camera Feed & Controls -->
-    <div class="camera-section">
-        <div class="panel camera-panel">
-            <h3>📺 Live Camera Feed</h3>
-            <div class="live-feed-container">
-                <img src="/live_feed" alt="Live Camera" id="live-feed" onerror="handleImageError(this)">
-                <div class="feed-overlay">
-                    <span id="motion-indicator" class="motion-badge">●</span>
-                    <span id="recording-indicator" class="recording-badge">●</span>
-                </div>
-            </div>
-            <p class="feed-info">Live camera with motion detection overlay</p>
-        </div>
-        
-        <div class="panel controls-panel">
-            <h3>🎛️ System Controls</h3>
-            <div class="controls-grid">
-                <button class="btn btn-primary" onclick="syncNow()">📤 Sync Files</button>
-                <button class="btn btn-success" onclick="processNow()">🧠 Process Queue</button>
-                <button class="btn btn-secondary" onclick="showSettings()">⚙️ Motion Settings</button>
-                <button class="btn btn-secondary" onclick="location.reload()">🔄 Refresh</button>
+<!-- Main Content - Camera Feed and Controls Side by Side -->
+<div class="camera-controls-row">
+    <div class="panel camera-panel">
+        <h3>📺 Live Camera Feed</h3>
+        <div class="live-feed-container">
+            <img src="/live_feed" alt="Live Camera" id="live-feed" onerror="handleImageError(this)">
+            <div class="feed-overlay">
+                <span id="motion-indicator" class="motion-badge">●</span>
+                <span id="recording-indicator" class="recording-badge">●</span>
             </div>
         </div>
+        <p class="feed-info">Live camera with motion detection overlay</p>
     </div>
     
-    <!-- Right Column: Detections -->
-    <div class="detections-section">
-        <div class="panel detections-panel">
-            <div class="panel-header">
-                <h3>🎯 Recent Detections</h3>
-                <div class="detection-controls">
-                    <span id="detection-count" class="count-badge">0 detections</span>
-                    <button class="btn btn-small" onclick="refreshDetections()">🔄</button>
-                </div>
+    <div class="panel controls-panel">
+        <h3>🎛️ System Controls</h3>
+        <div class="controls-grid">
+            <button class="btn btn-primary" onclick="syncNow()">📤 Sync Files</button>
+            <button class="btn btn-success" onclick="processNow()">🧠 Process Queue</button>
+            <button class="btn btn-secondary" onclick="showSettings()">⚙️ Motion Settings</button>
+            <button class="btn btn-secondary" onclick="location.reload()">🔄 Refresh</button>
+        </div>
+    </div>
+</div>
+
+<!-- Detections Section - Full Width Bottom Row -->
+<div class="detections-section">
+    <div class="panel detections-panel">
+        <div class="panel-header">
+            <h3>🎯 Recent Detections</h3>
+            <div class="detection-controls">
+                <span id="detection-count" class="count-badge">0 detections</span>
+                <button class="btn btn-small" onclick="refreshDetections()">🔄</button>
             </div>
-            
-            <div id="detection-grid" class="detection-grid">
-                <div class="loading-message">Loading detections...</div>
-            </div>
+        </div>
+        
+        <div id="detection-grid" class="detection-grid">
+            <div class="loading-message">Loading detections...</div>
         </div>
     </div>
 </div>
