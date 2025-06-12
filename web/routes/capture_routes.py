@@ -193,8 +193,6 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
                         if capture_service.motion_detector.motion_region:
                             region = capture_service.motion_detector.motion_region
                             cv2.rectangle(frame, (region.x1, region.y1), (region.x2, region.y2), (255, 255, 0), 2)
-                            cv2.putText(frame, "Detection Zone", (region.x1, region.y1-10),
-                                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
                     except Exception as e:
                         print(f"Error in live feed overlay: {e}")
                     
