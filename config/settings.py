@@ -129,7 +129,7 @@ def load_capture_config() -> AppConfig:
     return AppConfig(
         database=DatabaseConfig(path=base_path / "capture.db"),
         capture=CaptureConfig(
-            stream_url=os.getenv('STREAM_URL', 'rtsp://192.168.1.136:8554/birdcam'),
+            stream_url=os.getenv('STREAM_URL', ''),  # Optional RTSP fallback
             segment_duration=get_int_env('SEGMENT_DURATION', 300),
             fps=get_int_env('FPS', 10),
             resolution=(get_int_env('RESOLUTION_WIDTH', 640), get_int_env('RESOLUTION_HEIGHT', 480)),
