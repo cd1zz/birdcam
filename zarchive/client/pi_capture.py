@@ -493,10 +493,9 @@ capture_system = None
 def initialize_system():
     global capture_system
     # Configuration
-    STREAM_URL = "rtsp://192.168.1.136:8554/birdcam"
     PROCESSING_SERVER = "192.168.1.136"  # IP of your powerful computer
-    
-    capture_system = PiCaptureSystem(STREAM_URL, processing_server=PROCESSING_SERVER)
+
+    capture_system = PiCaptureSystem("", processing_server=PROCESSING_SERVER)
     
     # Start capture
     capture_thread = threading.Thread(target=capture_system.continuous_capture, daemon=True)

@@ -131,7 +131,7 @@ def load_capture_config() -> AppConfig:
         database=DatabaseConfig(path=base_path / "capture.db"),
         capture=CaptureConfig(
             camera_type=os.getenv('CAMERA_TYPE', 'opencv'),
-            stream_url=os.getenv('STREAM_URL', ''),  # Optional RTSP fallback
+            stream_url='',  # RTSP environment variable removed
             segment_duration=get_int_env('SEGMENT_DURATION', 300),
             fps=get_int_env('FPS', 10),
             resolution=(get_int_env('RESOLUTION_WIDTH', 640), get_int_env('RESOLUTION_HEIGHT', 480)),
