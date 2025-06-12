@@ -1297,7 +1297,7 @@ def live_feed():
                            b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
             else:
                 # Send blank frame if camera not available
-                blank = 255 * cv2.ones((480, 640, 3), dtype=cv2.uint8)
+                blank = 255 * np.ones((480, 640, 3), dtype=np.uint8)
                 cv2.putText(blank, "Camera Not Available", (150, 240),
                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
                 _, buffer = cv2.imencode('.jpg', blank)

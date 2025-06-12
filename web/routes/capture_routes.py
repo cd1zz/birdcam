@@ -4,6 +4,7 @@ Routes for Pi Capture System with Unified Dashboard
 """
 import threading
 import cv2
+import numpy as np
 import time
 import requests
 from flask import request, jsonify, Response, render_template, send_from_directory, stream_with_context
@@ -200,7 +201,7 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
                     yield (b'--frame\r\n'
                            b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
                 else:
-                    blank = 255 * cv2.ones((480, 640, 3), dtype=cv2.uint8)
+                    blank = 255 * np.ones((480, 640, 3), dtype=np.uint8)
                     cv2.putText(blank, "Camera Not Available", (150, 240),
                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
                     _, buffer = cv2.imencode('.jpg', blank)
