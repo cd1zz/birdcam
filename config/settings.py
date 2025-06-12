@@ -58,6 +58,7 @@ class DatabaseConfig:
 
 @dataclass
 class CaptureConfig:
+    camera_type: str
     stream_url: str
     segment_duration: int
     fps: int
@@ -129,6 +130,7 @@ def load_capture_config() -> AppConfig:
     return AppConfig(
         database=DatabaseConfig(path=base_path / "capture.db"),
         capture=CaptureConfig(
+            camera_type=os.getenv('CAMERA_TYPE', 'opencv'),
             stream_url=os.getenv('STREAM_URL', ''),  # Optional RTSP fallback
             segment_duration=get_int_env('SEGMENT_DURATION', 300),
             fps=get_int_env('FPS', 10),
@@ -178,6 +180,7 @@ def load_processing_config() -> AppConfig:
     return AppConfig(
         database=DatabaseConfig(path=base_path / "processing.db"),
         capture=CaptureConfig(
+            camera_type=os.getenv('CAMERA_TYPE', 'opencv'),
             stream_url="",  # Not used on processing server
             segment_duration=300,
             fps=10,
