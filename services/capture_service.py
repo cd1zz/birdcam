@@ -39,6 +39,8 @@ class CaptureService:
         self.is_running = False
         self.last_motion_time = 0
         self.segment_start_time = 0
+        # Latest motion state for UI indicators
+        self.latest_motion = False
         
         # Pre-motion buffer (15 seconds worth of frames)
         buffer_size = capture_config.fps * 15  # 15 seconds of frames
@@ -100,6 +102,7 @@ class CaptureService:
             
             # Detect motion
             has_motion = self.motion_detector.detect_motion(frame)
+            self.latest_motion = has_motion
             
             # Handle motion detection
             if has_motion:

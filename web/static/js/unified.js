@@ -64,6 +64,12 @@ function updatePiStatus(data) {
         captureText.textContent = 'MONITORING - Waiting for motion';
         recordingIndicator.className = 'recording-badge';
     }
+
+    if (pi.has_motion) {
+        motionIndicator.className = 'motion-badge active';
+    } else {
+        motionIndicator.className = 'motion-badge';
+    }
     
     // Update mini stats
     document.getElementById('pi-total-videos').textContent = pi.total_videos || '-';
