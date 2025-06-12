@@ -1283,19 +1283,13 @@ def live_feed():
                     frame = cv2.resize(frame, (640, 480))
                     # Add motion detection overlay
                     try:
+                        # Detect motion for diagnostics
                         has_motion = capture_system.detect_motion(frame.copy())
-                        color = (0, 255, 0) if has_motion else (0, 0, 255)
-                        cv2.putText(frame, f"Motion: {has_motion}", (10, 30),
-                                   cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
-                        cv2.putText(frame, f"Recording: {capture_system.is_capturing}", (10, 70),
-                                   cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
-                        
-                        # Draw motion detection region
+
+                        # Draw motion detection region (no text labels)
                         if capture_system.motion_region:
                             x1, y1, x2, y2 = capture_system.motion_region
                             cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 255, 0), 2)
-                            cv2.putText(frame, "Detection Zone", (x1, y1-10),
-                                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
                     except:
                         pass
                     # Encode frame

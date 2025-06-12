@@ -26,6 +26,7 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
         return jsonify({
             'pi': {
                 'is_capturing': status.is_capturing,
+                'has_motion': getattr(capture_service, 'latest_motion', False),
                 'queue_size': status.queue_size,
                 'last_motion': status.last_motion_time.isoformat() if status.last_motion_time else None,
                 'total_videos': 0,  # TODO: Add to capture service
@@ -187,17 +188,11 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
                     
                     try:
                         has_motion = capture_service.motion_detector.detect_motion(frame.copy())
-                        color = (0, 255, 0) if has_motion else (0, 0, 255)
-                        cv2.putText(frame, f"Motion: {has_motion}", (10, 30),
-                                   cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
-                        cv2.putText(frame, f"Recording: {capture_service.is_capturing}", (10, 70),
-                                   cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+                        capture_service.latest_motion = has_motion
                         
                         if capture_service.motion_detector.motion_region:
                             region = capture_service.motion_detector.motion_region
                             cv2.rectangle(frame, (region.x1, region.y1), (region.x2, region.y2), (255, 255, 0), 2)
-                            cv2.putText(frame, "Detection Zone", (region.x1, region.y1-10),
-                                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
                     except Exception as e:
                         print(f"Error in live feed overlay: {e}")
                     
