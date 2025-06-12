@@ -1294,8 +1294,6 @@ def live_feed():
                         if capture_system.motion_region:
                             x1, y1, x2, y2 = capture_system.motion_region
                             cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 255, 0), 2)
-                            cv2.putText(frame, "Detection Zone", (x1, y1-10),
-                                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
                     except:
                         pass
                     # Encode frame
