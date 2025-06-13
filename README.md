@@ -83,8 +83,8 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Multiple Cameras Detected
-The system will automatically try each camera. Check logs for which camera is being used.
+### Multiple Cameras
+Set `CAMERA_TYPE=both` in your `.env` file to capture from a USB camera and the Pi CSI camera at the same time. Frames from both sources will be combined side‑by‑side into a single video.
 
 ### Permission Errors
 ```bash
