@@ -56,20 +56,24 @@ function updatePiStatus(data) {
     const motionIndicator = document.getElementById('motion-indicator');
     const recordingIndicator = document.getElementById('recording-indicator');
     
-    if (pi.is_capturing) {
-        captureStatus.className = 'status-indicator recording';
-        captureText.textContent = 'RECORDING - Motion detected';
-        recordingIndicator.className = 'recording-badge active';
-    } else {
-        captureStatus.className = 'status-indicator online';
-        captureText.textContent = 'MONITORING - Waiting for motion';
-        recordingIndicator.className = 'recording-badge';
+    if (captureStatus && captureText) {
+        if (pi.is_capturing) {
+            captureStatus.className = 'status-indicator recording';
+            captureText.textContent = 'RECORDING - Motion detected';
+            if (recordingIndicator) recordingIndicator.className = 'recording-badge active';
+        } else {
+            captureStatus.className = 'status-indicator online';
+            captureText.textContent = 'MONITORING - Waiting for motion';
+            if (recordingIndicator) recordingIndicator.className = 'recording-badge';
+        }
     }
 
-    if (pi.has_motion) {
-        motionIndicator.className = 'motion-badge active';
-    } else {
-        motionIndicator.className = 'motion-badge';
+    if (motionIndicator) {
+        if (pi.has_motion) {
+            motionIndicator.className = 'motion-badge active';
+        } else {
+            motionIndicator.className = 'motion-badge';
+        }
     }
     
     // Update mini stats
@@ -570,9 +574,12 @@ function switchCamera() {
     const selector = document.getElementById('camera-selector');
     const cameraId = selector.value;
     const liveFeed = document.getElementById('live-feed');
-    
+    const settingsFeed = document.getElementById('settings-feed');
+
     // Update live feed URL with camera parameter and cache buster
-    liveFeed.src = `/live_feed?camera_id=${cameraId}&t=${Date.now()}`;
+    const url = `/live_feed?camera_id=${cameraId}&t=${Date.now()}`;
+    if (liveFeed) liveFeed.src = url;
+    if (settingsFeed) settingsFeed.src = url;
     currentCameraId = parseInt(cameraId);
     
     console.log(`Switched to camera ${cameraId}`);
