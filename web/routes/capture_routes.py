@@ -11,7 +11,17 @@ from flask import request, jsonify, Response, render_template, send_from_directo
 from core.models import MotionRegion
 from database.repositories.settings_repository import SettingsRepository
 
-def create_capture_routes(app, capture_service, sync_service, settings_repo):
+def create_capture_routes(app, capture_services, sync_service, settings_repo):
+
+    default_service = next(iter(capture_services.values()))
+
+    def get_service() -> 'CaptureService':
+        cam_id = request.args.get('camera_id', default_service.capture_config.camera_id)
+        try:
+            cam_id = int(cam_id)
+        except ValueError:
+            cam_id = default_service.capture_config.camera_id
+        return capture_services.get(cam_id, default_service)
     
     @app.route('/')
     def dashboard():
@@ -21,6 +31,7 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
     
     @app.route('/api/status')
     def api_status():
+        capture_service = get_service()
         status = capture_service.get_status()
         server_status = sync_service.get_server_status()
         
@@ -49,6 +60,7 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
     
     @app.route('/api/sync-now', methods=['POST'])
     def api_sync_now():
+        capture_service = get_service()
         try:
             threading.Thread(target=capture_service.sync_files, daemon=True).start()
             return jsonify({'message': 'Sync started successfully'})
@@ -82,6 +94,7 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
     def api_get_motion_settings():
         """Get motion detection settings"""
         try:
+            capture_service = get_service()
             region = capture_service.motion_detector.motion_region
             
             settings = {
@@ -104,6 +117,7 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
         """Get real-time motion detection debug info"""
         try:
             # Get the latest frame
+            capture_service = get_service()
             ret, frame = capture_service.camera_manager.read_frame()
             if not ret:
                 return jsonify({'error': 'Camera not available'})
@@ -128,6 +142,8 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
             if not region_data or not all(k in region_data for k in ['x1', 'y1', 'x2', 'y2']):
                 return jsonify({'error': 'Invalid region data'}), 400
             
+            capture_service = get_service()
+
             region = MotionRegion(
                 region_data['x1'], region_data['y1'],
                 region_data['x2'], region_data['y2']
@@ -183,6 +199,7 @@ def create_capture_routes(app, capture_service, sync_service, settings_repo):
     def live_feed():
         def generate():
             while True:
+                capture_service = get_service()
                 ret, frame = capture_service.camera_manager.read_frame()
                 if ret:
                     frame = cv2.resize(frame, (640, 480))

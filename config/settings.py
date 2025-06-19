@@ -58,6 +58,7 @@ class DatabaseConfig:
 
 @dataclass
 class CaptureConfig:
+    camera_id: int
     camera_type: str
     stream_url: str
     segment_duration: int
@@ -123,13 +124,15 @@ class AppConfig:
     sync: SyncConfig
     web: WebConfig
 
-def load_capture_config() -> AppConfig:
+def load_capture_config(camera_id: int = 0) -> AppConfig:
     """Load configuration for Pi capture system"""
     base_path = Path(os.getenv('STORAGE_PATH', './bird_footage'))
+    camera_path = base_path / f"camera_{camera_id}"
     
     return AppConfig(
-        database=DatabaseConfig(path=base_path / "capture.db"),
+        database=DatabaseConfig(path=camera_path / "capture.db"),
         capture=CaptureConfig(
+            camera_id=camera_id,
             camera_type=os.getenv('CAMERA_TYPE', 'opencv'),
             stream_url='',  # RTSP environment variable removed
             segment_duration=get_int_env('SEGMENT_DURATION', 300),
@@ -146,7 +149,7 @@ def load_capture_config() -> AppConfig:
             max_segment_duration=get_int_env('MAX_SEGMENT_DURATION', 300)
         ),
         processing=ProcessingConfig(
-            storage_path=base_path,
+            storage_path=camera_path,
             detection=DetectionConfig(
                 classes=get_list_env('DETECTION_CLASSES', ['bird']),
                 confidences=get_detection_confidences(),
@@ -172,6 +175,20 @@ def load_capture_config() -> AppConfig:
             cors_enabled=get_bool_env('CORS_ENABLED', True)
         )
     )
+
+def load_all_capture_configs() -> List[AppConfig]:
+    """Load configurations for all cameras listed in CAMERA_IDS"""
+    ids = os.getenv('CAMERA_IDS', '0')
+    configs: List[AppConfig] = []
+    for id_str in ids.split(','):
+        id_str = id_str.strip()
+        if id_str:
+            try:
+                cam_id = int(id_str)
+            except ValueError:
+                continue
+            configs.append(load_capture_config(cam_id))
+    return configs
 
 def load_processing_config() -> AppConfig:
     """Load configuration for processing server"""

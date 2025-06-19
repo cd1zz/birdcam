@@ -6,7 +6,7 @@ from flask import Flask
 from flask_cors import CORS
 from config.settings import WebConfig
 
-def create_capture_app(capture_service, sync_service, config):
+def create_capture_app(capture_services, sync_service, config):
     """Create Flask app for Pi capture system"""
     app = Flask(__name__)
     app.config['MAX_CONTENT_LENGTH'] = config.web.max_content_length
@@ -16,7 +16,7 @@ def create_capture_app(capture_service, sync_service, config):
     
     # Import and register routes
     from web.routes.capture_routes import create_capture_routes
-    create_capture_routes(app, capture_service, sync_service)
+    create_capture_routes(app, capture_services, sync_service)
     
     return app
 
