@@ -13,7 +13,7 @@ from database.connection import DatabaseManager
 from database.repositories.video_repository import VideoRepository
 from database.repositories.settings_repository import SettingsRepository
 from services.motion_detector import MotionDetector
-from services.camera_manager import CameraManager
+from services.camera_manager import CameraManager, print_detected_cameras
 from services.video_writer import VideoWriter
 from services.file_sync import FileSyncService
 from services.capture_service import CaptureService
@@ -154,7 +154,11 @@ def create_unified_app(capture_services, sync_service, settings_repos, config):
 
 def main():
     print("🚀 Starting Pi Capture System with Unified Dashboard...")
-    
+
+    # Inform user about detected cameras before loading configs
+    print("🔍 Detecting cameras...")
+    print_detected_cameras()
+
     try:
         # Load configuration for all cameras
         print("📋 Loading configuration...")
