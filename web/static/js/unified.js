@@ -374,7 +374,7 @@ function setDefaultRegion() {
 
 async function loadCurrentSettings() {
     try {
-        const data = await apiCall('/api/motion-settings');
+        const data = await apiCall(`/api/motion-settings?camera_id=${currentCameraId}`);
         
         if (data.region) {
             currentRegion = data.region;
@@ -447,7 +447,7 @@ async function saveSettings() {
     };
     
     try {
-        const data = await apiCall('/api/motion-settings', {
+        const data = await apiCall(`/api/motion-settings?camera_id=${currentCameraId}`, {
             method: 'POST',
             body: JSON.stringify(settings)
         });
@@ -529,7 +529,7 @@ function closeVideoModal() {
 
 async function updateDebugInfo() {
     try {
-        const data = await apiCall('/api/motion-debug');
+        const data = await apiCall(`/api/motion-debug?camera_id=${currentCameraId}`);
         const debugContent = document.getElementById('debug-content');
         
         if (data.error) {

@@ -135,7 +135,7 @@ def cleanup_old_files(storage_path: Path, days_to_keep: int):
                 file_path.unlink()
                 print(f"🗑️ Cleaned up: {file_path.name}")
 
-def create_unified_app(capture_services, sync_service, settings_repo, config):
+def create_unified_app(capture_services, sync_service, settings_repos, config):
     """Create Flask app with unified dashboard"""
     from flask import Flask
     from flask_cors import CORS
@@ -148,7 +148,7 @@ def create_unified_app(capture_services, sync_service, settings_repo, config):
     
     # Import and register routes with settings repo
     from web.routes.capture_routes import create_capture_routes
-    create_capture_routes(app, capture_services, sync_service, settings_repo)
+    create_capture_routes(app, capture_services, sync_service, settings_repos)
     
     return app
 
@@ -163,17 +163,16 @@ def main():
 
         capture_services = {}
         sync_service = None
-        settings_repo = None
+        settings_repos = {}
 
         for cfg in configs:
             print(f"📁 Storage for camera {cfg.capture.camera_id}: {cfg.processing.storage_path}")
 
             cs, sync, settings = setup_services(cfg)
             capture_services[cfg.capture.camera_id] = cs
+            settings_repos[cfg.capture.camera_id] = settings
             if sync_service is None:
                 sync_service = sync
-            if settings_repo is None:
-                settings_repo = settings
 
             setup_scheduler(cs, cfg)
 
@@ -186,7 +185,7 @@ def main():
 
         # Start web interface with unified dashboard using first config
         print("🌐 Starting unified dashboard...")
-        app = create_unified_app(capture_services, sync_service, settings_repo, configs[0])
+        app = create_unified_app(capture_services, sync_service, settings_repos, configs[0])
         
         print(f"✅ Unified Dashboard ready!")
         print(f"🌐 Access at: http://0.0.0.0:{configs[0].web.capture_port}")
