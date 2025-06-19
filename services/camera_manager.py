@@ -55,7 +55,7 @@ class CameraManager:
             try:
                 self.picam2 = Picamera2(camera_num=self.config.camera_id)
                 video_config = self.picam2.create_video_configuration(
-                    main={"size": self.config.resolution, "format": "RGB888"},
+                    main={"size": self.config.resolution},
                     controls={"FrameRate": self.config.fps},
                 )
                 self.picam2.configure(video_config)
