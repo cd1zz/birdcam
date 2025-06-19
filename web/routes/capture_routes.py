@@ -197,9 +197,13 @@ def create_capture_routes(app, capture_services, sync_service, settings_repo):
     
     @app.route('/live_feed')
     def live_feed():
+        """Live video feed for troubleshooting"""
+        # Get the service WITHIN the request context, before starting the generator
+        capture_service = get_service()
+        
         def generate():
             while True:
-                capture_service = get_service()
+                # Use the capture_service from the closure - don't call get_service() here
                 ret, frame = capture_service.camera_manager.read_frame()
                 if ret:
                     frame = cv2.resize(frame, (640, 480))
@@ -216,14 +220,14 @@ def create_capture_routes(app, capture_services, sync_service, settings_repo):
                     
                     _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
                     yield (b'--frame\r\n'
-                           b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+                        b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
                 else:
                     blank = 255 * np.ones((480, 640, 3), dtype=np.uint8)
                     cv2.putText(blank, "Camera Not Available", (150, 240),
-                               cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
                     _, buffer = cv2.imencode('.jpg', blank)
                     yield (b'--frame\r\n'
-                           b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+                        b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
                 
                 time.sleep(0.1)
         
