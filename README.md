@@ -92,3 +92,9 @@ The system will automatically try each camera. Check logs for which camera is be
 sudo usermod -a -G video $USER
 # Log out and back in
 ```
+
+### Blue or Distorted Colors
+When using `CAMERA_TYPE=picamera2`, the camera may deliver frames in
+RGB order. Birdcam now converts these frames to BGR before processing,
+so colors in the live feed should look normal. If you still see a blue
+hue, ensure you have updated to the latest version.

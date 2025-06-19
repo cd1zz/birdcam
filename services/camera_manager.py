@@ -55,7 +55,7 @@ class CameraManager:
             try:
                 self.picam2 = Picamera2(camera_num=self.config.camera_id)
                 video_config = self.picam2.create_video_configuration(
-                    main={"size": self.config.resolution, "format": "BGR888"},
+                    main={"size": self.config.resolution, "format": "RGB888"},
                     controls={"FrameRate": self.config.fps},
                 )
                 self.picam2.configure(video_config)
@@ -91,6 +91,9 @@ class CameraManager:
         if self.camera_type == "picamera2" and self.picam2:
             try:
                 frame = self.picam2.capture_array()
+                # Picamera2 returns RGB even when BGR is requested.
+                # Convert to BGR so OpenCV processing works correctly.
+                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
                 return True, frame
             except Exception:
                 return False, None
