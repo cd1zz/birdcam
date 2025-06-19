@@ -52,12 +52,12 @@ source .venv/bin/activate
 
 # Remove picamera2 from requirements if it exists
 if grep -q "picamera2" requirements.txt; then
-    echo "🔧 Removing picamera2 from requirements.txt (using system version)"
-    grep -v "picamera2" requirements.txt > requirements_temp.txt
-    mv requirements_temp.txt requirements.txt
+    echo "🔧 Installing requirements without picamera2 (using system version)"
+    grep -v "picamera2" requirements.txt > /tmp/requirements_no_picamera2.txt
+    pip install -r /tmp/requirements_no_picamera2.txt
+else
+    pip install -r requirements.txt
 fi
-
-pip install -r requirements.txt
 
 # Test camera
 echo "🧪 Testing camera..."
