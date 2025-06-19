@@ -266,3 +266,16 @@ def create_capture_routes(app, capture_services, sync_service, settings_repo):
 
         except Exception as e:
             return f"Error: {str(e)}", 500
+
+    @app.route('/api/cameras')
+    def api_list_cameras():
+        """List available cameras"""
+        camera_list = []
+        for cam_id, service in capture_services.items():
+            camera_list.append({
+                'id': cam_id,
+                'name': f'Camera {cam_id}',
+                'is_active': service.camera_manager.is_opened(),
+                'sensor_type': 'IMX500' if cam_id == 1 else 'OV5647'  
+            })
+        return jsonify({'cameras': camera_list})

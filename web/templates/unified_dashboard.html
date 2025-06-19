@@ -35,7 +35,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="status-card">
         <h3>🧠 AI Processing Server</h3>
         <div id="server-status-content">
@@ -59,7 +59,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="status-card">
         <h3>📊 Today's Activity</h3>
         <div class="status-grid-mini">
@@ -82,146 +82,142 @@
 <!-- Main Content - Camera Feed and Controls Side by Side -->
 <div class="camera-controls-row">
     <div class="panel camera-panel">
-        <h3>📺 Live Camera Feed</h3>
-        <div class="live-feed-container">
-            <img src="/live_feed" alt="Live Camera" id="live-feed" onerror="handleImageError(this)">
-            <div class="feed-overlay">
-                <span id="motion-indicator" class="motion-badge" title="Motion">●</span>
-                <span id="recording-indicator" class="recording-badge" title="Recording">●</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3>📺 Live Camera Feed</h3>
+            <select id="camera-selector" onchange="switchCamera()"
+                style="padding: 8px; border-radius: 5px; border: 1px solid #ddd; background: white;">
+                <option value="0">Camera 0 (Loading...)</option>
+            </select>
+        </div>
 
+        <div class="panel controls-panel">
+            <h3>🎛️ System Controls</h3>
+            <div class="controls-grid">
+                <button class="btn btn-primary" onclick="syncNow()">📤 Sync Files</button>
+                <button class="btn btn-success" onclick="processNow()">🧠 Process Queue</button>
+                <button class="btn btn-secondary" onclick="showSettings()">⚙️ Motion Settings</button>
+                <button class="btn btn-secondary" onclick="location.reload()">🔄 Refresh</button>
             </div>
         </div>
-        <p class="feed-info">Live camera with motion detection overlay</p>
     </div>
-    
-    <div class="panel controls-panel">
-        <h3>🎛️ System Controls</h3>
-        <div class="controls-grid">
-            <button class="btn btn-primary" onclick="syncNow()">📤 Sync Files</button>
-            <button class="btn btn-success" onclick="processNow()">🧠 Process Queue</button>
-            <button class="btn btn-secondary" onclick="showSettings()">⚙️ Motion Settings</button>
-            <button class="btn btn-secondary" onclick="location.reload()">🔄 Refresh</button>
-        </div>
-    </div>
-</div>
 
-<!-- Detections Section - Full Width Bottom Row -->
-<div class="detections-section">
-    <div class="panel detections-panel">
-        <div class="panel-header">
-            <h3>🎯 Recent Detections</h3>
-            <div class="detection-controls">
-                <span id="detection-count" class="count-badge">0 detections</span>
-                <button class="btn btn-small" onclick="refreshDetections()">🔄</button>
-            </div>
-        </div>
-        
-        <div id="detection-grid" class="detection-grid">
-            <div class="loading-message">Loading detections...</div>
-        </div>
-    </div>
-</div>
-
-<!-- Settings Modal -->
-<div id="settings-modal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>⚙️ Motion Detection Settings</h3>
-            <button class="modal-close" onclick="closeSettings()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="settings-grid">
-                <div class="settings-preview">
-                    <h4>🎯 Motion Detection Region</h4>
-                    <p>Click and drag to draw detection area</p>
-                    <div class="preview-container">
-                        <img id="settings-feed" src="/live_feed">
-                        <canvas id="region-canvas" width="400" height="300"></canvas>
-                    </div>
-                    <div class="region-controls">
-                        <button class="btn btn-secondary" onclick="clearRegion()">🗑️ Clear</button>
-                        <button class="btn btn-secondary" onclick="setDefaultRegion()">📐 Default</button>
-                    </div>
+    <!-- Detections Section - Full Width Bottom Row -->
+    <div class="detections-section">
+        <div class="panel detections-panel">
+            <div class="panel-header">
+                <h3>🎯 Recent Detections</h3>
+                <div class="detection-controls">
+                    <span id="detection-count" class="count-badge">0 detections</span>
+                    <button class="btn btn-small" onclick="refreshDetections()">🔄</button>
                 </div>
-                
-                <div class="settings-controls">
-                    <h4>🔧 Detection Parameters</h4>
-                    
-                    <div class="setting-item">
-                        <label for="threshold-slider">Motion Sensitivity:</label>
-                        <input type="range" id="threshold-slider" min="1000" max="10000" value="5000">
-                        <span id="threshold-value">5000</span>
-                        <small class="setting-help">Lower = more sensitive to small movements</small>
-                    </div>
-                    
-                    <div class="setting-item">
-                        <label for="size-slider">Min Object Size:</label>
-                        <input type="range" id="size-slider" min="100" max="2000" value="500">
-                        <span id="size-value">500</span>
-                        <small class="setting-help">Minimum size of moving objects to detect</small>
-                    </div>
-                    
-                    <div class="setting-item">
-                        <label for="timeout-slider">Recording Timeout:</label>
-                        <input type="range" id="timeout-slider" min="10" max="120" value="30">
-                        <span id="timeout-value">30</span> seconds
-                        <small class="setting-help">Stop recording after this many seconds of no motion</small>
-                    </div>
-                    
-                    <div class="setting-item">
-                        <h5>Current Region:</h5>
-                        <div id="region-info" class="region-display">
-                            No region selected
+            </div>
+
+            <div id="detection-grid" class="detection-grid">
+                <div class="loading-message">Loading detections...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚙️ Motion Detection Settings</h3>
+                <button class="modal-close" onclick="closeSettings()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-grid">
+                    <div class="settings-preview">
+                        <h4>🎯 Motion Detection Region</h4>
+                        <p>Click and drag to draw detection area</p>
+                        <div class="preview-container">
+                            <img id="settings-feed" src="/live_feed">
+                            <canvas id="region-canvas" width="400" height="300"></canvas>
+                        </div>
+                        <div class="region-controls">
+                            <button class="btn btn-secondary" onclick="clearRegion()">🗑️ Clear</button>
+                            <button class="btn btn-secondary" onclick="setDefaultRegion()">📐 Default</button>
                         </div>
                     </div>
-                    
-                    <div class="setting-item">
-                        <h5>🐛 Debug Info:</h5>
-                        <div id="debug-info" class="debug-display">
-                            <button class="btn btn-small" onclick="updateDebugInfo()">🔍 Show Debug</button>
-                            <div id="debug-content" style="display: none; margin-top: 10px; font-size: 12px;"></div>
+
+                    <div class="settings-controls">
+                        <h4>🔧 Detection Parameters</h4>
+
+                        <div class="setting-item">
+                            <label for="threshold-slider">Motion Sensitivity:</label>
+                            <input type="range" id="threshold-slider" min="1000" max="10000" value="5000">
+                            <span id="threshold-value">5000</span>
+                            <small class="setting-help">Lower = more sensitive to small movements</small>
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="size-slider">Min Object Size:</label>
+                            <input type="range" id="size-slider" min="100" max="2000" value="500">
+                            <span id="size-value">500</span>
+                            <small class="setting-help">Minimum size of moving objects to detect</small>
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="timeout-slider">Recording Timeout:</label>
+                            <input type="range" id="timeout-slider" min="10" max="120" value="30">
+                            <span id="timeout-value">30</span> seconds
+                            <small class="setting-help">Stop recording after this many seconds of no motion</small>
+                        </div>
+
+                        <div class="setting-item">
+                            <h5>Current Region:</h5>
+                            <div id="region-info" class="region-display">
+                                No region selected
+                            </div>
+                        </div>
+
+                        <div class="setting-item">
+                            <h5>🐛 Debug Info:</h5>
+                            <div id="debug-info" class="debug-display">
+                                <button class="btn btn-small" onclick="updateDebugInfo()">🔍 Show Debug</button>
+                                <div id="debug-content" style="display: none; margin-top: 10px; font-size: 12px;"></div>
+                            </div>
+                        </div>
+
+                        <div class="setting-actions">
+                            <button class="btn btn-success" onclick="saveSettings()">💾 Save Settings</button>
+                            <button class="btn btn-secondary" onclick="testMotion()">🧪 Test Detection</button>
+                            <button class="btn btn-secondary" onclick="toggleDebugInfo()">🐛 Toggle Debug</button>
                         </div>
                     </div>
-                    
-                    <div class="setting-actions">
-                        <button class="btn btn-success" onclick="saveSettings()">💾 Save Settings</button>
-                        <button class="btn btn-secondary" onclick="testMotion()">🧪 Test Detection</button>
-                        <button class="btn btn-secondary" onclick="toggleDebugInfo()">🐛 Toggle Debug</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Modal -->
+    <div id="video-modal" class="modal" style="display: none;">
+        <div class="modal-content video-modal-content">
+            <div class="modal-header">
+                <h3 id="video-title">📹 Video Player</h3>
+                <button class="modal-close" onclick="closeVideoModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <video id="video-player" controls style="width: 100%; max-width: 800px;">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="video-info">
+                    <div id="video-details"></div>
+                    <div class="video-actions">
+                        <a id="download-link" class="btn btn-success" target="_blank">📥 Download</a>
+                        <a id="new-tab-link" class="btn btn-secondary" target="_blank">🔗 Open in New Tab</a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+    {% endblock %}
 
-<!-- Video Modal -->
-<div id="video-modal" class="modal" style="display: none;">
-    <div class="modal-content video-modal-content">
-        <div class="modal-header">
-            <h3 id="video-title">📹 Video Player</h3>
-            <button class="modal-close" onclick="closeVideoModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <video id="video-player" controls style="width: 100%; max-width: 800px;">
-                Your browser does not support the video tag.
-            </video>
-            <div class="video-info">
-                <div id="video-details"></div>
-                <div class="video-actions">
-                    <a id="download-link" class="btn btn-success" target="_blank">📥 Download</a>
-                    <a id="new-tab-link" class="btn btn-secondary" target="_blank">🔗 Open in New Tab</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<!-- Inject processing server URL from Flask config -->
-<script>
-    const PROCESSING_SERVER_URL = '{{ processing_server_url }}';
-    console.log('🔧 Processing server URL loaded from config:', PROCESSING_SERVER_URL);
-</script>
-<script src="{{ url_for('static', filename='js/unified.js') }}"></script>
-{% endblock %}
+    {% block extra_js %}
+    <!-- Inject processing server URL from Flask config -->
+    <script>
+        const PROCESSING_SERVER_URL = '{{ processing_server_url }}';
+        console.log('🔧 Processing server URL loaded from config:', PROCESSING_SERVER_URL);
+    </script>
+    <script src="{{ url_for('static', filename='js/unified.js') }}"></script>
+    {% endblock %}

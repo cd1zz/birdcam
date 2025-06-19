@@ -10,6 +10,7 @@ let startX, startY;
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    loadCameras();  // ADD THIS LINE
     updateDashboard();
     setInterval(updateDashboard, 5000);
     
@@ -559,5 +560,49 @@ function toggleDebugInfo() {
         updateDebugInfo();
     } else {
         debugContent.style.display = 'none';
+    }
+}
+
+// Global variable to track current camera
+let currentCameraId = 0;
+
+function switchCamera() {
+    const selector = document.getElementById('camera-selector');
+    const cameraId = selector.value;
+    const liveFeed = document.getElementById('live-feed');
+    
+    // Update live feed URL with camera parameter and cache buster
+    liveFeed.src = `/live_feed?camera_id=${cameraId}&t=${Date.now()}`;
+    currentCameraId = parseInt(cameraId);
+    
+    console.log(`Switched to camera ${cameraId}`);
+}
+
+// Load available cameras on page load
+async function loadCameras() {
+    try {
+        const response = await fetch('/api/cameras');
+        const data = await response.json();
+        
+        const selector = document.getElementById('camera-selector');
+        selector.innerHTML = '';
+        
+        data.cameras.forEach(camera => {
+            const option = document.createElement('option');
+            option.value = camera.id;
+            option.textContent = `Camera ${camera.id} (${camera.sensor_type})${camera.is_active ? '' : ' - Offline'}`;
+            if (!camera.is_active) {
+                option.disabled = true;
+                option.style.color = '#999';
+            }
+            selector.appendChild(option);
+        });
+        
+        console.log(`Loaded ${data.cameras.length} cameras`);
+    } catch (error) {
+        console.error('Failed to load cameras:', error);
+        // Fallback if API fails
+        const selector = document.getElementById('camera-selector');
+        selector.innerHTML = '<option value="0">Camera 0</option><option value="1">Camera 1</option>';
     }
 }
