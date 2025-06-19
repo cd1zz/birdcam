@@ -227,7 +227,8 @@ def create_capture_routes(app, capture_services, sync_service, settings_repo):
                 
                 time.sleep(0.1)
         
-        return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+        return Response(stream_with_context(generate()),
+                        mimetype='multipart/x-mixed-replace; boundary=frame')
     
     @app.route('/videos/<filename>')
     def serve_video(filename):
