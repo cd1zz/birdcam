@@ -90,6 +90,15 @@
             </select>
         </div>
 
+        <div class="live-feed-container">
+            <img src="/live_feed" alt="Live Camera" id="live-feed" onerror="handleImageError(this)">
+            <div class="feed-overlay">
+                <span id="motion-indicator" class="motion-badge" title="Motion">●</span>
+                <span id="recording-indicator" class="recording-badge" title="Recording">●</span>
+            </div>
+        </div>
+        <p class="feed-info">Live camera with motion detection overlay</p>
+
         <div class="panel controls-panel">
             <h3>🎛️ System Controls</h3>
             <div class="controls-grid">
