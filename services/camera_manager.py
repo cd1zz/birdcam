@@ -1,13 +1,46 @@
 # services/camera_manager.py
 import cv2
 import numpy as np
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List, Dict
 from config.settings import CaptureConfig
 
 try:
     from picamera2 import Picamera2
 except ImportError:  # pragma: no cover - picamera2 may not be installed
     Picamera2 = None
+
+
+def detect_available_cameras(max_devices: int = 4) -> List[Dict[str, str]]:
+    """Detect connected cameras and return their IDs and types."""
+    cameras: List[Dict[str, str]] = []
+
+    if Picamera2:
+        try:
+            infos = Picamera2.global_camera_info()
+            for idx, _ in enumerate(infos):
+                cameras.append({"id": str(idx), "type": "picamera2"})
+        except Exception as e:  # pragma: no cover - hardware specific
+            print(f"Picamera2 detection failed: {e}")
+
+    for i in range(max_devices):
+        cap = cv2.VideoCapture(i)
+        if cap.isOpened():
+            cameras.append({"id": str(i), "type": "opencv"})
+            cap.release()
+
+    return cameras
+
+
+def print_detected_cameras(max_devices: int = 4) -> List[Dict[str, str]]:
+    """Print detected cameras and return the list."""
+    cams = detect_available_cameras(max_devices)
+    if not cams:
+        print("❌ No cameras detected")
+    else:
+        print(f"✅ Found {len(cams)} camera(s):")
+        for cam in cams:
+            print(f" - ID {cam['id']} ({cam['type']})")
+    return cams
 
 class CameraManager:
     def __init__(self, config: CaptureConfig):
