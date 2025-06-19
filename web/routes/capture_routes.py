@@ -9,11 +9,11 @@ import time
 import requests
 from flask import request, jsonify, Response, render_template, send_from_directory, stream_with_context
 from core.models import MotionRegion
-from database.repositories.settings_repository import SettingsRepository
 
-def create_capture_routes(app, capture_services, sync_service, settings_repo):
+def create_capture_routes(app, capture_services, sync_service, settings_repos):
 
     default_service = next(iter(capture_services.values()))
+    default_repo = settings_repos.get(default_service.capture_config.camera_id)
 
     def get_service() -> 'CaptureService':
         cam_id = request.args.get('camera_id', default_service.capture_config.camera_id)
@@ -22,6 +22,9 @@ def create_capture_routes(app, capture_services, sync_service, settings_repo):
         except ValueError:
             cam_id = default_service.capture_config.camera_id
         return capture_services.get(cam_id, default_service)
+
+    def get_repo(cam_id: int):
+        return settings_repos.get(cam_id, default_repo)
     
     @app.route('/')
     def dashboard():
@@ -159,7 +162,9 @@ def create_capture_routes(app, capture_services, sync_service, settings_repo):
             capture_service.motion_config.motion_timeout_seconds = motion_timeout_seconds
             
             # Save to database for persistence
-            settings_repo.save_motion_settings(region, motion_threshold, min_contour_area, motion_timeout_seconds)
+            repo = get_repo(capture_service.capture_config.camera_id)
+            if repo:
+                repo.save_motion_settings(region, motion_threshold, min_contour_area, motion_timeout_seconds)
             
             # Try to update server settings too
             server_updated = False

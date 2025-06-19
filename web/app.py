@@ -16,7 +16,7 @@ def create_capture_app(capture_services, sync_service, config):
     
     # Import and register routes
     from web.routes.capture_routes import create_capture_routes
-    create_capture_routes(app, capture_services, sync_service)
+    create_capture_routes(app, capture_services, sync_service, {})
     
     return app
 
