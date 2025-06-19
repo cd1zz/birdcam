@@ -8,7 +8,7 @@ import threading
 import time
 from pathlib import Path
 
-from config.settings import load_capture_config
+from config.settings import load_all_capture_configs
 from database.connection import DatabaseManager
 from database.repositories.video_repository import VideoRepository
 from database.repositories.settings_repository import SettingsRepository
@@ -135,7 +135,7 @@ def cleanup_old_files(storage_path: Path, days_to_keep: int):
                 file_path.unlink()
                 print(f"🗑️ Cleaned up: {file_path.name}")
 
-def create_unified_app(capture_service, sync_service, settings_repo, config):
+def create_unified_app(capture_services, sync_service, settings_repo, config):
     """Create Flask app with unified dashboard"""
     from flask import Flask
     from flask_cors import CORS
@@ -148,7 +148,7 @@ def create_unified_app(capture_service, sync_service, settings_repo, config):
     
     # Import and register routes with settings repo
     from web.routes.capture_routes import create_capture_routes
-    create_capture_routes(app, capture_service, sync_service, settings_repo)
+    create_capture_routes(app, capture_services, sync_service, settings_repo)
     
     return app
 
@@ -156,42 +156,53 @@ def main():
     print("🚀 Starting Pi Capture System with Unified Dashboard...")
     
     try:
-        # Load configuration
+        # Load configuration for all cameras
         print("📋 Loading configuration...")
-        config = load_capture_config()
-        print(f"✅ Config loaded - Stream: {config.capture.stream_url}")
-        print(f"📁 Storage: {config.processing.storage_path}")
-        
-        # Setup services
-        capture_service, sync_service, settings_repo = setup_services(config)
-        
-        # Setup scheduler
-        setup_scheduler(capture_service, config)
-        
-        # Start capture
-        print("🎬 Starting video capture...")
-        capture_service.start_capture()
-        print("✅ Capture started")
-        
-        # Start web interface with unified dashboard
+        configs = load_all_capture_configs()
+        print(f"✅ Loaded {len(configs)} camera configuration(s)")
+
+        capture_services = {}
+        sync_service = None
+        settings_repo = None
+
+        for cfg in configs:
+            print(f"📁 Storage for camera {cfg.capture.camera_id}: {cfg.processing.storage_path}")
+
+            cs, sync, settings = setup_services(cfg)
+            capture_services[cfg.capture.camera_id] = cs
+            if sync_service is None:
+                sync_service = sync
+            if settings_repo is None:
+                settings_repo = settings
+
+            setup_scheduler(cs, cfg)
+
+            print("🎬 Starting video capture...")
+            cs.start_capture()
+            print(f"✅ Capture started for camera {cfg.capture.camera_id}")
+
+        if not capture_services:
+            raise RuntimeError("No camera configurations found")
+
+        # Start web interface with unified dashboard using first config
         print("🌐 Starting unified dashboard...")
-        app = create_unified_app(capture_service, sync_service, settings_repo, config)
+        app = create_unified_app(capture_services, sync_service, settings_repo, configs[0])
         
         print(f"✅ Unified Dashboard ready!")
-        print(f"🌐 Access at: http://0.0.0.0:{config.web.capture_port}")
+        print(f"🌐 Access at: http://0.0.0.0:{configs[0].web.capture_port}")
         print("🎯 This dashboard shows both Pi capture AND AI processing status")
         print("⚙️ Motion settings will be saved and restored on restart")
         
         app.run(
-            host=config.web.host,
-            port=config.web.capture_port,
+            host=configs[0].web.host,
+            port=configs[0].web.capture_port,
             threaded=True,
             debug=False
         )
     except KeyboardInterrupt:
         print("\n🛑 Shutting down...")
-        if 'capture_service' in locals():
-            capture_service.stop_capture()
+        for cs in capture_services.values():
+            cs.stop_capture()
     except Exception as e:
         print(f"\n❌ Fatal error: {e}")
         import traceback

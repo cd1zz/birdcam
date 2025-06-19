@@ -20,7 +20,7 @@ class CameraManager:
     def _initialize_camera(self):
         if self.camera_type == "picamera2" and Picamera2:
             try:
-                self.picam2 = Picamera2()
+                self.picam2 = Picamera2(camera_num=self.config.camera_id)
                 video_config = self.picam2.create_video_configuration(
                     main={"size": self.config.resolution, "format": "BGR888"},
                     controls={"FrameRate": self.config.fps},
@@ -34,7 +34,7 @@ class CameraManager:
                 self.camera_type = "opencv"
 
         # Try direct camera first via OpenCV
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(self.config.camera_id)
         if self.cap.isOpened():
             self._configure_camera()
             return
