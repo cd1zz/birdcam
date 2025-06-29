@@ -62,7 +62,7 @@ chmod +x setup_pi_camera.sh
 
 3. **Configure Environment**
    ```bash
-   echo "CAMERA_TYPE=opencv" >> .env
+   echo "CAMERA_TYPE=picamera2" >> .env
    ```
 
 ## Troubleshooting
@@ -92,7 +92,7 @@ Example:
 
 ```bash
 CAMERA_IDS=0,1
-CAMERA_TYPES=picamera2,opencv
+CAMERA_TYPES=picamera2,picamera2
 ```
 
 ### Permission Errors

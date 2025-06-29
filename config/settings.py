@@ -133,7 +133,7 @@ def load_capture_config(camera_id: int = 0, camera_type: Optional[str] = None) -
         database=DatabaseConfig(path=camera_path / "capture.db"),
         capture=CaptureConfig(
             camera_id=camera_id,
-            camera_type=camera_type or os.getenv('CAMERA_TYPE', 'opencv'),
+            camera_type=camera_type or os.getenv('CAMERA_TYPE', 'picamera2'),
             stream_url='',  # RTSP environment variable removed
             segment_duration=get_int_env('SEGMENT_DURATION', 300),
             fps=get_int_env('FPS', 10),
@@ -218,7 +218,7 @@ def load_processing_config() -> AppConfig:
         database=DatabaseConfig(path=base_path / "processing.db"),
         capture=CaptureConfig(
             camera_id=0,
-            camera_type=os.getenv('CAMERA_TYPE', 'opencv'),
+            camera_type=os.getenv('CAMERA_TYPE', 'picamera2'),
             stream_url="",  # Not used on processing server
             segment_duration=300,
             fps=10,
