@@ -39,7 +39,6 @@ chmod +x setup_pi_camera.sh
 5. **Configure Environment**
    ```bash
    cp .env.example .env
-   echo "CAMERA_TYPE=picamera2" >> .env
    ```
    Adjust other settings in `.env` as needed.
 
@@ -65,7 +64,6 @@ chmod +x setup_pi_camera.sh
 3. **Configure Environment**
    ```bash
    cp .env.example .env
-   echo "CAMERA_TYPE=picamera2" >> .env
    ```
    Edit `.env` to suit your setup.
 
@@ -88,15 +86,12 @@ pip install -r requirements.txt
 ```
 
 ### Multiple Cameras
-Birdcam can run several cameras at once. List camera IDs in `CAMERA_IDS` and
-their matching types in `CAMERA_TYPES`. Leave `CAMERA_TYPES` blank to let
-Birdcam auto-detect the type.
+Birdcam can run several cameras at once. List camera IDs in `CAMERA_IDS`.
 
 Example:
 
 ```bash
 CAMERA_IDS=0,1
-CAMERA_TYPES=picamera2,picamera2
 ```
 
 ### Permission Errors
@@ -107,7 +102,7 @@ sudo usermod -a -G video $USER
 ```
 
 ### Blue or Distorted Colors
-When using `CAMERA_TYPE=picamera2`, the camera may deliver frames in
+When using the Picamera2 library, the camera may deliver frames in
 RGB order. Birdcam now converts these frames to BGR before processing,
 so colors in the live feed should look normal. If you still see a blue
 hue, ensure you have updated to the latest version.

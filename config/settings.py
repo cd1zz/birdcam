@@ -179,11 +179,10 @@ def load_capture_config(camera_id: int = 0, camera_type: Optional[str] = None) -
 def load_all_capture_configs() -> List[AppConfig]:
     """Load configurations for all cameras.
 
-    If CAMERA_IDS/CAmera_TYPES are provided they will be used. Otherwise the
-    system will auto-detect available cameras and their types.
+    If CAMERA_IDS is provided it will be used. Otherwise the system will
+    auto-detect available cameras.
     """
     ids_env = os.getenv('CAMERA_IDS', '')
-    types_env = get_list_env('CAMERA_TYPES', [])
 
     from services.camera_manager import detect_available_cameras
     detected = detect_available_cameras()
@@ -191,22 +190,13 @@ def load_all_capture_configs() -> List[AppConfig]:
     id_list = [s.strip() for s in ids_env.split(',') if s.strip()] if ids_env else [cam['id'] for cam in detected]
 
     configs: List[AppConfig] = []
-    for idx, id_str in enumerate(id_list):
+    for id_str in id_list:
         try:
             cam_id = int(id_str)
         except ValueError:
             continue
 
-        cam_type: Optional[str] = None
-        if idx < len(types_env) and types_env[idx]:
-            cam_type = types_env[idx].lower()
-        else:
-            for cam in detected:
-                if cam['id'] == id_str:
-                    cam_type = cam['type']
-                    break
-
-        configs.append(load_capture_config(cam_id, cam_type))
+        configs.append(load_capture_config(cam_id))
 
     return configs
 
