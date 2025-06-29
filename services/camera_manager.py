@@ -24,6 +24,9 @@ def detect_available_cameras(max_devices: int = 4) -> List[Dict[str, str]]:
         except Exception as e:  # pragma: no cover - hardware specific
             print(f"Picamera2 detection failed: {e}")
 
+    if cameras:
+        return cameras
+
     for i in range(max_devices):
         cap = cv2.VideoCapture(i)
         if cap.isOpened():
