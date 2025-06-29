@@ -19,6 +19,9 @@
                 <span id="capture-status" class="status-indicator online"></span>
                 <span id="capture-text">Loading...</span>
             </div>
+            <div class="status-address" id="pi-address">
+                {{ capture_host }}:{{ capture_port }}
+            </div>
             <div class="status-grid-mini">
                 <div class="mini-stat">
                     <span class="mini-number" id="pi-total-videos">-</span>
@@ -42,6 +45,9 @@
             <div class="status-item">
                 <span id="server-status" class="status-indicator offline"></span>
                 <span id="server-text">Checking...</span>
+            </div>
+            <div class="status-address" id="server-address">
+                {{ processing_host }}:{{ processing_port }}
             </div>
             <div class="status-grid-mini">
                 <div class="mini-stat">

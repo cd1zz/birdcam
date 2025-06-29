@@ -21,6 +21,12 @@
     font-size: 1.1em;
 }
 
+.status-address {
+    margin-top: 5px;
+    font-size: 0.85em;
+    color: #7f8c8d;
+}
+
 .status-grid-mini {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
