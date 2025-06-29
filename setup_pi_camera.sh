@@ -73,10 +73,6 @@ fi
 
 # Create/update .env file
 echo "⚙️  Configuring environment..."
-if ! grep -q "CAMERA_TYPE=picamera2" .env 2>/dev/null; then
-    echo "CAMERA_TYPE=picamera2" >> .env
-    echo "✅ Set CAMERA_TYPE=picamera2 in .env"
-fi
 
 echo ""
 echo "🎉 Setup complete!"
