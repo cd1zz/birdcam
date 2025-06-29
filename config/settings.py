@@ -197,6 +197,7 @@ def load_processing_config() -> AppConfig:
     return AppConfig(
         database=DatabaseConfig(path=base_path / "processing.db"),
         capture=CaptureConfig(
+            camera_id=0,
             camera_type=os.getenv('CAMERA_TYPE', 'opencv'),
             stream_url="",  # Not used on processing server
             segment_duration=300,
