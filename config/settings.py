@@ -4,6 +4,7 @@ from pathlib import Path
 import os
 from typing import Tuple, Optional, List, Dict
 from dotenv import load_dotenv
+from services.camera_manager import detect_available_cameras
 
 # Load .env file
 load_dotenv()
@@ -185,7 +186,6 @@ def load_all_capture_configs() -> List[AppConfig]:
     ids_env = os.getenv('CAMERA_IDS', '')
     types_env = get_list_env('CAMERA_TYPES', [])
 
-    from services.camera_manager import detect_available_cameras
     detected = detect_available_cameras()
 
     id_list = [s.strip() for s in ids_env.split(',') if s.strip()] if ids_env else [cam['id'] for cam in detected]
@@ -217,6 +217,7 @@ def load_processing_config() -> AppConfig:
     return AppConfig(
         database=DatabaseConfig(path=base_path / "processing.db"),
         capture=CaptureConfig(
+            camera_id=0,
             camera_type=os.getenv('CAMERA_TYPE', 'opencv'),
             stream_url="",  # Not used on processing server
             segment_duration=300,
