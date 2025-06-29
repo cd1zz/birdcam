@@ -4,6 +4,7 @@ from pathlib import Path
 import os
 from typing import Tuple, Optional, List, Dict
 from dotenv import load_dotenv
+from services.camera_manager import detect_available_cameras
 
 # Load .env file
 load_dotenv()
@@ -124,7 +125,7 @@ class AppConfig:
     sync: SyncConfig
     web: WebConfig
 
-def load_capture_config(camera_id: int = 0) -> AppConfig:
+def load_capture_config(camera_id: int = 0, camera_type: Optional[str] = None) -> AppConfig:
     """Load configuration for Pi capture system"""
     base_path = Path(os.getenv('STORAGE_PATH', './bird_footage'))
     camera_path = base_path / f"camera_{camera_id}"
@@ -133,7 +134,7 @@ def load_capture_config(camera_id: int = 0) -> AppConfig:
         database=DatabaseConfig(path=camera_path / "capture.db"),
         capture=CaptureConfig(
             camera_id=camera_id,
-            camera_type=os.getenv('CAMERA_TYPE', 'opencv'),
+            camera_type=camera_type or os.getenv('CAMERA_TYPE', 'opencv'),
             stream_url='',  # RTSP environment variable removed
             segment_duration=get_int_env('SEGMENT_DURATION', 300),
             fps=get_int_env('FPS', 10),
@@ -177,17 +178,36 @@ def load_capture_config(camera_id: int = 0) -> AppConfig:
     )
 
 def load_all_capture_configs() -> List[AppConfig]:
-    """Load configurations for all cameras listed in CAMERA_IDS"""
-    ids = os.getenv('CAMERA_IDS', '0')
+    """Load configurations for all cameras.
+
+    If CAMERA_IDS/CAmera_TYPES are provided they will be used. Otherwise the
+    system will auto-detect available cameras and their types.
+    """
+    ids_env = os.getenv('CAMERA_IDS', '')
+    types_env = get_list_env('CAMERA_TYPES', [])
+
+    detected = detect_available_cameras()
+
+    id_list = [s.strip() for s in ids_env.split(',') if s.strip()] if ids_env else [cam['id'] for cam in detected]
+
     configs: List[AppConfig] = []
-    for id_str in ids.split(','):
-        id_str = id_str.strip()
-        if id_str:
-            try:
-                cam_id = int(id_str)
-            except ValueError:
-                continue
-            configs.append(load_capture_config(cam_id))
+    for idx, id_str in enumerate(id_list):
+        try:
+            cam_id = int(id_str)
+        except ValueError:
+            continue
+
+        cam_type: Optional[str] = None
+        if idx < len(types_env) and types_env[idx]:
+            cam_type = types_env[idx].lower()
+        else:
+            for cam in detected:
+                if cam['id'] == id_str:
+                    cam_type = cam['type']
+                    break
+
+        configs.append(load_capture_config(cam_id, cam_type))
+
     return configs
 
 def load_processing_config() -> AppConfig:

@@ -39,7 +39,8 @@ def print_detected_cameras(max_devices: int = 4) -> List[Dict[str, str]]:
     else:
         print(f"✅ Found {len(cams)} camera(s):")
         for cam in cams:
-            print(f" - ID {cam['id']} ({cam['type']})")
+            pretty = "CSI" if cam["type"] == "picamera2" else "OpenCV"
+            print(f" - ID {cam['id']} ({pretty})")
     return cams
 
 class CameraManager:
