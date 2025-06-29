@@ -1,8 +1,10 @@
 # services/camera_manager.py
 import cv2
 import numpy as np
-from typing import Optional, Tuple, List, Dict
-from config.settings import CaptureConfig
+from typing import Optional, Tuple, List, Dict, TYPE_CHECKING
+
+if TYPE_CHECKING:  # Avoid circular import at runtime
+    from config.settings import CaptureConfig
 
 try:
     from picamera2 import Picamera2
@@ -44,7 +46,7 @@ def print_detected_cameras(max_devices: int = 4) -> List[Dict[str, str]]:
     return cams
 
 class CameraManager:
-    def __init__(self, config: CaptureConfig):
+    def __init__(self, config: 'CaptureConfig'):
         self.config = config
         self.camera_type = config.camera_type.lower()
         self.cap: Optional[cv2.VideoCapture] = None
