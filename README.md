@@ -38,8 +38,10 @@ chmod +x setup_pi_camera.sh
 
 5. **Configure Environment**
    ```bash
+   cp .env.example .env
    echo "CAMERA_TYPE=picamera2" >> .env
    ```
+   Adjust other settings in `.env` as needed.
 
 6. **Test Camera**
    ```bash
@@ -62,8 +64,10 @@ chmod +x setup_pi_camera.sh
 
 3. **Configure Environment**
    ```bash
+   cp .env.example .env
    echo "CAMERA_TYPE=picamera2" >> .env
    ```
+   Edit `.env` to suit your setup.
 
 ## Troubleshooting
 
