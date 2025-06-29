@@ -170,7 +170,12 @@ def main():
         settings_repos = {}
 
         for cfg in configs:
-            print(f"📁 Storage for camera {cfg.capture.camera_id}: {cfg.processing.storage_path}")
+            print(
+                f"📁 Storage for camera {cfg.capture.camera_id}: {cfg.processing.storage_path}"
+            )
+            print(
+                f"📷 Using {cfg.capture.camera_type} for camera {cfg.capture.camera_id}"
+            )
 
             cs, sync, settings = setup_services(cfg)
             capture_services[cfg.capture.camera_id] = cs

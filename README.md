@@ -83,8 +83,17 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Multiple Cameras Detected
-The system will automatically try each camera. Check logs for which camera is being used.
+### Multiple Cameras
+Birdcam can run several cameras at once. List camera IDs in `CAMERA_IDS` and
+their matching types in `CAMERA_TYPES`. Leave `CAMERA_TYPES` blank to let
+Birdcam auto-detect the type.
+
+Example:
+
+```bash
+CAMERA_IDS=0,1
+CAMERA_TYPES=picamera2,opencv
+```
 
 ### Permission Errors
 ```bash
