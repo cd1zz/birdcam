@@ -28,9 +28,22 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
     
     @app.route('/')
     def dashboard():
-        # Pass processing server URL to template
+        """Unified dashboard with server addresses injected"""
         processing_server_url = f"http://{sync_service.server_host}:{sync_service.server_port}"
-        return render_template('unified_dashboard.html', processing_server_url=processing_server_url)
+
+        # Derive capture host/port from the current request
+        host_parts = request.host.split(":")
+        capture_host = host_parts[0]
+        capture_port = host_parts[1] if len(host_parts) > 1 else ("443" if request.scheme == "https" else "80")
+
+        return render_template(
+            'unified_dashboard.html',
+            processing_server_url=processing_server_url,
+            processing_host=sync_service.server_host,
+            processing_port=sync_service.server_port,
+            capture_host=capture_host,
+            capture_port=capture_port
+        )
     
     @app.route('/api/status')
     def api_status():
