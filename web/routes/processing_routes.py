@@ -68,7 +68,15 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
         unionArea = boxAArea + boxBArea - interArea
         return interArea / unionArea if unionArea > 0 else 0.0
 
-    def _cluster_detections(items, time_window=300, iou_thresh=0.3, limit=20):
+    def _center_distance(boxA, boxB):
+        cxA = (boxA[0] + boxA[2]) / 2
+        cyA = (boxA[1] + boxA[3]) / 2
+        cxB = (boxB[0] + boxB[2]) / 2
+        cyB = (boxB[1] + boxB[3]) / 2
+        return ((cxA - cxB) ** 2 + (cyA - cyB) ** 2) ** 0.5
+
+    def _cluster_detections(items, time_window=60, iou_thresh=0.1,
+                            center_thresh=150, limit=20):
         """Group detections by temporal and spatial proximity"""
         events = []
         for item in items:
@@ -81,7 +89,8 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
                     continue
                 if abs(abs_time - event['abs_time']) > time_window:
                     continue
-                if _bbox_iou(det.bbox, event['bbox']) < iou_thresh:
+                if (_bbox_iou(det.bbox, event['bbox']) < iou_thresh and
+                        _center_distance(det.bbox, event['bbox']) > center_thresh):
                     continue
                 matched = event
                 break
@@ -116,13 +125,23 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
                 })
 
         events.sort(key=lambda e: e['abs_time'], reverse=True)
-        return events[:limit]
+        if limit:
+            events = events[:limit]
+        return events
 
     @app.route('/api/recent-detections')
     def api_recent_detections():
-        # Fetch a larger number of raw detections for clustering
-        raw_items = detection_repo.get_recent_with_thumbnails(limit=100)
-        events = _cluster_detections(raw_items)
+        species = request.args.get('species')
+        start = request.args.get('start')
+        end = request.args.get('end')
+        sort = request.args.get('sort', 'desc')
+        limit = request.args.get('limit', default=20, type=int)
+
+        raw_items = detection_repo.get_recent_filtered_with_thumbnails(
+            species=species, start=start, end=end, limit=100)
+        events = _cluster_detections(raw_items, limit=None)
+        events.sort(key=lambda e: e['abs_time'], reverse=(sort != 'asc'))
+        events = events[:limit]
         for e in events:
             e.pop('bbox', None)
             e.pop('abs_time', None)

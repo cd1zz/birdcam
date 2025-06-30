@@ -88,9 +88,39 @@ class DetectionRepository(BaseRepository):
     
     def _row_to_detection_with_video(self, row) -> dict:
         detection = self._row_to_detection(row)
+        received = row['received_time']
+        if isinstance(received, str):
+            received = datetime.fromisoformat(received)
         return {
             'detection': detection,
             'filename': row['filename'],
-            'received_time': row['received_time'],
+            'received_time': received,
             'duration': row['duration']
         }
+
+    def get_recent_filtered_with_thumbnails(self, *, species: Optional[str] = None,
+                                            start: Optional[str] = None,
+                                            end: Optional[str] = None,
+                                            limit: int = 20):
+        """Retrieve recent detections with optional filtering."""
+        with self.db_manager.get_connection() as conn:
+            query = (
+                "SELECT d.*, v.filename, v.received_time, v.duration "
+                "FROM detections d "
+                "JOIN videos v ON d.video_id = v.id "
+                "WHERE d.thumbnail_path IS NOT NULL"
+            )
+            params = []
+            if species:
+                query += " AND d.species = ?"
+                params.append(species)
+            if start:
+                query += " AND v.received_time >= ?"
+                params.append(start)
+            if end:
+                query += " AND v.received_time <= ?"
+                params.append(end)
+            query += " ORDER BY v.received_time DESC, d.timestamp DESC LIMIT ?"
+            params.append(limit)
+            cursor = conn.execute(query, params)
+            return [self._row_to_detection_with_video(row) for row in cursor.fetchall()]

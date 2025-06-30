@@ -111,5 +111,16 @@ hue, ensure you have updated to the latest version.
 The processing server now groups detections that occur close in time and
 space into a single event. The `/api/recent-detections` endpoint returns
 these events with a `count` field indicating how many detections were
-clustered together. This keeps the dashboard from filling up with many
+clustered together. Clustering also considers the distance between
+bounding box centers, so short movements across the frame are treated as
+a single visit. This keeps the dashboard from filling up with many
 frames from the same visitor.
+
+You can filter results by detection class and date range:
+
+```
+/api/recent-detections?species=bluejay&start=2025-06-20&end=2025-06-30
+```
+
+Use the `sort` parameter (`asc` or `desc`) to control order and `limit`
+to change how many events are returned.
