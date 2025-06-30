@@ -262,18 +262,20 @@ class ProcessingService:
         
         # Save detections to database (only if there are any)
         if has_detections:
+            thumbnail_count = 0
             for detection, detection_data in detections:
                 detection_id = self.detection_repo.create(detection)
-                
-                # Generate thumbnail for first few detections
-                if len([d for d, _ in detections[:self.config.detection.max_thumbnails_per_video]]) <= self.config.detection.max_thumbnails_per_video:
+
+                # Generate thumbnail only for the first few detections
+                if thumbnail_count < self.config.detection.max_thumbnails_per_video:
                     thumbnail_path = self._generate_thumbnail(
-                        detection_data['frame'], detection.bbox, 
-                        video.filename, detection_id, detection.confidence, 
+                        detection_data['frame'], detection.bbox,
+                        video.filename, detection_id, detection.confidence,
                         detection.timestamp, detection_data['class']
                     )
                     if thumbnail_path:
                         self.detection_repo.update_thumbnail_path(detection_id, thumbnail_path)
+                    thumbnail_count += 1
         
         # Update video record
         self.video_repo.update_status(
