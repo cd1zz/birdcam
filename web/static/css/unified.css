@@ -205,6 +205,12 @@
     font-weight: 500;
 }
 
+.detection-card .count-badge {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+}
+
 .btn-small {
     padding: 6px 12px;
     font-size: 0.8em;

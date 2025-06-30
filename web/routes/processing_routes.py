@@ -55,25 +55,78 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             'detection_classes': processing_service.config.detection.classes
         })
     
+    def _bbox_iou(boxA, boxB):
+        """Compute Intersection over Union of two bounding boxes"""
+        xA = max(boxA[0], boxB[0])
+        yA = max(boxA[1], boxB[1])
+        xB = min(boxA[2], boxB[2])
+        yB = min(boxA[3], boxB[3])
+
+        interArea = max(0, xB - xA) * max(0, yB - yA)
+        boxAArea = max(0, boxA[2] - boxA[0]) * max(0, boxA[3] - boxA[1])
+        boxBArea = max(0, boxB[2] - boxB[0]) * max(0, boxB[3] - boxB[1])
+        unionArea = boxAArea + boxBArea - interArea
+        return interArea / unionArea if unionArea > 0 else 0.0
+
+    def _cluster_detections(items, time_window=300, iou_thresh=0.3, limit=20):
+        """Group detections by temporal and spatial proximity"""
+        events = []
+        for item in items:
+            det = item['detection']
+            abs_time = item['received_time'].timestamp() + det.timestamp
+
+            matched = None
+            for event in events:
+                if det.species != event['species']:
+                    continue
+                if abs(abs_time - event['abs_time']) > time_window:
+                    continue
+                if _bbox_iou(det.bbox, event['bbox']) < iou_thresh:
+                    continue
+                matched = event
+                break
+
+            if matched:
+                matched['count'] += 1
+                matched['abs_time'] = max(matched['abs_time'], abs_time)
+                if det.confidence > matched['confidence']:
+                    matched.update({
+                        'id': det.id,
+                        'filename': item['filename'],
+                        'timestamp': det.timestamp,
+                        'confidence': det.confidence,
+                        'thumbnail': det.thumbnail_path,
+                        'received_time': item['received_time'],
+                        'duration': item['duration'],
+                        'bbox': det.bbox,
+                    })
+            else:
+                events.append({
+                    'id': det.id,
+                    'filename': item['filename'],
+                    'received_time': item['received_time'],
+                    'timestamp': det.timestamp,
+                    'confidence': det.confidence,
+                    'thumbnail': det.thumbnail_path,
+                    'duration': item['duration'],
+                    'species': det.species,
+                    'bbox': det.bbox,
+                    'count': 1,
+                    'abs_time': abs_time,
+                })
+
+        events.sort(key=lambda e: e['abs_time'], reverse=True)
+        return events[:limit]
+
     @app.route('/api/recent-detections')
     def api_recent_detections():
-        detections_data = detection_repo.get_recent_with_thumbnails()
-        detections = []
-
-        for item in detections_data:
-            detection = item['detection']
-            detections.append({
-                'id': detection.id,
-                'filename': item['filename'],
-                'received_time': item['received_time'],
-                'timestamp': detection.timestamp,
-                'confidence': detection.confidence,
-                'thumbnail': detection.thumbnail_path,
-                'duration': item['duration'],
-                'species': detection.species  # Now includes actual detection class
-            })
-        
-        return jsonify({'detections': detections})
+        # Fetch a larger number of raw detections for clustering
+        raw_items = detection_repo.get_recent_with_thumbnails(limit=100)
+        events = _cluster_detections(raw_items)
+        for e in events:
+            e.pop('bbox', None)
+            e.pop('abs_time', None)
+        return jsonify({'detections': events})
     
     @app.route('/api/process-now', methods=['POST'])
     def api_process_now():

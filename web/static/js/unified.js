@@ -172,9 +172,12 @@ function updateDetectionGrid(detections) {
         // Direct thumbnail URL to processing server - much faster!
         const thumbnailUrl = `${PROCESSING_SERVER_URL}/thumbnails/${detection.thumbnail}`;
         
+        const countBadge = detection.count && detection.count > 1
+            ? `<span class="count-badge">${detection.count}</span>` : '';
         return `
             <div class="detection-card" onclick="viewVideo('${detection.filename}')">
                 <button class="delete-btn" onclick="deleteDetection(event, ${detection.id})">🗑️</button>
+                ${countBadge}
                 <img src="${thumbnailUrl}"
                      alt="${detection.species || 'Detection'}"
                      onerror="this.style.display='none'">
