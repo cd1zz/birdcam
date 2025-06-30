@@ -97,10 +97,14 @@ function updateDetectionGrid(detections) {
         return;
     }
     
-    grid.innerHTML = detections.map(detection => `
+    grid.innerHTML = detections.map(detection => {
+        const countBadge = detection.count && detection.count > 1
+            ? `<span class="count-badge">${detection.count}</span>` : '';
+        return `
         <div class="detection-card" onclick="viewVideo('${detection.filename}')">
-            <img src="/thumbnails/${detection.thumbnail}" 
-                 alt="Bird detection" 
+            ${countBadge}
+            <img src="/thumbnails/${detection.thumbnail}"
+                 alt="Bird detection"
                  onerror="this.style.display='none'">
             <div class="detection-info">
                 <div><strong>Confidence:</strong> <span>${(detection.confidence * 100).toFixed(1)}%</span></div>
@@ -108,8 +112,8 @@ function updateDetectionGrid(detections) {
                 <div><strong>Found:</strong> <span>${formatTimestamp(detection.received_time)}</span></div>
                 <div class="filename"><strong>File:</strong> ${detection.filename}</div>
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 }
 
 // Control functions

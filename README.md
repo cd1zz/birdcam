@@ -106,3 +106,10 @@ When using the Picamera2 library, the camera may deliver frames in
 RGB order. Birdcam now converts these frames to BGR before processing,
 so colors in the live feed should look normal. If you still see a blue
 hue, ensure you have updated to the latest version.
+
+### Event Grouping
+The processing server now groups detections that occur close in time and
+space into a single event. The `/api/recent-detections` endpoint returns
+these events with a `count` field indicating how many detections were
+clustered together. This keeps the dashboard from filling up with many
+frames from the same visitor.
