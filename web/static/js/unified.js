@@ -8,6 +8,25 @@ let startX, startY;
 // PROCESSING_SERVER_URL is now injected by the template
 // No hardcoded URL needed!
 
+// Detect mobile browsers for download compatibility
+function isMobileBrowser() {
+    return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+// Fetch file and trigger download (used on mobile)
+async function triggerDownload(url, filename) {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const tempUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = tempUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(tempUrl);
+}
+
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
     loadCameras();  // ADD THIS LINE
@@ -486,6 +505,18 @@ function showVideoModal(videoUrl, filename) {
     if (downloadLink) {
         downloadLink.href = videoUrl;
         downloadLink.download = filename;
+        downloadLink.onclick = null;
+        if (isMobileBrowser()) {
+            downloadLink.addEventListener('click', async (e) => {
+                e.preventDefault();
+                try {
+                    await triggerDownload(videoUrl, filename);
+                } catch (err) {
+                    console.error('Download failed:', err);
+                    window.open(videoUrl, '_blank');
+                }
+            }, { once: true });
+        }
     }
     
     if (newTabLink) {
