@@ -132,6 +132,7 @@ class CaptureService:
                             self.passive_camera_service._start_recording_from_active()
             else:
                 # Passive camera doesn't do motion detection
+                has_motion = False
                 self.latest_motion = False
             
             # Always add frames to pre-motion buffer when NOT recording
@@ -190,14 +191,10 @@ class CaptureService:
             self.is_capturing = True
             self.segment_start_time = time.time()
             
-            # Re-enable pre-motion buffer for active camera (fixed timestamp handling)
-            if self.pre_motion_buffer and self.is_active:
-                print(f"📼 Writing {len(self.pre_motion_buffer)} pre-motion frames")
-                self.video_writer.write_frames_with_timestamps(list(self.pre_motion_buffer))
-                self.pre_motion_buffer.clear()
-            elif self.pre_motion_buffer:
-                # Passive camera - clear buffer but don't write (no pre-motion for passive)
-                print(f"📼 Clearing {len(self.pre_motion_buffer)} frames from passive camera buffer")
+            # EMERGENCY FIX: Skip pre-motion buffer to prevent FFmpeg timestamp errors
+            # TODO: Re-enable with proper timestamp handling
+            if self.pre_motion_buffer:
+                print(f"📼 Skipping {len(self.pre_motion_buffer)} pre-motion frames (emergency fix)")
                 self.pre_motion_buffer.clear()
             
             print(f"🎬 Recording started: {segment.filename}")

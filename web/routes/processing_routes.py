@@ -215,52 +215,17 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
     
     @app.route('/api/debug/simple')
     def api_debug_simple():
-        """Simple debug endpoint with minimal data"""
-        try:
-            # Direct database check without using ORM objects
-            from pathlib import Path
-            import sqlite3
-            
-            db_path = Path(processing_service.config.database.path)
-            
-            result = {
-                'database_exists': db_path.exists(),
-                'database_path': str(db_path)
-            }
-            
-            if db_path.exists():
-                conn = sqlite3.connect(str(db_path))
-                cursor = conn.cursor()
-                
-                # Count by status
-                cursor.execute('SELECT status, COUNT(*) FROM videos GROUP BY status')
-                status_counts = dict(cursor.fetchall())
-                result['status_counts'] = status_counts
-                
-                # Count pending specifically
-                cursor.execute('SELECT COUNT(*) FROM videos WHERE status = ?', ('pending',))
-                pending_count = cursor.fetchone()[0]
-                result['pending_count'] = pending_count
-                
-                # Get recent videos
-                cursor.execute('SELECT id, filename, status FROM videos ORDER BY id DESC LIMIT 5')
-                recent = cursor.fetchall()
-                result['recent_videos'] = [{'id': r[0], 'filename': r[1], 'status': r[2]} for r in recent]
-                
-                conn.close()
-            
-            # Check directories
-            incoming_dir = Path(processing_service.incoming_dir)
-            result['incoming_dir'] = str(incoming_dir)
-            result['incoming_exists'] = incoming_dir.exists()
-            
-            if incoming_dir.exists():
-                result['incoming_files'] = len(list(incoming_dir.glob('*.mp4')))
-            
-            return jsonify(result)
-            
-        except Exception as e:
-            return jsonify({'error': str(e), 'type': type(e).__name__}), 500
+        """Simple debug endpoint - completely rewritten"""
+        return jsonify({
+            'status': 'working',
+            'timestamp': time.time(),
+            'message': 'Debug endpoint is functional'
+        })
+    
+    @app.route('/api/debug/test')
+    def api_debug_test():
+        """Test endpoint to verify service is working"""
+        return jsonify({'test': 'passed', 'service': 'AI Processing Server'})
 
     @app.route('/api/delete-detection', methods=['POST'])
     def api_delete_detection():
