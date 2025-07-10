@@ -79,11 +79,11 @@ export const api = {
   // Motion settings
   motion: {
     getSettings: (cameraId?: number) => 
-      piApi.get<MotionSettings>('/api/motion-settings', { 
+      processingApi.get<MotionSettings>('/api/motion-settings', { 
         params: cameraId !== undefined ? { camera_id: cameraId } : undefined 
       }),
     updateSettings: (settings: Partial<MotionSettings>, cameraId?: number) => 
-      piApi.post('/api/motion-settings', settings, { 
+      processingApi.post('/api/motion-settings', settings, { 
         params: cameraId !== undefined ? { camera_id: cameraId } : undefined 
       }),
     getBroadcasterConfig: () => piApi.get('/api/motion-broadcaster/config'),

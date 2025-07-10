@@ -118,7 +118,6 @@ const InteractiveCameraFeed: React.FC<InteractiveCameraFeedProps> = ({
     if (!imgRef.current || !containerRef.current) return { x: imageX, y: imageY };
     
     const rect = imgRef.current.getBoundingClientRect();
-    const containerRect = containerRef.current.getBoundingClientRect();
     
     const screenX = (imageX / 640) * rect.width;
     const screenY = (imageY / 480) * rect.height;

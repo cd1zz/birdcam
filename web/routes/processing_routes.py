@@ -278,23 +278,95 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
     
     @app.route('/api/motion-settings', methods=['GET'])
     def api_get_motion_settings():
-        """Get motion detection settings (placeholder for processing server)"""
-        # Processing server doesn't handle motion detection, but we provide endpoint for compatibility
-        return jsonify({
-            'region': None,
-            'motion_threshold': 5000,
-            'min_contour_area': 500,
-            'note': 'Motion detection is handled by Pi capture system'
-        })
+        """Get motion detection settings"""
+        import json
+        from pathlib import Path
+        
+        try:
+            camera_id = request.args.get('camera_id', '0')
+            settings_file = Path(config.processing.storage_path) / f"motion_settings_camera_{camera_id}.json"
+            
+            # Default settings
+            default_settings = {
+                'region': None,
+                'motion_threshold': 5000,
+                'min_contour_area': 500,
+                'motion_timeout_seconds': 30,
+                'motion_box_enabled': True,
+                'motion_box_x1': 100,
+                'motion_box_y1': 100,
+                'motion_box_x2': 500,
+                'motion_box_y2': 350,
+            }
+            
+            # Load saved settings if they exist
+            if settings_file.exists():
+                try:
+                    with open(settings_file, 'r') as f:
+                        saved_settings = json.load(f)
+                        default_settings.update(saved_settings)
+                except Exception as e:
+                    print(f"Error loading motion settings: {e}")
+            
+            return jsonify(default_settings)
+            
+        except Exception as e:
+            print(f"Error in motion settings GET: {e}")
+            return jsonify({
+                'region': None,
+                'motion_threshold': 5000,
+                'min_contour_area': 500,
+                'motion_timeout_seconds': 30,
+                'motion_box_enabled': True,
+                'motion_box_x1': 100,
+                'motion_box_y1': 100,
+                'motion_box_x2': 500,
+                'motion_box_y2': 350,
+            })
     
     @app.route('/api/motion-settings', methods=['POST'])
     def api_set_motion_settings():
-        """Set motion detection settings (placeholder for processing server)"""
-        # Processing server doesn't handle motion detection
-        return jsonify({
-            'message': 'Motion settings received but not applied (processing server)',
-            'note': 'Motion detection is handled by Pi capture system'
-        })
+        """Set motion detection settings"""
+        import json
+        from pathlib import Path
+        
+        try:
+            data = request.get_json() or {}
+            camera_id = request.args.get('camera_id', '0')
+            settings_file = Path(config.processing.storage_path) / f"motion_settings_camera_{camera_id}.json"
+            
+            # Ensure storage directory exists
+            settings_file.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Load existing settings
+            current_settings = {}
+            if settings_file.exists():
+                try:
+                    with open(settings_file, 'r') as f:
+                        current_settings = json.load(f)
+                except Exception as e:
+                    print(f"Error loading existing settings: {e}")
+            
+            # Update with new settings
+            current_settings.update(data)
+            
+            # Save to file
+            with open(settings_file, 'w') as f:
+                json.dump(current_settings, f, indent=2)
+            
+            print(f"✅ Saved motion settings for camera {camera_id}: {data}")
+            
+            return jsonify({
+                'message': f'Motion settings saved for camera {camera_id}',
+                'saved_settings': current_settings,
+                'file_path': str(settings_file)
+            })
+            
+        except Exception as e:
+            print(f"❌ Error saving motion settings: {e}")
+            return jsonify({
+                'error': f'Failed to save motion settings: {str(e)}'
+            }), 500
     
     @app.route('/videos/<filename>')
     def serve_video(filename):
