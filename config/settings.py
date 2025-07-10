@@ -75,6 +75,11 @@ class MotionConfig:
     motion_timeout_seconds: int
     max_segment_duration: int
     region: Optional[Tuple[int, int, int, int]] = None
+    motion_box_enabled: bool = True
+    motion_box_x1: int = 0
+    motion_box_y1: int = 0
+    motion_box_x2: int = 640
+    motion_box_y2: int = 480
 
 @dataclass
 class DetectionConfig:
@@ -146,7 +151,12 @@ def load_capture_config(camera_id: int = 0, camera_type: Optional[str] = None) -
             min_contour_area=get_int_env('MIN_CONTOUR_AREA', 500),
             learning_rate=get_float_env('LEARNING_RATE', 0.01),
             motion_timeout_seconds=get_int_env('MOTION_TIMEOUT_SECONDS', 30),
-            max_segment_duration=get_int_env('MAX_SEGMENT_DURATION', 300)
+            max_segment_duration=get_int_env('MAX_SEGMENT_DURATION', 300),
+            motion_box_enabled=get_bool_env('MOTION_BOX_ENABLED', True),
+            motion_box_x1=get_int_env('MOTION_BOX_X1', 0),
+            motion_box_y1=get_int_env('MOTION_BOX_Y1', 0),
+            motion_box_x2=get_int_env('MOTION_BOX_X2', 640),
+            motion_box_y2=get_int_env('MOTION_BOX_Y2', 480)
         ),
         processing=ProcessingConfig(
             storage_path=camera_path,
@@ -221,7 +231,12 @@ def load_processing_config() -> AppConfig:
             min_contour_area=500,
             learning_rate=0.01,
             motion_timeout_seconds=30,
-            max_segment_duration=300
+            max_segment_duration=300,
+            motion_box_enabled=get_bool_env('MOTION_BOX_ENABLED', True),
+            motion_box_x1=get_int_env('MOTION_BOX_X1', 0),
+            motion_box_y1=get_int_env('MOTION_BOX_Y1', 0),
+            motion_box_x2=get_int_env('MOTION_BOX_X2', 640),
+            motion_box_y2=get_int_env('MOTION_BOX_Y2', 480)
         ),
         processing=ProcessingConfig(
             storage_path=base_path,

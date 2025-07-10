@@ -16,6 +16,13 @@ class MotionDetector:
         self.motion_region: Optional[MotionRegion] = None
         if config.region:
             self.motion_region = MotionRegion(*config.region)
+        elif config.motion_box_enabled:
+            self.motion_region = MotionRegion(
+                config.motion_box_x1, 
+                config.motion_box_y1, 
+                config.motion_box_x2, 
+                config.motion_box_y2
+            )
     
     def set_motion_region(self, region: MotionRegion):
         self.motion_region = region
@@ -24,13 +31,25 @@ class MotionDetector:
         """Detect motion using contour area within the configured region"""
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         
-        # Set default region if none specified
-        if self.motion_region is None:
+        # Set default region if none specified and motion box is disabled
+        if self.motion_region is None and not self.config.motion_box_enabled:
             h, w = gray.shape
             self.motion_region = MotionRegion(
                 int(w * 0.2), int(h * 0.2),
                 int(w * 0.8), int(h * 0.8)
             )
+        elif self.motion_region is None and self.config.motion_box_enabled:
+            # Use motion box coordinates from config
+            self.motion_region = MotionRegion(
+                self.config.motion_box_x1, 
+                self.config.motion_box_y1, 
+                self.config.motion_box_x2, 
+                self.config.motion_box_y2
+            )
+        
+        # Skip motion detection if motion box is disabled
+        if not self.config.motion_box_enabled:
+            return False
         
         # Create mask for region of interest
         mask = np.zeros(gray.shape, dtype=np.uint8)

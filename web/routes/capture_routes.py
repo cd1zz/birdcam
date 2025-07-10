@@ -134,15 +134,21 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
         try:
             capture_service = get_service()
             region = capture_service.motion_detector.motion_region
+            config = capture_service.motion_detector.config
             
             settings = {
                 'region': {
                     'x1': region.x1, 'y1': region.y1, 
                     'x2': region.x2, 'y2': region.y2
                 } if region else None,
-                'motion_threshold': capture_service.motion_detector.config.threshold,
-                'min_contour_area': capture_service.motion_detector.config.min_contour_area,
+                'motion_threshold': config.threshold,
+                'min_contour_area': config.min_contour_area,
                 'motion_timeout_seconds': capture_service.motion_config.motion_timeout_seconds,
+                'motion_box_enabled': config.motion_box_enabled,
+                'motion_box_x1': config.motion_box_x1,
+                'motion_box_y1': config.motion_box_y1,
+                'motion_box_x2': config.motion_box_x2,
+                'motion_box_y2': config.motion_box_y2,
                 'source': 'current'
             }
             
@@ -176,8 +182,22 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             motion_threshold = data.get('motion_threshold', 5000)
             min_contour_area = data.get('min_contour_area', 500)
             motion_timeout_seconds = data.get('motion_timeout_seconds', 30)
+            motion_box_enabled = data.get('motion_box_enabled', True)
+            motion_box_x1 = data.get('motion_box_x1', 0)
+            motion_box_y1 = data.get('motion_box_y1', 0)
+            motion_box_x2 = data.get('motion_box_x2', 640)
+            motion_box_y2 = data.get('motion_box_y2', 480)
             
-            if not region_data or not all(k in region_data for k in ['x1', 'y1', 'x2', 'y2']):
+            # Validate motion box coordinates if enabled
+            if motion_box_enabled:
+                if not all(isinstance(coord, (int, float)) for coord in [motion_box_x1, motion_box_y1, motion_box_x2, motion_box_y2]):
+                    return jsonify({'error': 'Motion box coordinates must be numeric'}), 400
+                if motion_box_x1 >= motion_box_x2 or motion_box_y1 >= motion_box_y2:
+                    return jsonify({'error': 'Invalid motion box dimensions'}), 400
+                if motion_box_x1 < 0 or motion_box_y1 < 0 or motion_box_x2 < 0 or motion_box_y2 < 0:
+                    return jsonify({'error': 'Motion box coordinates must be non-negative'}), 400
+            
+            if region_data and not all(k in region_data for k in ['x1', 'y1', 'x2', 'y2']):
                 return jsonify({'error': 'Invalid region data'}), 400
             
             # Validate coordinate values
@@ -202,16 +222,26 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             
             capture_service = get_service()
 
-            region = MotionRegion(
-                region_data['x1'], region_data['y1'],
-                region_data['x2'], region_data['y2']
-            )
-            
-            # Update motion detector
-            capture_service.motion_detector.set_motion_region(region)
+            # Update motion detector configuration
             capture_service.motion_detector.config.threshold = motion_threshold
             capture_service.motion_detector.config.min_contour_area = min_contour_area
             capture_service.motion_detector.config.motion_timeout_seconds = motion_timeout_seconds
+            capture_service.motion_detector.config.motion_box_enabled = motion_box_enabled
+            capture_service.motion_detector.config.motion_box_x1 = motion_box_x1
+            capture_service.motion_detector.config.motion_box_y1 = motion_box_y1
+            capture_service.motion_detector.config.motion_box_x2 = motion_box_x2
+            capture_service.motion_detector.config.motion_box_y2 = motion_box_y2
+
+            # Update motion region based on motion box settings
+            if motion_box_enabled:
+                region = MotionRegion(motion_box_x1, motion_box_y1, motion_box_x2, motion_box_y2)
+                capture_service.motion_detector.set_motion_region(region)
+            elif region_data:
+                region = MotionRegion(
+                    region_data['x1'], region_data['y1'],
+                    region_data['x2'], region_data['y2']
+                )
+                capture_service.motion_detector.set_motion_region(region)
             
             # IMPORTANT: Update the capture service timeout too
             capture_service.motion_config.motion_timeout_seconds = motion_timeout_seconds
@@ -219,7 +249,14 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             # Save to database for persistence
             repo = get_repo(capture_service.capture_config.camera_id)
             if repo:
-                repo.save_motion_settings(region, motion_threshold, min_contour_area, motion_timeout_seconds)
+                # Use motion box coordinates if enabled, otherwise use region data
+                if motion_box_enabled:
+                    region_for_db = MotionRegion(motion_box_x1, motion_box_y1, motion_box_x2, motion_box_y2)
+                else:
+                    region_for_db = region if region_data else MotionRegion(motion_box_x1, motion_box_y1, motion_box_x2, motion_box_y2)
+                
+                repo.save_motion_settings(region_for_db, motion_threshold, min_contour_area, motion_timeout_seconds, 
+                                        motion_box_enabled, motion_box_x1, motion_box_y1, motion_box_x2, motion_box_y2)
             
             # Try to update server settings too
             server_updated = False
@@ -386,12 +423,34 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             if not capture_service:
                 return jsonify({'error': f'Camera {camera_id} not found'}), 404
             
+            # Check if motion box overlay is requested
+            show_motion_box = request.args.get('show_motion_box', 'false').lower() == 'true'
+            
             def generate_frames():
                 while True:
                     try:
                         ret, frame = capture_service.camera_manager.read_frame()
                         if not ret:
                             break
+                        
+                        # Draw motion box overlay if requested
+                        if show_motion_box:
+                            config = capture_service.motion_detector.config
+                            if config.motion_box_enabled:
+                                # Draw motion box rectangle
+                                cv2.rectangle(frame, 
+                                            (config.motion_box_x1, config.motion_box_y1),
+                                            (config.motion_box_x2, config.motion_box_y2),
+                                            (0, 255, 0), 2)  # Green rectangle
+                                
+                                # Add text label
+                                cv2.putText(frame, "Motion Detection Area", 
+                                          (config.motion_box_x1, config.motion_box_y1 - 10),
+                                          cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+                            else:
+                                # Show "Motion Detection Disabled" message
+                                cv2.putText(frame, "Motion Detection Disabled", 
+                                          (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
                         
                         # Encode frame as JPEG
                         ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
@@ -420,9 +479,31 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             if not capture_service:
                 return jsonify({'error': f'Camera {camera_id} not found'}), 404
             
+            # Check if motion box overlay is requested
+            show_motion_box = request.args.get('show_motion_box', 'false').lower() == 'true'
+            
             ret, frame = capture_service.camera_manager.read_frame()
             if not ret:
                 return jsonify({'error': 'Failed to capture frame'}), 500
+            
+            # Draw motion box overlay if requested
+            if show_motion_box:
+                config = capture_service.motion_detector.config
+                if config.motion_box_enabled:
+                    # Draw motion box rectangle
+                    cv2.rectangle(frame, 
+                                (config.motion_box_x1, config.motion_box_y1),
+                                (config.motion_box_x2, config.motion_box_y2),
+                                (0, 255, 0), 2)  # Green rectangle
+                    
+                    # Add text label
+                    cv2.putText(frame, "Motion Detection Area", 
+                              (config.motion_box_x1, config.motion_box_y1 - 10),
+                              cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+                else:
+                    # Show "Motion Detection Disabled" message
+                    cv2.putText(frame, "Motion Detection Disabled", 
+                              (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
             
             # Encode frame as JPEG
             ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
