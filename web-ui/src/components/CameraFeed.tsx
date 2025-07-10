@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { api } from '../api/client';
 
 interface CameraFeedProps {
-  cameraId: string;
+  cameraId: number;
   cameraName: string;
   className?: string;
 }

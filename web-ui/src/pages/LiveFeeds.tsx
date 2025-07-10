@@ -5,13 +5,13 @@ import { api } from '../api/client';
 
 const LiveFeeds: React.FC = () => {
   const [selectedLayout, setSelectedLayout] = useState<'grid' | 'single'>('grid');
-  const [selectedCamera, setSelectedCamera] = useState<string | null>(null);
+  const [selectedCamera, setSelectedCamera] = useState<number | null>(null);
 
   const { data: cameras, isLoading, error } = useQuery({
     queryKey: ['cameras'],
     queryFn: async () => {
       const response = await api.cameras.list();
-      return response.data;
+      return response.data.cameras; // Extract cameras array from response
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
@@ -92,7 +92,7 @@ const LiveFeeds: React.FC = () => {
             <label className="text-sm font-medium text-gray-700">Select Camera:</label>
             <select
               value={selectedCamera || ''}
-              onChange={(e) => setSelectedCamera(e.target.value)}
+              onChange={(e) => setSelectedCamera(parseInt(e.target.value))}
               className="block w-48 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
               {cameras.map((camera) => (

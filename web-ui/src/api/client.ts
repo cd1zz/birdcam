@@ -18,10 +18,10 @@ export const processingApi = axios.create({
 
 // Types for API responses
 export interface Camera {
-  id: string;
+  id: number;
   name: string;
-  resolution: string;
-  status: 'active' | 'inactive';
+  is_active: boolean;
+  sensor_type: string;
 }
 
 export interface Detection {
@@ -69,9 +69,9 @@ export interface MotionSettings {
 export const api = {
   // Pi Camera APIs
   cameras: {
-    list: () => piApi.get<Camera[]>('/api/cameras'),
-    getStream: (cameraId: string) => `${PI_SERVER}/api/camera/${cameraId}/stream`,
-    getSnapshot: (cameraId: string) => `${PI_SERVER}/api/camera/${cameraId}/snapshot`,
+    list: () => piApi.get<{cameras: Camera[]}>('/api/cameras'),
+    getStream: (cameraId: number) => `${PI_SERVER}/api/camera/${cameraId}/stream`,
+    getSnapshot: (cameraId: number) => `${PI_SERVER}/api/camera/${cameraId}/snapshot`,
   },
 
   // Motion settings
@@ -98,7 +98,7 @@ export const api = {
       start?: string;
       end?: string;
       sort?: 'asc' | 'desc';
-    }) => processingApi.get<Detection[]>('/api/recent-detections', { params }),
+    }) => processingApi.get<{detections: Detection[]}>('/api/recent-detections', { params }),
     
     getThumbnail: (path: string) => `${PROCESSING_SERVER || ''}/thumbnails/${path}`,
     getVideo: (filename: string) => `${PROCESSING_SERVER || ''}/videos/${filename}`,

@@ -30,7 +30,25 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
     def get_repo(cam_id: int):
         return settings_repos.get(cam_id, default_repo)
     
-    # Web UI removed - API only
+    # Simple status page
+    @app.route('/')
+    def index():
+        return '''
+        <html>
+        <head><title>BirdCam Pi Capture System</title></head>
+        <body>
+        <h1>🐦 BirdCam Pi Capture System</h1>
+        <p>This is the Pi capture system. The web UI is served from the processing server.</p>
+        <h2>Available APIs:</h2>
+        <ul>
+        <li><a href="/api/status">System Status</a></li>
+        <li><a href="/api/cameras">Camera List</a></li>
+        <li><a href="/api/camera/0/stream">Camera Stream</a></li>
+        </ul>
+        <p><strong>Main UI:</strong> Access the full web interface at your processing server (port 8091)</p>
+        </body>
+        </html>
+        '''
     
     @app.route('/api/status')
     def api_status():

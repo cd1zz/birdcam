@@ -42,7 +42,7 @@ const Detections: React.FC = () => {
         sort: 'desc' as const,
       };
       const response = await api.detections.getRecent(params);
-      return response.data;
+      return response.data.detections; // Extract detections array from response
     },
     refetchInterval: 60000, // Refresh every minute
   });
