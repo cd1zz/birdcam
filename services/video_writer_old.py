@@ -1,4 +1,4 @@
-# services/video_writer_fixed.py - EMERGENCY FIX
+# services/video_writer.py - FIXED VERSION
 import cv2
 import numpy as np
 from pathlib import Path
@@ -46,32 +46,54 @@ class VideoWriter:
         return self.current_segment
     
     def write_frame(self, frame: np.ndarray):
-        """Write a single frame to the video - SIMPLIFIED VERSION"""
+        """Write a single frame to the video"""
         if not self.writer or not self.writer.isOpened():
+            print("❌ No video writer available for frame")
             return
         
-        # Basic validation
+        # Validate frame
         if frame is None or frame.size == 0:
+            print("❌ Invalid frame (None or empty)")
             return
             
-        # Ensure frame is the right size
-        if frame.shape[:2] != (self.resolution[1], self.resolution[0]):
-            frame = cv2.resize(frame, self.resolution)
-        
-        # Simple write without error checking that was causing issues
+        # Ensure frame is the right size and format
         try:
+            if frame.shape[:2] != (self.resolution[1], self.resolution[0]):
+                frame = cv2.resize(frame, self.resolution)
+            
+            # Ensure frame is in correct format (BGR)
+            if len(frame.shape) != 3 or frame.shape[2] != 3:
+                print(f"❌ Invalid frame format: {frame.shape}")
+                return
+                
+        except Exception as e:
+            print(f"❌ Error processing frame: {e}")
+            return
+        
+        try:
+            # Write frame - cv2.VideoWriter.write() doesn't return success/failure
             self.writer.write(frame)
             self.frames_written += 1
+            
+            # Debug every 50 frames
+            if self.frames_written % 50 == 0:
+                print(f"📝 Written {self.frames_written} frames to {self.current_segment.filename if self.current_segment else 'unknown'}")
+                
         except Exception as e:
-            print(f"❌ Write error: {e}")
+            print(f"❌ Exception writing frame: {e}")
     
     def write_frames(self, frames: list):
         """Write multiple frames to the video"""
         if not frames:
             return
         
-        for frame in frames:
+        print(f"📝 Writing {len(frames)} frames...")
+        for i, frame in enumerate(frames):
             self.write_frame(frame)
+            
+            # Progress for large batches
+            if len(frames) > 10 and i % 10 == 0:
+                print(f"  📝 Progress: {i+1}/{len(frames)} frames")
     
     def finish_segment(self) -> Optional[CaptureSegment]:
         if not self.writer or not self.current_segment:
@@ -99,6 +121,9 @@ class VideoWriter:
         if filepath.exists():
             self.current_segment.file_size = filepath.stat().st_size
             print(f"✅ Segment completed: {self.current_segment.filename}")
+            print(f"   📊 Duration: {self.current_segment.duration}s, Frames: {self.frames_written}, Size: {self.current_segment.file_size/1024/1024:.1f}MB")
+        else:
+            print(f"❌ Video file not found: {filepath}")
         
         completed_segment = self.current_segment
         self.current_segment = None
@@ -113,3 +138,12 @@ class VideoWriter:
     def get_frames_written(self) -> int:
         """Get number of frames written to current segment"""
         return self.frames_written
+    
+    def __del__(self):
+        """Cleanup when object is destroyed"""
+        try:
+            if hasattr(self, 'writer') and self.writer:
+                if self.writer.isOpened():
+                    self.writer.release()
+        except Exception:
+            pass  # Ignore errors during cleanup
