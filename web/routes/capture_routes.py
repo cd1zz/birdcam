@@ -96,6 +96,23 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
         except Exception as e:
             print(f"Error getting server detections: {e}")
             return jsonify({'detections': [], 'error': str(e)})
+    
+    @app.route('/api/server-metrics')
+    def api_server_metrics():
+        """Proxy to get server system metrics"""
+        try:
+            url = f"{sync_service.base_url}/api/system-metrics"
+            resp = requests.get(url, timeout=5)
+            if resp.status_code == 200:
+                return jsonify(resp.json())
+            else:
+                return jsonify({'error': f'Server returned status {resp.status_code}'}), resp.status_code
+        except requests.exceptions.Timeout:
+            return jsonify({'error': 'Server request timed out'}), 504
+        except requests.exceptions.ConnectionError:
+            return jsonify({'error': 'Could not connect to processing server'}), 503
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
     @app.route('/api/delete-detection', methods=['POST'])
     def api_delete_detection():
@@ -303,6 +320,27 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
                 return Response(
                     stream_with_context(resp.iter_content(chunk_size=8192)),
                     content_type=resp.headers.get("Content-Type", "image/jpeg"),
+                )
+            return resp.content, resp.status_code
+
+        except Exception as e:
+            return f"Error: {str(e)}", 500
+    
+    @app.route('/videos/<filename>')
+    def serve_video(filename):
+        """Proxy video requests to the processing server."""
+        try:
+            url = f"{sync_service.base_url}/videos/{filename}"
+            resp = requests.get(url, stream=True, timeout=30)  # 30 second timeout for videos
+
+            if resp.status_code == 200:
+                return Response(
+                    stream_with_context(resp.iter_content(chunk_size=8192)),
+                    content_type=resp.headers.get("Content-Type", "video/mp4"),
+                    headers={
+                        'Accept-Ranges': 'bytes',
+                        'Content-Length': resp.headers.get('Content-Length', '0')
+                    }
                 )
             return resp.content, resp.status_code
 

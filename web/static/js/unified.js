@@ -163,9 +163,9 @@ async function updateSystemMetrics() {
         updateEmbeddedMetricsError('pi');
     }
     
-    // Update server metrics
+    // Update server metrics (through proxy)
     try {
-        const serverMetrics = await fetch(`${PROCESSING_SERVER_URL}/api/system-metrics`);
+        const serverMetrics = await fetch('/api/server-metrics');
         const serverData = await serverMetrics.json();
         updateEmbeddedMetrics('server', serverData);
     } catch (error) {
@@ -264,8 +264,8 @@ function updateDetectionGrid(detections) {
         const confidenceClass = confidence >= 80 ? 'confidence-high' :
                                confidence >= 60 ? 'confidence-medium' : 'confidence-low';
         
-        // Direct thumbnail URL to processing server - much faster!
-        const thumbnailUrl = `${PROCESSING_SERVER_URL}/thumbnails/${detection.thumbnail}`;
+        // Use proxy for thumbnails to avoid CORS issues
+        const thumbnailUrl = `/thumbnails/${detection.thumbnail}`;
         
         const countBadge = detection.count && detection.count > 1
             ? `<span class="count-badge">${detection.count}</span>` : '';
@@ -583,9 +583,9 @@ function testMotion() {
 
 // **UPDATED: Video streaming using template-injected URL**
 function viewVideo(filename) {
-    // Use the processing server URL injected by the template
-    const videoUrl = `${PROCESSING_SERVER_URL}/videos/${filename}`;
-    console.log(`🎬 Loading video from configured server: ${videoUrl}`);
+    // Use proxy to avoid CORS issues
+    const videoUrl = `/videos/${filename}`;
+    console.log(`🎬 Loading video through proxy: ${videoUrl}`);
     showVideoModal(videoUrl, filename);
 }
 
