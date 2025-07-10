@@ -27,32 +27,10 @@ async function triggerDownload(url, filename) {
     window.URL.revokeObjectURL(tempUrl);
 }
 
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    loadCameras();  // ADD THIS LINE
-    updateDashboard();
-    setInterval(updateDashboard, 5000);
-    
-    // Initialize cross-camera motion features
-    initializeCrossCameraMotion();
-    
-    // Initialize live feed error handler
-    const liveFeed = document.getElementById('live-feed');
-    if (liveFeed) {
-        liveFeed.onerror = handleImageError;
-    }
-    
-    // Update timestamp every second
-    setInterval(updateTimestamp, 1000);
-});
+// Note: Initialization moved to the bottom of the file to avoid duplicates
 
-// Main dashboard update function
-async function updateDashboard() {
-    await Promise.all([
-        updateSystemStatus(),
-        updateDetections()
-    ]);
-}
+// Main dashboard update function - now called updateSystemStatus for clarity
+// Note: Keeping this for backward compatibility but main function is updateSystemStatus
 
 async function updateSystemStatus() {
     try {
@@ -762,8 +740,7 @@ async function initializeCrossCameraMotion() {
     // Initialize camera indicators
     await updateCameraIndicators();
     
-    // Start regular updates for cross-camera status
-    setInterval(updateCrossCameraStatus, 2000);
+    // Note: Regular updates are handled by main initialization
 }
 
 async function updateCameraIndicators() {
@@ -895,21 +872,39 @@ function updateTimestamp() {
     }
 }
 
+// Global timer variables to prevent multiple intervals
+let dashboardUpdateInterval = null;
+let timestampUpdateInterval = null;
+let crossCameraUpdateInterval = null;
+
 // Initialize page when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Initializing unified dashboard...');
     
-    // Load available cameras
+    // Clear any existing intervals
+    if (dashboardUpdateInterval) clearInterval(dashboardUpdateInterval);
+    if (timestampUpdateInterval) clearInterval(timestampUpdateInterval);
+    if (crossCameraUpdateInterval) clearInterval(crossCameraUpdateInterval);
+    
+    // Load available cameras (once)
     loadCameras();
     
-    // Initialize cross-camera motion system
+    // Initialize cross-camera motion system (once)
     initializeCrossCameraMotion();
     
-    // Start regular updates
+    // Initialize live feed error handler
+    const liveFeed = document.getElementById('live-feed');
+    if (liveFeed) {
+        liveFeed.onerror = handleImageError;
+    }
+    
+    // Initial update
     updateSystemStatus();
     
-    // Update timestamp every second
-    setInterval(updateTimestamp, 1000);
+    // Set up coordinated update intervals
+    dashboardUpdateInterval = setInterval(updateSystemStatus, 10000); // Every 10 seconds
+    timestampUpdateInterval = setInterval(updateTimestamp, 5000);      // Every 5 seconds
+    crossCameraUpdateInterval = setInterval(updateCrossCameraStatus, 15000); // Every 15 seconds
     
-    console.log('✅ Unified dashboard initialized');
+    console.log('✅ Unified dashboard initialized with controlled update intervals');
 });

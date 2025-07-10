@@ -327,7 +327,8 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
         return jsonify({
             'status': 'ok',
             'timestamp': time.time(),
-            'cameras_count': len(capture_services)
+            'cameras_count': len(capture_services),
+            'service_info': 'Pi Capture System'
         })
     
     @app.route('/videos/<filename>')
