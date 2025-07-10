@@ -257,40 +257,78 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
     @app.route('/live_feed')
     def live_feed():
         """Live video feed for troubleshooting"""
-        # Get the service WITHIN the request context, before starting the generator
-        capture_service = get_service()
-        
-        def generate():
-            while True:
-                # Use the capture_service from the closure - don't call get_service() here
-                ret, frame = capture_service.camera_manager.read_frame()
-                if ret:
-                    frame = cv2.resize(frame, (640, 480))
-                    
-                    try:
-                        has_motion = capture_service.motion_detector.detect_motion(frame.copy())
-                        capture_service.latest_motion = has_motion
-                        
-                        if capture_service.motion_detector.motion_region:
-                            region = capture_service.motion_detector.motion_region
-                            cv2.rectangle(frame, (region.x1, region.y1), (region.x2, region.y2), (255, 255, 0), 2)
-                    except Exception as e:
-                        print(f"Error in live feed overlay: {e}")
-                    
-                    _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
-                    yield (b'--frame\r\n'
-                        b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
-                else:
-                    blank = 255 * np.ones((480, 640, 3), dtype=np.uint8)
-                    cv2.putText(blank, "Camera Not Available", (150, 240),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
-                    _, buffer = cv2.imencode('.jpg', blank)
-                    yield (b'--frame\r\n'
-                        b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+        try:
+            # Get the service WITHIN the request context, before starting the generator
+            capture_service = get_service()
+            
+            def generate():
+                consecutive_errors = 0
+                max_errors = 50  # Allow some errors before giving up
                 
-                time.sleep(0.1)
-        
-        return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+                try:
+                    while consecutive_errors < max_errors:
+                        try:
+                            # Use the capture_service from the closure - don't call get_service() here
+                            ret, frame = capture_service.camera_manager.read_frame()
+                            if ret and frame is not None:
+                                frame = cv2.resize(frame, (640, 480))
+                                
+                                try:
+                                    has_motion = capture_service.motion_detector.detect_motion(frame.copy())
+                                    capture_service.latest_motion = has_motion
+                                    
+                                    if capture_service.motion_detector.motion_region:
+                                        region = capture_service.motion_detector.motion_region
+                                        cv2.rectangle(frame, (region.x1, region.y1), (region.x2, region.y2), (255, 255, 0), 2)
+                                except Exception as e:
+                                    print(f"Error in live feed overlay: {e}")
+                                
+                                _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+                                yield (b'--frame\r\n'
+                                    b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+                                consecutive_errors = 0  # Reset error counter on success
+                            else:
+                                # Camera not available
+                                consecutive_errors += 1
+                                blank = 255 * np.ones((480, 640, 3), dtype=np.uint8)
+                                cv2.putText(blank, f"Camera Not Available (Errors: {consecutive_errors})", (50, 240),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+                                _, buffer = cv2.imencode('.jpg', blank)
+                                yield (b'--frame\r\n'
+                                    b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+                            
+                            time.sleep(0.1)
+                            
+                        except GeneratorExit:
+                            # Client disconnected
+                            print("Live feed client disconnected")
+                            break
+                        except Exception as e:
+                            print(f"Error in live feed generator: {e}")
+                            consecutive_errors += 1
+                            time.sleep(0.5)  # Wait longer on errors
+                            
+                    print(f"Live feed stopped after {consecutive_errors} consecutive errors")
+                    
+                except Exception as e:
+                    print(f"Fatal error in live feed generator: {e}")
+                finally:
+                    print("Live feed generator finished")
+            
+            return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+            
+        except Exception as e:
+            print(f"Error setting up live feed: {e}")
+            return f"Error: Camera not available - {str(e)}", 500
+    
+    @app.route('/api/health')
+    def api_health():
+        """Simple health check endpoint"""
+        return jsonify({
+            'status': 'ok',
+            'timestamp': time.time(),
+            'cameras_count': len(capture_services)
+        })
     
     @app.route('/videos/<filename>')
     def serve_video(filename):
