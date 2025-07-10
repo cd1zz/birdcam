@@ -3,6 +3,7 @@
 web-ui/.env
 .utec_tokens/
 bird_processing/
+database/
 # Python
 __pycache__/
 *.py[cod]
