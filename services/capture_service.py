@@ -1,4 +1,4 @@
-# services/capture_service.py - FIXED VERSION 2
+# services/capture_service.py - SIMPLIFIED MASTER-SLAVE VERSION
 import time
 import threading
 from collections import deque
@@ -13,7 +13,6 @@ from services.motion_detector import MotionDetector
 from services.camera_manager import CameraManager
 from services.video_writer import VideoWriter
 from services.file_sync import FileSyncService
-from services.motion_event_broadcaster import get_motion_broadcaster, MotionEvent
 from database.repositories.video_repository import VideoRepository
 
 class CaptureService:
@@ -42,9 +41,11 @@ class CaptureService:
         self.segment_start_time = 0
         # Latest motion state for UI indicators
         self.latest_motion = False
-        # Cross-camera motion feedback prevention
-        self._suppress_motion_reporting_until = 0
-        self._cross_camera_timeout = 0
+        
+        # Master-slave camera setup
+        self.camera_id = capture_config.camera_id
+        self.is_master = self.camera_id == 0  # Camera 0 is the master
+        self.slave_camera_service: Optional['CaptureService'] = None
         
         # Pre-motion buffer (15 seconds worth of frames)
         buffer_size = capture_config.fps * 15  # 15 seconds of frames
@@ -58,19 +59,16 @@ class CaptureService:
         self.on_motion_detected: Optional[Callable] = None
         self.on_segment_completed: Optional[Callable[[CaptureSegment], None]] = None
         
-        # Motion broadcaster integration
-        self.motion_broadcaster = get_motion_broadcaster()
-        self.camera_id = capture_config.camera_id
-        
-        # Register this camera with the motion broadcaster
-        self.motion_broadcaster.register_camera(self.camera_id, self._handle_cross_camera_motion)
-        
         print(f"🎯 CaptureService initialized:")
+        print(f"   📷 Camera ID: {self.camera_id} ({'MASTER' if self.is_master else 'SLAVE'})")
         print(f"   📺 Resolution: {capture_config.resolution}")
         print(f"   🎬 FPS: {capture_config.fps}")
         print(f"   ⏱️ Motion timeout: {motion_config.motion_timeout_seconds}s")
         print(f"   📦 Buffer size: {buffer_size} frames")
-        print(f"   🔗 Registered with motion broadcaster for camera {self.camera_id}")
+        if self.is_master:
+            print(f"   🎯 Motion detection: ENABLED (master camera)")
+        else:
+            print(f"   🎯 Motion detection: DISABLED (slave camera)")
     
     def start_capture(self):
         """Start the capture process in a background thread"""
@@ -96,14 +94,11 @@ class CaptureService:
         if self.is_capturing:
             self._finish_current_segment()
         
-        # Unregister from motion broadcaster
-        self.motion_broadcaster.unregister_camera(self.camera_id)
-        
         print("✅ Capture stopped")
     
     def _capture_loop(self):
-        """Main capture loop - FINAL VERSION"""
-        print("🔄 Capture loop started")
+        """Main capture loop - MASTER-SLAVE VERSION"""
+        print(f"🔄 Capture loop started for camera {self.camera_id} ({'MASTER' if self.is_master else 'SLAVE'})")
         last_heartbeat = time.time()
         
         while self.is_running:
@@ -115,32 +110,29 @@ class CaptureService:
                 time.sleep(0.1)
                 continue
             
-            # Detect motion
-            has_motion = self.motion_detector.detect_motion(frame)
-            self.latest_motion = has_motion
-            
-            # Handle motion detection
-            if has_motion:
-                self.last_motion_time = current_time
+            # Only master camera does motion detection
+            if self.is_master:
+                has_motion = self.motion_detector.detect_motion(frame)
+                self.latest_motion = has_motion
                 
-                if self.on_motion_detected:
-                    self.on_motion_detected()
-                
-                # Only report motion to broadcaster if not suppressed (prevents feedback loops)
-                if current_time > self._suppress_motion_reporting_until:
-                    # Report motion to broadcaster (this will trigger all cameras)
-                    self.motion_broadcaster.report_motion(
-                        camera_id=self.camera_id,
-                        confidence=1.0,  # Could be enhanced with actual confidence from detector
-                        location=None    # Could be enhanced with motion center coordinates
-                    )
-                else:
-                    print(f"🔇 Motion reporting suppressed for camera {self.camera_id} (preventing feedback loop)")
-                
-                # Start recording if not already recording
-                if not self.is_capturing:
-                    print(f"🎯 Motion detected on camera {self.camera_id}! Starting recording...")
-                    self._start_recording()
+                # Handle motion detection on master camera
+                if has_motion:
+                    self.last_motion_time = current_time
+                    
+                    if self.on_motion_detected:
+                        self.on_motion_detected()
+                    
+                    # Start recording on both cameras
+                    if not self.is_capturing:
+                        print(f"🎯 Motion detected on master camera {self.camera_id}! Starting recording on both cameras...")
+                        self._start_recording()
+                        
+                        # Trigger slave camera recording
+                        if self.slave_camera_service and not self.slave_camera_service.is_capturing:
+                            self.slave_camera_service._start_recording_from_master()
+            else:
+                # Slave camera doesn't do motion detection
+                self.latest_motion = False
             
             # Always add frames to pre-motion buffer when NOT recording
             if not self.is_capturing:
@@ -160,32 +152,22 @@ class CaptureService:
                 should_stop = False
                 stop_reason = ""
                 
-                # Check if we should stop based on motion timeout
-                motion_timeout_exceeded = time_since_motion > self.motion_config.motion_timeout_seconds
-                
-                # Check if cross-camera timeout has expired
-                cross_camera_timeout_exceeded = (self._cross_camera_timeout > 0 and 
-                                                current_time > self._cross_camera_timeout)
-                
-                if motion_timeout_exceeded and cross_camera_timeout_exceeded:
-                    should_stop = True
-                    stop_reason = f"no motion for {time_since_motion:.1f}s and cross-camera timeout expired"
-                elif motion_timeout_exceeded and self._cross_camera_timeout == 0:
-                    # Normal motion timeout (not cross-camera triggered)
+                # Simple timeout logic (back to old-state simplicity)
+                if time_since_motion > self.motion_config.motion_timeout_seconds:
                     should_stop = True
                     stop_reason = f"no motion for {time_since_motion:.1f}s"
-                elif cross_camera_timeout_exceeded and self.last_motion_time == 0:
-                    # Only cross-camera triggered, no own motion
-                    should_stop = True
-                    stop_reason = "cross-camera timeout expired"
                 elif recording_duration > self.motion_config.max_segment_duration:
                     should_stop = True
                     stop_reason = f"max duration reached ({recording_duration:.1f}s)"
                 
                 if should_stop:
-                    print(f"🛑 Stopping recording: {stop_reason}")
+                    print(f"🛑 Stopping recording on camera {self.camera_id}: {stop_reason}")
                     self._finish_current_segment()
-                    # DO NOT RESTART HERE - let the loop detect new motion naturally!
+                    
+                    # If master camera stops, stop slave camera too
+                    if self.is_master and self.slave_camera_service and self.slave_camera_service.is_capturing:
+                        print(f"🛑 Stopping slave camera {self.slave_camera_service.camera_id} recording")
+                        self.slave_camera_service._finish_current_segment()
             
             # Heartbeat every 30 seconds
             if current_time - last_heartbeat > 30:
@@ -208,10 +190,14 @@ class CaptureService:
             self.is_capturing = True
             self.segment_start_time = time.time()
             
-            # EMERGENCY FIX: Skip pre-motion buffer to prevent FFmpeg timestamp errors
-            # TODO: Re-enable with proper timestamp handling
-            if self.pre_motion_buffer:
-                print(f"📼 Skipping {len(self.pre_motion_buffer)} pre-motion frames (emergency fix)")
+            # Re-enable pre-motion buffer for master camera (fixed timestamp handling)
+            if self.pre_motion_buffer and self.is_master:
+                print(f"📼 Writing {len(self.pre_motion_buffer)} pre-motion frames")
+                self.video_writer.write_frames_with_timestamps(list(self.pre_motion_buffer))
+                self.pre_motion_buffer.clear()
+            elif self.pre_motion_buffer:
+                # Slave camera - clear buffer but don't write (no pre-motion for slave)
+                print(f"📼 Clearing {len(self.pre_motion_buffer)} frames from slave camera buffer")
                 self.pre_motion_buffer.clear()
             
             print(f"🎬 Recording started: {segment.filename}")
@@ -229,8 +215,6 @@ class CaptureService:
             completed_segment = self.video_writer.finish_segment()
             self.is_capturing = False
             self.segment_start_time = 0
-            # Reset cross-camera timeout when stopping recording
-            self._cross_camera_timeout = 0
             
             if not completed_segment:
                 print("⚠️ No segment to finish")
@@ -320,35 +304,19 @@ class CaptureService:
         with self.sync_lock:
             return len(self.sync_queue)
     
-    def _handle_cross_camera_motion(self, motion_event: MotionEvent):
-        """
-        Handle motion events from other cameras (cross-camera triggering).
-        This method is called by the motion broadcaster when any camera detects motion.
-        """
-        # Don't trigger on our own motion events (already handled in _capture_loop)
-        if motion_event.camera_id == self.camera_id:
+    def set_slave_camera(self, slave_service: 'CaptureService'):
+        """Set the slave camera service for master-slave recording"""
+        if self.is_master:
+            self.slave_camera_service = slave_service
+            print(f"✅ Master camera {self.camera_id} linked to slave camera {slave_service.camera_id}")
+        else:
+            print(f"⚠️ Camera {self.camera_id} is not master, cannot set slave camera")
+    
+    def _start_recording_from_master(self):
+        """Start recording on slave camera when triggered by master"""
+        if self.is_master:
+            print(f"⚠️ Master camera {self.camera_id} should not be triggered by master")
             return
         
-        print(f"🔗 Cross-camera trigger: Camera {motion_event.camera_id} detected motion, triggering camera {self.camera_id}")
-        
-        # Set a flag to suppress motion reporting for a short time to prevent feedback loops
-        self._suppress_motion_reporting_until = time.time() + 2.0  # Suppress for 2 seconds
-        
-        # Start recording if not already recording
-        if not self.is_capturing:
-            print(f"🎬 Starting recording on camera {self.camera_id} due to cross-camera motion")
-            self._start_recording()
-            # Set a shorter timeout for cross-camera triggered recordings
-            self._cross_camera_timeout = time.time() + 10.0  # 10 second timeout for cross-camera triggers
-        else:
-            # If already recording due to our own motion, don't interfere with timeout
-            # Only extend if this is also a cross-camera triggered recording
-            if hasattr(self, '_cross_camera_timeout') and time.time() < self._cross_camera_timeout:
-                self._cross_camera_timeout = time.time() + 10.0
-                print(f"🔄 Extending cross-camera recording on camera {self.camera_id}")
-            else:
-                print(f"🔄 Camera {self.camera_id} already recording (own motion), not extending for cross-camera motion")
-    
-    def get_motion_broadcaster_stats(self) -> dict:
-        """Get statistics from the motion broadcaster"""
-        return self.motion_broadcaster.get_statistics()
+        print(f"🎬 Starting slave camera {self.camera_id} recording (triggered by master)")
+        self._start_recording()

@@ -18,7 +18,7 @@ from services.camera_manager import CameraManager, print_detected_cameras
 from services.video_writer import VideoWriter
 from services.file_sync import FileSyncService
 from services.capture_service import CaptureService
-from services.motion_event_broadcaster import initialize_motion_broadcaster
+# Removed motion_event_broadcaster - using simple master-slave approach
 from web.app import create_capture_app
 
 
@@ -171,7 +171,7 @@ def main():
         print("🔗 Initializing motion broadcaster...")
         cross_trigger_enabled = os.getenv('CROSS_CAMERA_TRIGGER', 'true').lower() == 'true'
         trigger_timeout = float(os.getenv('CROSS_TRIGGER_TIMEOUT', '5.0'))
-        initialize_motion_broadcaster(cross_trigger_enabled, trigger_timeout)
+        # Removed motion broadcaster initialization - using simple master-slave approach
         print(f"✅ Motion broadcaster initialized (cross-trigger: {cross_trigger_enabled}, timeout: {trigger_timeout}s)")
 
         capture_services = {}
@@ -194,12 +194,25 @@ def main():
 
             setup_scheduler(cs, cfg)
 
-            print("🎬 Starting video capture...")
-            cs.start_capture()
-            print(f"✅ Capture started for camera {cfg.capture.camera_id}")
-
         if not capture_services:
             raise RuntimeError("No camera configurations found")
+        
+        # Set up master-slave relationships
+        print("🔗 Setting up master-slave camera relationships...")
+        master_service = capture_services.get(0)  # Camera 0 is master
+        if master_service:
+            for camera_id, service in capture_services.items():
+                if camera_id != 0:  # All other cameras are slaves
+                    master_service.set_slave_camera(service)
+                    print(f"✅ Linked master camera 0 to slave camera {camera_id}")
+        else:
+            print("⚠️ No master camera (camera 0) found - using single camera mode")
+        
+        # Start all capture services
+        print("🎬 Starting video capture for all cameras...")
+        for camera_id, cs in capture_services.items():
+            cs.start_capture()
+            print(f"✅ Capture started for camera {camera_id}")
 
         # Start web interface with unified dashboard using first config
         print("🌐 Starting unified dashboard...")
@@ -209,6 +222,10 @@ def main():
         print(f"🌐 Access at: http://0.0.0.0:{configs[0].web.capture_port}")
         print("🎯 This dashboard shows both Pi capture AND AI processing status")
         print("⚙️ Motion settings will be saved and restored on restart")
+        if len(capture_services) > 1:
+            print("🔗 Master-slave setup: Camera 0 detects motion, all cameras record")
+        else:
+            print("📷 Single camera mode active")
         
         app.run(
             host=configs[0].web.host,
