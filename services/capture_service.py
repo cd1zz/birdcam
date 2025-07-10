@@ -59,12 +59,13 @@ class CaptureService:
         self.on_motion_detected: Optional[Callable] = None
         self.on_segment_completed: Optional[Callable[[CaptureSegment], None]] = None
         
-        print(f"🎯 CaptureService initialized:")
+        print(f"🎯 CaptureService initialized: [BUG-FIX-v2.1]")
         print(f"   📷 Camera ID: {self.camera_id} ({'ACTIVE' if self.is_active else 'PASSIVE'})")
         print(f"   📺 Resolution: {capture_config.resolution}")
         print(f"   🎬 FPS: {capture_config.fps}")
         print(f"   ⏱️ Motion timeout: {motion_config.motion_timeout_seconds}s")
         print(f"   📦 Buffer size: {buffer_size} frames")
+        print(f"   🛡️ Bug fixes: has_motion scoping fix + pre-motion buffer disabled")
         if self.is_active:
             print(f"   🎯 Motion detection: ENABLED (active camera)")
         else:
@@ -98,11 +99,15 @@ class CaptureService:
     
     def _capture_loop(self):
         """Main capture loop - ACTIVE-PASSIVE VERSION"""
-        print(f"🔄 Capture loop started for camera {self.camera_id} ({'ACTIVE' if self.is_active else 'PASSIVE'})")
+        print(f"🔄 Capture loop started for camera {self.camera_id} ({'ACTIVE' if self.is_active else 'PASSIVE'}) [BUG-FIX-v2.1]")
+        print(f"🛡️ Safety: has_motion initialized at loop start to prevent UnboundLocalError")
         last_heartbeat = time.time()
         
         while self.is_running:
             current_time = time.time()
+            
+            # Initialize has_motion to ensure it's always defined
+            has_motion = False
             
             # Read frame from camera
             ret, frame = self.camera_manager.read_frame()
@@ -191,11 +196,13 @@ class CaptureService:
             self.is_capturing = True
             self.segment_start_time = time.time()
             
-            # EMERGENCY FIX: Skip pre-motion buffer to prevent FFmpeg timestamp errors
-            # TODO: Re-enable with proper timestamp handling
+            # EMERGENCY FIX v2: Absolutely prevent pre-motion buffer writing
+            # This fixes FFmpeg timestamp crashes and segmentation faults
             if self.pre_motion_buffer:
-                print(f"📼 Skipping {len(self.pre_motion_buffer)} pre-motion frames (emergency fix)")
+                buffer_count = len(self.pre_motion_buffer)
                 self.pre_motion_buffer.clear()
+                print(f"⚠️ SAFETY: Cleared {buffer_count} pre-motion frames to prevent crashes (FIXED v2)")
+                print(f"🛡️ Pre-motion buffer disabled until proper timestamp handling is implemented")
             
             print(f"🎬 Recording started: {segment.filename}")
             

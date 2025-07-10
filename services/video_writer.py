@@ -74,22 +74,14 @@ class VideoWriter:
             self.write_frame(frame)
     
     def write_frames_with_timestamps(self, frames: list):
-        """Write pre-motion buffer frames with proper spacing to avoid timestamp issues"""
+        """DISABLED: This method was causing FFmpeg crashes"""
         if not frames:
             return
         
-        print(f"📼 Writing {len(frames)} pre-motion frames with timestamp spacing...")
-        
-        # Write frames with a small delay to ensure different timestamps
-        for i, frame in enumerate(frames):
-            self.write_frame(frame)
-            
-            # Add a tiny delay every few frames to ensure timestamps advance
-            if i % 10 == 0 and i > 0:
-                import time
-                time.sleep(0.001)  # 1ms delay every 10 frames
-        
-        print(f"✅ Pre-motion frames written successfully")
+        print(f"⚠️ WARNING: write_frames_with_timestamps is disabled to prevent crashes!")
+        print(f"📼 Skipping {len(frames)} frames (emergency fix)")
+        # Do nothing - this prevents FFmpeg timestamp crashes
+        return
     
     def finish_segment(self) -> Optional[CaptureSegment]:
         if not self.writer or not self.current_segment:
