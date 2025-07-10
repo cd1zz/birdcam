@@ -894,3 +894,22 @@ function updateTimestamp() {
         timestampElement.textContent = now.toLocaleTimeString();
     }
 }
+
+// Initialize page when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Initializing unified dashboard...');
+    
+    // Load available cameras
+    loadCameras();
+    
+    // Initialize cross-camera motion system
+    initializeCrossCameraMotion();
+    
+    // Start regular updates
+    updateSystemStatus();
+    
+    // Update timestamp every second
+    setInterval(updateTimestamp, 1000);
+    
+    console.log('✅ Unified dashboard initialized');
+});
