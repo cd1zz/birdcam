@@ -297,12 +297,16 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
         """Proxy video requests to the processing server."""
         try:
             url = f"{sync_service.base_url}/videos/{filename}"
-            resp = requests.get(url, stream=True, timeout=30)  # 30 second timeout
+            resp = requests.get(url, stream=True, timeout=30)  # 30 second timeout for videos
 
             if resp.status_code == 200:
                 return Response(
                     stream_with_context(resp.iter_content(chunk_size=8192)),
                     content_type=resp.headers.get("Content-Type", "video/mp4"),
+                    headers={
+                        'Accept-Ranges': 'bytes',
+                        'Content-Length': resp.headers.get('Content-Length', '0')
+                    }
                 )
             return resp.content, resp.status_code
 
@@ -320,27 +324,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
                 return Response(
                     stream_with_context(resp.iter_content(chunk_size=8192)),
                     content_type=resp.headers.get("Content-Type", "image/jpeg"),
-                )
-            return resp.content, resp.status_code
-
-        except Exception as e:
-            return f"Error: {str(e)}", 500
-    
-    @app.route('/videos/<filename>')
-    def serve_video(filename):
-        """Proxy video requests to the processing server."""
-        try:
-            url = f"{sync_service.base_url}/videos/{filename}"
-            resp = requests.get(url, stream=True, timeout=30)  # 30 second timeout for videos
-
-            if resp.status_code == 200:
-                return Response(
-                    stream_with_context(resp.iter_content(chunk_size=8192)),
-                    content_type=resp.headers.get("Content-Type", "video/mp4"),
-                    headers={
-                        'Accept-Ranges': 'bytes',
-                        'Content-Length': resp.headers.get('Content-Length', '0')
-                    }
                 )
             return resp.content, resp.status_code
 
