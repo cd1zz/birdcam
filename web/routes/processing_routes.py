@@ -3,7 +3,7 @@
 Routes for Processing Server with Detections/No-Detections Structure
 """
 import threading
-from flask import request, jsonify, render_template, send_from_directory
+from flask import request, jsonify, send_from_directory
 from services.system_metrics import SystemMetricsCollector
 
 def create_processing_routes(app, processing_service, video_repo, detection_repo, config):
@@ -11,9 +11,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
     # Initialize system metrics collector
     metrics_collector = SystemMetricsCollector(str(config.processing.storage_path))
     
-    @app.route('/')
-    def dashboard():
-        return render_template('processing_dashboard.html')
+    # Web UI removed - API only
     
     @app.route('/upload', methods=['POST'])
     def upload_video():
@@ -168,40 +166,74 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     
-    @app.route('/api/debug/queue')
-    def api_debug_queue():
-        """Debug endpoint to check queue state"""
+    @app.route('/api/reset-queue', methods=['POST'])
+    def api_reset_queue():
+        """Reset failed/stuck videos back to pending status"""
         try:
-            # Check database state
-            pending_videos = processing_service.video_repo.get_pending_videos()
-            
-            # Get a small sample of all videos to check statuses
-            with processing_service.video_repo.db_manager.get_connection() as conn:
-                cursor = conn.execute('SELECT id, filename, status FROM videos ORDER BY id DESC LIMIT 10')
-                recent_videos = [{'id': row[0], 'filename': row[1], 'status': row[2]} for row in cursor.fetchall()]
+            with video_repo.db_manager.get_connection() as conn:
+                # Count videos that need to be reset
+                cursor = conn.execute("SELECT COUNT(*) FROM videos WHERE status NOT IN ('completed', 'pending')")
+                reset_count = cursor.fetchone()[0]
                 
-                cursor = conn.execute('SELECT status, COUNT(*) FROM videos GROUP BY status')
-                status_counts = {row[0]: row[1] for row in cursor.fetchall()}
-            
-            # Check if incoming directory exists
-            incoming_dir = processing_service.incoming_dir
-            incoming_exists = incoming_dir.exists()
-            incoming_files = list(incoming_dir.glob('*.mp4')) if incoming_exists else []
-            
-            return jsonify({
-                'pending_videos_count': len(pending_videos),
-                'pending_videos_sample': [{'id': v.id, 'filename': v.filename, 'status': v.status} for v in pending_videos[:5]],
-                'recent_videos': recent_videos,
-                'status_counts': status_counts,
-                'is_processing': processing_service.is_processing,
-                'incoming_dir': str(incoming_dir),
-                'incoming_dir_exists': incoming_exists,
-                'incoming_files_count': len(incoming_files),
-                'incoming_files_sample': [f.name for f in incoming_files[:5]],
-                'model_loaded': processing_service.model_manager.is_loaded
-            })
+                # Reset them to pending
+                cursor = conn.execute("UPDATE videos SET status = 'pending' WHERE status NOT IN ('completed', 'pending')")
+                conn.commit()
+                
+                return jsonify({
+                    'message': f'Reset {reset_count} videos to pending status',
+                    'reset_count': reset_count
+                })
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/debug/simple')
+    def api_debug_simple():
+        """Simple debug endpoint with minimal data"""
+        try:
+            # Direct database check without using ORM objects
+            from pathlib import Path
+            import sqlite3
+            
+            db_path = Path(processing_service.config.database.path)
+            
+            result = {
+                'database_exists': db_path.exists(),
+                'database_path': str(db_path)
+            }
+            
+            if db_path.exists():
+                conn = sqlite3.connect(str(db_path))
+                cursor = conn.cursor()
+                
+                # Count by status
+                cursor.execute('SELECT status, COUNT(*) FROM videos GROUP BY status')
+                status_counts = dict(cursor.fetchall())
+                result['status_counts'] = status_counts
+                
+                # Count pending specifically
+                cursor.execute('SELECT COUNT(*) FROM videos WHERE status = ?', ('pending',))
+                pending_count = cursor.fetchone()[0]
+                result['pending_count'] = pending_count
+                
+                # Get recent videos
+                cursor.execute('SELECT id, filename, status FROM videos ORDER BY id DESC LIMIT 5')
+                recent = cursor.fetchall()
+                result['recent_videos'] = [{'id': r[0], 'filename': r[1], 'status': r[2]} for r in recent]
+                
+                conn.close()
+            
+            # Check directories
+            incoming_dir = Path(processing_service.incoming_dir)
+            result['incoming_dir'] = str(incoming_dir)
+            result['incoming_exists'] = incoming_dir.exists()
+            
+            if incoming_dir.exists():
+                result['incoming_files'] = len(list(incoming_dir.glob('*.mp4')))
+            
+            return jsonify(result)
+            
+        except Exception as e:
+            return jsonify({'error': str(e), 'type': type(e).__name__}), 500
 
     @app.route('/api/delete-detection', methods=['POST'])
     def api_delete_detection():
