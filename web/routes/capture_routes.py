@@ -73,7 +73,7 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             
             # Count videos and cameras
             videos_today = capture_service.video_writer.get_videos_count_today() if hasattr(capture_service.video_writer, 'get_videos_count_today') else status.queue_size
-            cameras_active = len([s for s in capture_services.values() if s.is_running()])
+            cameras_active = len([s for s in capture_services.values() if s.is_running])
             
             return jsonify({
                 'status': 'running' if status.is_capturing else 'stopped',

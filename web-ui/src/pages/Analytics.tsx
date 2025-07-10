@@ -3,23 +3,31 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
 
 const Analytics: React.FC = () => {
-  const { data: piStatus } = useQuery({
+  const { data: piStatus, error: piError } = useQuery({
     queryKey: ['piStatus'],
     queryFn: async () => {
       const response = await api.status.getPiStatus();
+      console.log('Pi Status Response:', response.data);
       return response.data;
     },
     refetchInterval: 5000,
+    retry: 1,
   });
 
-  const { data: processingStatus } = useQuery({
+  const { data: processingStatus, error: processingError } = useQuery({
     queryKey: ['processingStatus'],
     queryFn: async () => {
       const response = await api.status.getProcessingStatus();
+      console.log('Processing Status Response:', response.data);
       return response.data;
     },
     refetchInterval: 5000,
+    retry: 1,
   });
+
+  // Log errors for debugging
+  if (piError) console.error('Pi Status Error:', piError);
+  if (processingError) console.error('Processing Status Error:', processingError);
 
   const formatUptime = (seconds: number) => {
     const days = Math.floor(seconds / 86400);
