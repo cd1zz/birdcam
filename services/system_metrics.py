@@ -5,7 +5,19 @@ System metrics collection service for monitoring CPU, memory, and disk usage.
 import psutil
 import time
 from dataclasses import dataclass
-from typing import Dict, Any
+from typing import Dict, Any, List
+
+
+@dataclass
+class DiskMetrics:
+    """Disk usage metrics for a single drive"""
+    device: str
+    mountpoint: str
+    fstype: str
+    percent: float
+    used_gb: float
+    total_gb: float
+    free_gb: float
 
 
 @dataclass
@@ -15,10 +27,7 @@ class SystemMetrics:
     memory_percent: float
     memory_used_gb: float
     memory_total_gb: float
-    disk_percent: float
-    disk_used_gb: float
-    disk_total_gb: float
-    disk_free_gb: float
+    disks: List[DiskMetrics]
     timestamp: float
 
 
@@ -27,6 +36,45 @@ class SystemMetricsCollector:
     
     def __init__(self, storage_path: str = "/"):
         self.storage_path = storage_path
+    
+    def _get_storage_disks(self) -> List[DiskMetrics]:
+        """Get disk metrics for all storage drives"""
+        disks = []
+        
+        # Get all disk partitions
+        partitions = psutil.disk_partitions()
+        
+        for partition in partitions:
+            # Skip pseudo-filesystems and system partitions
+            if partition.fstype in ('', 'tmpfs', 'devtmpfs', 'squashfs', 'proc', 'sysfs', 'devfs'):
+                continue
+            if partition.mountpoint in ('/dev', '/proc', '/sys', '/run', '/boot/efi'):
+                continue
+            if partition.mountpoint.startswith('/snap/'):
+                continue
+            
+            try:
+                # Get disk usage for this partition
+                disk = psutil.disk_usage(partition.mountpoint)
+                disk_percent = (disk.used / disk.total) * 100
+                disk_used_gb = disk.used / (1024**3)
+                disk_total_gb = disk.total / (1024**3)
+                disk_free_gb = disk.free / (1024**3)
+                
+                disks.append(DiskMetrics(
+                    device=partition.device,
+                    mountpoint=partition.mountpoint,
+                    fstype=partition.fstype,
+                    percent=round(disk_percent, 1),
+                    used_gb=round(disk_used_gb, 2),
+                    total_gb=round(disk_total_gb, 2),
+                    free_gb=round(disk_free_gb, 2)
+                ))
+            except PermissionError:
+                # Skip drives we can't access
+                continue
+        
+        return disks
     
     def get_metrics(self) -> SystemMetrics:
         """Get current system metrics"""
@@ -39,22 +87,15 @@ class SystemMetricsCollector:
         memory_used_gb = memory.used / (1024**3)
         memory_total_gb = memory.total / (1024**3)
         
-        # Disk usage for storage path
-        disk = psutil.disk_usage(self.storage_path)
-        disk_percent = (disk.used / disk.total) * 100
-        disk_used_gb = disk.used / (1024**3)
-        disk_total_gb = disk.total / (1024**3)
-        disk_free_gb = disk.free / (1024**3)
+        # Get all storage disks
+        disks = self._get_storage_disks()
         
         return SystemMetrics(
             cpu_percent=round(cpu_percent, 1),
             memory_percent=round(memory_percent, 1),
             memory_used_gb=round(memory_used_gb, 2),
             memory_total_gb=round(memory_total_gb, 2),
-            disk_percent=round(disk_percent, 1),
-            disk_used_gb=round(disk_used_gb, 2),
-            disk_total_gb=round(disk_total_gb, 2),
-            disk_free_gb=round(disk_free_gb, 2),
+            disks=disks,
             timestamp=time.time()
         )
     
@@ -66,9 +107,16 @@ class SystemMetricsCollector:
             'memory_percent': metrics.memory_percent,
             'memory_used_gb': metrics.memory_used_gb,
             'memory_total_gb': metrics.memory_total_gb,
-            'disk_percent': metrics.disk_percent,
-            'disk_used_gb': metrics.disk_used_gb,
-            'disk_total_gb': metrics.disk_total_gb,
-            'disk_free_gb': metrics.disk_free_gb,
+            'disks': [
+                {
+                    'device': disk.device,
+                    'mountpoint': disk.mountpoint,
+                    'fstype': disk.fstype,
+                    'percent': disk.percent,
+                    'used_gb': disk.used_gb,
+                    'total_gb': disk.total_gb,
+                    'free_gb': disk.free_gb
+                } for disk in metrics.disks
+            ],
             'timestamp': metrics.timestamp
         }

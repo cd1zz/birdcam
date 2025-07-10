@@ -28,7 +28,7 @@ class SystemMetrics {
                         </button>
                     </div>
                 </div>
-                <div class="metrics-grid">
+                <div class="metrics-grid" id="metrics-grid">
                     <div class="metric-card">
                         <div class="metric-icon">💻</div>
                         <div class="metric-info">
@@ -49,15 +49,8 @@ class SystemMetrics {
                             </div>
                         </div>
                     </div>
-                    <div class="metric-card">
-                        <div class="metric-icon">💾</div>
-                        <div class="metric-info">
-                            <div class="metric-label">Disk</div>
-                            <div class="metric-value" id="disk-value">--</div>
-                            <div class="metric-bar">
-                                <div class="metric-fill" id="disk-fill"></div>
-                            </div>
-                        </div>
+                    <div id="disk-cards-container">
+                        <!-- Disk cards will be dynamically generated -->
                     </div>
                 </div>
                 <div class="metrics-footer">
@@ -117,21 +110,64 @@ class SystemMetrics {
             memoryFill.className = `metric-fill ${this.getColorClass(metrics.memory_percent)}`;
         }
 
-        // Disk
-        const diskValue = document.getElementById('disk-value');
-        const diskFill = document.getElementById('disk-fill');
-        if (diskValue && diskFill) {
-            diskValue.textContent = `${metrics.disk_percent}%`;
-            diskValue.title = `${metrics.disk_used_gb}GB / ${metrics.disk_total_gb}GB (${metrics.disk_free_gb}GB free)`;
-            diskFill.style.width = `${metrics.disk_percent}%`;
-            diskFill.className = `metric-fill ${this.getColorClass(metrics.disk_percent)}`;
-        }
+        // Disks - dynamically generate cards for each disk
+        this.updateDiskCards(metrics.disks || []);
 
         // Timestamp
         const timestampElement = document.getElementById('metrics-timestamp');
         if (timestampElement) {
             const date = new Date(metrics.timestamp * 1000);
             timestampElement.textContent = `Last updated: ${date.toLocaleTimeString()}`;
+        }
+    }
+
+    updateDiskCards(disks) {
+        const container = document.getElementById('disk-cards-container');
+        if (!container) return;
+
+        // Clear existing disk cards
+        container.innerHTML = '';
+
+        // Create a card for each disk
+        disks.forEach((disk, index) => {
+            const diskCard = document.createElement('div');
+            diskCard.className = 'metric-card';
+            diskCard.innerHTML = `
+                <div class="metric-icon">💾</div>
+                <div class="metric-info">
+                    <div class="metric-label">${this.getDiskLabel(disk)}</div>
+                    <div class="metric-value" id="disk-value-${index}">${disk.percent}%</div>
+                    <div class="metric-bar">
+                        <div class="metric-fill ${this.getColorClass(disk.percent)}" 
+                             id="disk-fill-${index}" 
+                             style="width: ${disk.percent}%"></div>
+                    </div>
+                </div>
+            `;
+            
+            // Add tooltip with detailed info
+            const valueElement = diskCard.querySelector(`#disk-value-${index}`);
+            if (valueElement) {
+                valueElement.title = `${disk.used_gb}GB / ${disk.total_gb}GB (${disk.free_gb}GB free)\n${disk.mountpoint}`;
+            }
+            
+            container.appendChild(diskCard);
+        });
+    }
+
+    getDiskLabel(disk) {
+        // Create a friendly label for the disk
+        if (disk.mountpoint === '/') {
+            return 'Root';
+        } else if (disk.mountpoint === '/home') {
+            return 'Home';
+        } else if (disk.mountpoint.startsWith('/mnt/') || disk.mountpoint.startsWith('/media/')) {
+            // Extract the last part of the path for mounted drives
+            const parts = disk.mountpoint.split('/');
+            return parts[parts.length - 1] || 'Drive';
+        } else {
+            // For other mounts, show the mount point
+            return disk.mountpoint.replace('/', '') || 'Drive';
         }
     }
 

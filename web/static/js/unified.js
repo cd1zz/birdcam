@@ -64,6 +64,9 @@ async function updateSystemStatus() {
         const serverData = await apiCall('/api/server-status');
         updateServerStatus(serverData);
         
+        // Get system metrics for both servers
+        updateSystemMetrics();
+        
     } catch (error) {
         console.error('Failed to update status:', error);
         updateStatusError();
@@ -147,6 +150,92 @@ function updateServerStatus(data) {
 function updateStatusError() {
     document.getElementById('capture-text').textContent = 'Connection failed';
     document.getElementById('server-text').textContent = 'Connection failed';
+}
+
+// System metrics functions
+async function updateSystemMetrics() {
+    // Update Pi metrics
+    try {
+        const piMetrics = await apiCall('/api/system-metrics');
+        updateEmbeddedMetrics('pi', piMetrics);
+    } catch (error) {
+        console.error('Failed to get Pi metrics:', error);
+        updateEmbeddedMetricsError('pi');
+    }
+    
+    // Update server metrics
+    try {
+        const serverMetrics = await fetch(`${PROCESSING_SERVER_URL}/api/system-metrics`);
+        const serverData = await serverMetrics.json();
+        updateEmbeddedMetrics('server', serverData);
+    } catch (error) {
+        console.error('Failed to get server metrics:', error);
+        updateEmbeddedMetricsError('server');
+    }
+}
+
+function updateEmbeddedMetrics(prefix, metrics) {
+    if (!metrics || metrics.error) {
+        updateEmbeddedMetricsError(prefix);
+        return;
+    }
+    
+    // Update CPU
+    const cpuElement = document.getElementById(`${prefix}-cpu`);
+    const cpuBar = document.getElementById(`${prefix}-cpu-bar`);
+    if (cpuElement && cpuBar) {
+        cpuElement.textContent = `${metrics.cpu_percent}%`;
+        cpuBar.style.width = `${metrics.cpu_percent}%`;
+        cpuBar.className = `metric-fill-mini ${getMetricColorClass(metrics.cpu_percent)}`;
+    }
+    
+    // Update Memory
+    const memoryElement = document.getElementById(`${prefix}-memory`);
+    const memoryBar = document.getElementById(`${prefix}-memory-bar`);
+    if (memoryElement && memoryBar) {
+        memoryElement.textContent = `${metrics.memory_percent}%`;
+        memoryElement.title = `${metrics.memory_used_gb}GB / ${metrics.memory_total_gb}GB`;
+        memoryBar.style.width = `${metrics.memory_percent}%`;
+        memoryBar.className = `metric-fill-mini ${getMetricColorClass(metrics.memory_percent)}`;
+    }
+    
+    // Update Disk (use first disk or root filesystem)
+    const diskElement = document.getElementById(`${prefix}-disk`);
+    const diskBar = document.getElementById(`${prefix}-disk-bar`);
+    if (diskElement && diskBar && metrics.disks && metrics.disks.length > 0) {
+        // Find root filesystem or use first disk
+        const rootDisk = metrics.disks.find(d => d.mountpoint === '/') || metrics.disks[0];
+        diskElement.textContent = `${rootDisk.percent}%`;
+        diskElement.title = `${rootDisk.used_gb}GB / ${rootDisk.total_gb}GB (${rootDisk.free_gb}GB free)`;
+        diskBar.style.width = `${rootDisk.percent}%`;
+        diskBar.className = `metric-fill-mini ${getMetricColorClass(rootDisk.percent)}`;
+    }
+}
+
+function updateEmbeddedMetricsError(prefix) {
+    // Update with error indicators
+    const cpuElement = document.getElementById(`${prefix}-cpu`);
+    const memoryElement = document.getElementById(`${prefix}-memory`);
+    const diskElement = document.getElementById(`${prefix}-disk`);
+    
+    if (cpuElement) cpuElement.textContent = 'N/A';
+    if (memoryElement) memoryElement.textContent = 'N/A';
+    if (diskElement) diskElement.textContent = 'N/A';
+    
+    // Reset bars
+    const cpuBar = document.getElementById(`${prefix}-cpu-bar`);
+    const memoryBar = document.getElementById(`${prefix}-memory-bar`);
+    const diskBar = document.getElementById(`${prefix}-disk-bar`);
+    
+    if (cpuBar) cpuBar.style.width = '0%';
+    if (memoryBar) memoryBar.style.width = '0%';
+    if (diskBar) diskBar.style.width = '0%';
+}
+
+function getMetricColorClass(percentage) {
+    if (percentage >= 90) return 'danger';
+    if (percentage >= 75) return 'warning';
+    return '';
 }
 
 async function updateDetections() {

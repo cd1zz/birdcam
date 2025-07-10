@@ -675,6 +675,90 @@ input:checked + .slider:before {
     z-index: 10;
 }
 
+/* Embedded System Metrics Styles */
+.embedded-metrics {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.metrics-header-mini {
+    margin-bottom: 12px;
+}
+
+.metrics-header-mini h4 {
+    margin: 0;
+    font-size: 0.9em;
+    color: #495057;
+    font-weight: 600;
+}
+
+.metrics-grid-mini {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.metric-mini {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.metric-icon-mini {
+    font-size: 16px;
+    opacity: 0.8;
+}
+
+.metric-content-mini {
+    flex: 1;
+    min-width: 0;
+}
+
+.metric-label-mini {
+    display: block;
+    font-size: 0.7em;
+    color: #6c757d;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.metric-value-mini {
+    display: block;
+    font-size: 0.85em;
+    font-weight: bold;
+    color: #212529;
+    margin-bottom: 4px;
+}
+
+.metric-bar-mini {
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.metric-fill-mini {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    background: #28a745;
+}
+
+.metric-fill-mini.warning {
+    background: #ffc107;
+}
+
+.metric-fill-mini.danger {
+    background: #dc3545;
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
     .camera-controls-row {
@@ -732,5 +816,28 @@ input:checked + .slider:before {
     .btn-small {
         padding: 4px 8px;
         font-size: 0.75em;
+    }
+    
+    /* Embedded metrics responsive styles */
+    .metrics-grid-mini {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .metric-mini {
+        padding: 6px;
+        gap: 6px;
+    }
+    
+    .metric-icon-mini {
+        font-size: 14px;
+    }
+    
+    .metric-label-mini {
+        font-size: 0.65em;
+    }
+    
+    .metric-value-mini {
+        font-size: 0.8em;
     }
 }

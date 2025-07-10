@@ -104,6 +104,14 @@ function formatDuration(seconds) {
     return `${secs}s`;
 }
 
+// DOM utility functions
+function updateElement(elementId, value) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = value;
+    }
+}
+
 // Add CSS animations
 const style = document.createElement('style');
 style.textContent = `

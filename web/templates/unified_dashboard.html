@@ -7,15 +7,9 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/unified.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/metrics.css') }}">
 {% endblock %}
 
 {% block content %}
-<!-- System Metrics -->
-<div id="system-metrics" class="metrics-section">
-    <!-- System metrics will be loaded here -->
-</div>
-
 <!-- System Status Overview -->
 <div class="status-overview">
     <div class="status-card">
@@ -40,6 +34,45 @@
                 <div class="mini-stat">
                     <span class="mini-number" id="pi-storage">-</span>
                     <span class="mini-label">MB</span>
+                </div>
+            </div>
+            
+            <!-- Embedded Pi System Metrics -->
+            <div class="embedded-metrics" id="pi-metrics">
+                <div class="metrics-header-mini">
+                    <h4>📊 System Metrics</h4>
+                </div>
+                <div class="metrics-grid-mini">
+                    <div class="metric-mini">
+                        <span class="metric-icon-mini">💻</span>
+                        <div class="metric-content-mini">
+                            <span class="metric-label-mini">CPU</span>
+                            <span class="metric-value-mini" id="pi-cpu">-</span>
+                            <div class="metric-bar-mini">
+                                <div class="metric-fill-mini" id="pi-cpu-bar"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="metric-mini">
+                        <span class="metric-icon-mini">🧠</span>
+                        <div class="metric-content-mini">
+                            <span class="metric-label-mini">Memory</span>
+                            <span class="metric-value-mini" id="pi-memory">-</span>
+                            <div class="metric-bar-mini">
+                                <div class="metric-fill-mini" id="pi-memory-bar"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="metric-mini">
+                        <span class="metric-icon-mini">💾</span>
+                        <div class="metric-content-mini">
+                            <span class="metric-label-mini">Disk</span>
+                            <span class="metric-value-mini" id="pi-disk">-</span>
+                            <div class="metric-bar-mini">
+                                <div class="metric-fill-mini" id="pi-disk-bar"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -67,6 +100,45 @@
                 <div class="mini-stat">
                     <span class="mini-number" id="total-birds">-</span>
                     <span class="mini-label">Detections</span>
+                </div>
+            </div>
+            
+            <!-- Embedded Server System Metrics -->
+            <div class="embedded-metrics" id="server-metrics">
+                <div class="metrics-header-mini">
+                    <h4>📊 System Metrics</h4>
+                </div>
+                <div class="metrics-grid-mini">
+                    <div class="metric-mini">
+                        <span class="metric-icon-mini">💻</span>
+                        <div class="metric-content-mini">
+                            <span class="metric-label-mini">CPU</span>
+                            <span class="metric-value-mini" id="server-cpu">-</span>
+                            <div class="metric-bar-mini">
+                                <div class="metric-fill-mini" id="server-cpu-bar"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="metric-mini">
+                        <span class="metric-icon-mini">🧠</span>
+                        <div class="metric-content-mini">
+                            <span class="metric-label-mini">Memory</span>
+                            <span class="metric-value-mini" id="server-memory">-</span>
+                            <div class="metric-bar-mini">
+                                <div class="metric-fill-mini" id="server-memory-bar"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="metric-mini">
+                        <span class="metric-icon-mini">💾</span>
+                        <div class="metric-content-mini">
+                            <span class="metric-label-mini">Disk</span>
+                            <span class="metric-value-mini" id="server-disk">-</span>
+                            <div class="metric-bar-mini">
+                                <div class="metric-fill-mini" id="server-disk-bar"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -287,5 +359,4 @@
         console.log('🔧 Processing server URL loaded from config:', PROCESSING_SERVER_URL);
     </script>
     <script src="{{ url_for('static', filename='js/unified.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/metrics.js') }}"></script>
     {% endblock %}
