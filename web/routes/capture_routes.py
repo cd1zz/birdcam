@@ -359,3 +359,93 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             return jsonify(metrics)
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/camera/<int:camera_id>/stream')
+    def api_camera_stream(camera_id):
+        """Live MJPEG stream for a specific camera"""
+        try:
+            capture_service = capture_services.get(camera_id)
+            if not capture_service:
+                return jsonify({'error': f'Camera {camera_id} not found'}), 404
+            
+            def generate_frames():
+                while True:
+                    try:
+                        ret, frame = capture_service.camera_manager.read_frame()
+                        if not ret:
+                            break
+                        
+                        # Encode frame as JPEG
+                        ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+                        if not ret:
+                            continue
+                        
+                        # Yield frame in MJPEG format
+                        yield (b'--frame\r\n'
+                               b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+                        
+                        time.sleep(0.1)  # ~10 FPS
+                    except Exception as e:
+                        print(f"Stream error: {e}")
+                        break
+            
+            return Response(generate_frames(),
+                          mimetype='multipart/x-mixed-replace; boundary=frame')
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/camera/<int:camera_id>/snapshot')
+    def api_camera_snapshot(camera_id):
+        """Get single frame snapshot from camera"""
+        try:
+            capture_service = capture_services.get(camera_id)
+            if not capture_service:
+                return jsonify({'error': f'Camera {camera_id} not found'}), 404
+            
+            ret, frame = capture_service.camera_manager.read_frame()
+            if not ret:
+                return jsonify({'error': 'Failed to capture frame'}), 500
+            
+            # Encode frame as JPEG
+            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
+            if not ret:
+                return jsonify({'error': 'Failed to encode frame'}), 500
+            
+            return Response(buffer.tobytes(), mimetype='image/jpeg')
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/statistics/summary')
+    def api_statistics_summary():
+        """Get comprehensive system statistics"""
+        try:
+            # Get metrics from all cameras
+            camera_stats = []
+            for cam_id, service in capture_services.items():
+                status = service.get_status()
+                camera_stats.append({
+                    'camera_id': cam_id,
+                    'is_capturing': status.is_capturing,
+                    'queue_size': status.queue_size,
+                    'last_motion': status.last_motion_time.isoformat() if status.last_motion_time else None,
+                    'is_active': service.camera_manager.is_opened()
+                })
+            
+            # Get server status
+            server_status = sync_service.get_server_status()
+            
+            # Get motion broadcaster stats
+            broadcaster_stats = default_service.get_motion_broadcaster_stats()
+            
+            # Get system metrics
+            system_metrics = metrics_collector.get_metrics_dict()
+            
+            return jsonify({
+                'cameras': camera_stats,
+                'server': server_status,
+                'motion_broadcaster': broadcaster_stats,
+                'system': system_metrics,
+                'timestamp': time.time()
+            })
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
