@@ -284,7 +284,15 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
         
         try:
             camera_id = request.args.get('camera_id', '0')
-            settings_file = Path(config.processing.storage_path) / f"motion_settings_camera_{camera_id}.json"
+            
+            # Safely get storage path
+            try:
+                storage_path = Path(config.processing.storage_path)
+            except Exception as e:
+                print(f"Error accessing storage path: {e}")
+                storage_path = Path("./bird_processing")
+            
+            settings_file = storage_path / f"motion_settings_camera_{camera_id}.json"
             
             # Default settings
             default_settings = {

@@ -27,12 +27,29 @@ class VideoWriter:
         filename = f"segment_{timestamp.strftime('%Y%m%d_%H%M%S')}.mp4"
         filepath = self.output_dir / filename
         
-        # Use mp4v codec (server will convert to H.264 later)
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        self.writer = cv2.VideoWriter(str(filepath), fourcc, self.fps, self.resolution)
+        # Try different codecs for better compatibility
+        codecs_to_try = [
+            ('XVID', cv2.VideoWriter_fourcc(*'XVID')),  # More reliable
+            ('mp4v', cv2.VideoWriter_fourcc(*'mp4v')),  # Original
+            ('MJPG', cv2.VideoWriter_fourcc(*'MJPG')),  # Fallback
+        ]
         
-        if not self.writer.isOpened():
-            raise RuntimeError(f"Failed to initialize video writer for {filename}")
+        self.writer = None
+        for codec_name, fourcc in codecs_to_try:
+            try:
+                print(f"🎥 Trying codec: {codec_name}")
+                temp_writer = cv2.VideoWriter(str(filepath), fourcc, self.fps, self.resolution)
+                if temp_writer.isOpened():
+                    self.writer = temp_writer
+                    print(f"✅ Successfully initialized with {codec_name} codec")
+                    break
+                else:
+                    temp_writer.release()
+            except Exception as e:
+                print(f"❌ Failed to initialize with {codec_name}: {e}")
+        
+        if not self.writer or not self.writer.isOpened():
+            raise RuntimeError(f"Failed to initialize video writer for {filename} with any codec")
         
         self.current_segment = CaptureSegment(
             filename=filename,
@@ -51,20 +68,40 @@ class VideoWriter:
             print("❌ No video writer available for frame")
             return
         
-        # Ensure frame is the right size
-        if frame.shape[:2] != (self.resolution[1], self.resolution[0]):
-            frame = cv2.resize(frame, self.resolution)
-        
-        try:
-            self.writer.write(frame)
-            self.frames_written += 1
+        # Validate frame
+        if frame is None or frame.size == 0:
+            print("❌ Invalid frame (None or empty)")
+            return
             
-            # Debug every 50 frames
-            if self.frames_written % 50 == 0:
-                print(f"📝 Written {self.frames_written} frames to {self.current_segment.filename if self.current_segment else 'unknown'}")
+        # Ensure frame is the right size and format
+        try:
+            if frame.shape[:2] != (self.resolution[1], self.resolution[0]):
+                frame = cv2.resize(frame, self.resolution)
+            
+            # Ensure frame is in correct format (BGR)
+            if len(frame.shape) != 3 or frame.shape[2] != 3:
+                print(f"❌ Invalid frame format: {frame.shape}")
+                return
                 
         except Exception as e:
-            print(f"❌ Error writing frame: {e}")
+            print(f"❌ Error processing frame: {e}")
+            return
+        
+        try:
+            # Write frame with error checking
+            success = self.writer.write(frame)
+            if success:
+                self.frames_written += 1
+                
+                # Debug every 50 frames
+                if self.frames_written % 50 == 0:
+                    print(f"📝 Written {self.frames_written} frames to {self.current_segment.filename if self.current_segment else 'unknown'}")
+            else:
+                print(f"❌ Failed to write frame {self.frames_written + 1}")
+                
+        except Exception as e:
+            print(f"❌ Exception writing frame: {e}")
+            # Don't increment counter on error
     
     def write_frames(self, frames: list):
         """Write multiple frames to the video"""
@@ -85,9 +122,14 @@ class VideoWriter:
         
         print(f"🏁 Finishing segment: {self.current_segment.filename} ({self.frames_written} frames)")
         
-        # Release the writer
-        self.writer.release()
-        self.writer = None
+        # Safely release the writer
+        try:
+            if self.writer.isOpened():
+                self.writer.release()
+            self.writer = None
+        except Exception as e:
+            print(f"⚠️ Error releasing video writer: {e}")
+            self.writer = None
         
         # Update segment info
         self.current_segment.end_time = datetime.now()
@@ -117,3 +159,12 @@ class VideoWriter:
     def get_frames_written(self) -> int:
         """Get number of frames written to current segment"""
         return self.frames_written
+    
+    def __del__(self):
+        """Cleanup when object is destroyed"""
+        try:
+            if hasattr(self, 'writer') and self.writer:
+                if self.writer.isOpened():
+                    self.writer.release()
+        except Exception:
+            pass  # Ignore errors during cleanup
