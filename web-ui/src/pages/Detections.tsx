@@ -50,7 +50,7 @@ const Detections: React.FC = () => {
       return api.detections.getRecent(params);
     },
     refetchInterval: 60000,
-    retry: (failureCount, error) => {
+    retry: (failureCount, error: any) => {
       // Don't retry on 4xx errors (client errors)
       if (error?.response?.status >= 400 && error?.response?.status < 500) {
         return false;
@@ -90,7 +90,7 @@ const Detections: React.FC = () => {
   }
 
   if (isError) {
-    const errorMessage = error?.userMessage || 'Failed to load detections. Please try again.';
+    const errorMessage = (error as any)?.userMessage || 'Failed to load detections. Please try again.';
     
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">

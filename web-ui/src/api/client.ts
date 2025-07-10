@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from 'axios';
+import axios from 'axios';
 
 // API endpoints configuration
 const PI_SERVER = import.meta.env.VITE_PI_SERVER || 'http://localhost:8090';

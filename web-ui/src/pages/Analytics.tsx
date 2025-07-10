@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../api/client';
+import { api, type SystemStatus } from '../api/client';
 
 interface SystemHealth {
   isOnline: boolean;
@@ -12,55 +12,48 @@ const Analytics: React.FC = () => {
   const [piHealth, setPiHealth] = useState<SystemHealth>({ isOnline: false, lastSeen: 0, consecutiveFailures: 0 });
   const [processingHealth, setProcessingHealth] = useState<SystemHealth>({ isOnline: false, lastSeen: 0, consecutiveFailures: 0 });
 
-  const { data: piStatus, error: piError, isError: piIsError } = useQuery({
+  const { data: piStatus } = useQuery<SystemStatus>({
     queryKey: ['piStatus'],
     queryFn: api.status.getPiStatus,
     refetchInterval: 15000, // Reduced frequency from 5s to 15s
     retry: 3, // Increased retries from 1 to 3
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
     staleTime: 10000, // Data considered fresh for 10s
-    cacheTime: 30000, // Keep in cache for 30s
+    gcTime: 30000, // Keep in cache for 30s (replaces cacheTime)
     refetchOnWindowFocus: false, // Don't refetch on window focus
-    onSuccess: (data) => {
-      setPiHealth(prev => ({
-        isOnline: true,
-        lastSeen: Date.now(),
-        consecutiveFailures: 0
-      }));
-    },
-    onError: (error) => {
-      setPiHealth(prev => ({
-        ...prev,
-        consecutiveFailures: prev.consecutiveFailures + 1,
-        isOnline: prev.consecutiveFailures < 3 // Only mark offline after 3 consecutive failures
-      }));
-    }
   });
 
-  const { data: processingStatus, error: processingError, isError: processingIsError } = useQuery({
+  const { data: processingStatus } = useQuery<SystemStatus>({
     queryKey: ['processingStatus'],
     queryFn: api.status.getProcessingStatus,
     refetchInterval: 15000, // Reduced frequency from 5s to 15s
     retry: 3, // Increased retries from 1 to 3
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
     staleTime: 10000, // Data considered fresh for 10s
-    cacheTime: 30000, // Keep in cache for 30s
+    gcTime: 30000, // Keep in cache for 30s (replaces cacheTime)
     refetchOnWindowFocus: false, // Don't refetch on window focus
-    onSuccess: (data) => {
-      setProcessingHealth(prev => ({
+  });
+
+  // Handle success/error states with useEffect
+  useEffect(() => {
+    if (piStatus) {
+      setPiHealth({
         isOnline: true,
         lastSeen: Date.now(),
         consecutiveFailures: 0
-      }));
-    },
-    onError: (error) => {
-      setProcessingHealth(prev => ({
-        ...prev,
-        consecutiveFailures: prev.consecutiveFailures + 1,
-        isOnline: prev.consecutiveFailures < 3 // Only mark offline after 3 consecutive failures
-      }));
+      });
     }
-  });
+  }, [piStatus]);
+
+  useEffect(() => {
+    if (processingStatus) {
+      setProcessingHealth({
+        isOnline: true,
+        lastSeen: Date.now(),
+        consecutiveFailures: 0
+      });
+    }
+  }, [processingStatus]);
 
   // Initialize health states
   useEffect(() => {
@@ -128,30 +121,30 @@ const Analytics: React.FC = () => {
               
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Uptime</span>
-                <span className="font-medium">{formatUptime(piStatus.uptime)}</span>
+                <span className="font-medium">{formatUptime(piStatus.uptime || 0)}</span>
               </div>
               
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Active Cameras</span>
-                <span className="font-medium">{piStatus.cameras_active}</span>
+                <span className="font-medium">{piStatus.cameras_active || 0}</span>
               </div>
               
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Videos Today</span>
-                <span className="font-medium">{piStatus.videos_today}</span>
+                <span className="font-medium">{piStatus.videos_today || 0}</span>
               </div>
               
               <div className="pt-4 border-t">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-gray-600">Storage</span>
                   <span className="text-sm text-gray-500">
-                    {formatBytes(piStatus.storage_used)} / {formatBytes(piStatus.storage_total)}
+                    {formatBytes(piStatus.storage_used || 0)} / {formatBytes(piStatus.storage_total || 0)}
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
                     className="bg-blue-600 h-2 rounded-full transition-all"
-                    style={{ width: `${(piStatus.storage_used / piStatus.storage_total) * 100}%` }}
+                    style={{ width: `${((piStatus.storage_used || 0) / (piStatus.storage_total || 1)) * 100}%` }}
                   ></div>
                 </div>
               </div>
@@ -195,30 +188,30 @@ const Analytics: React.FC = () => {
               
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Uptime</span>
-                <span className="font-medium">{formatUptime(processingStatus.uptime)}</span>
+                <span className="font-medium">{formatUptime(processingStatus.uptime || 0)}</span>
               </div>
               
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Detections Today</span>
-                <span className="font-medium">{processingStatus.detections_today}</span>
+                <span className="font-medium">{processingStatus.detections_today || 0}</span>
               </div>
               
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Videos Processed</span>
-                <span className="font-medium">{processingStatus.videos_today}</span>
+                <span className="font-medium">{processingStatus.videos_today || 0}</span>
               </div>
               
               <div className="pt-4 border-t">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-gray-600">Storage</span>
                   <span className="text-sm text-gray-500">
-                    {formatBytes(processingStatus.storage_used)} / {formatBytes(processingStatus.storage_total)}
+                    {formatBytes(processingStatus.storage_used || 0)} / {formatBytes(processingStatus.storage_total || 0)}
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
                     className="bg-green-600 h-2 rounded-full transition-all"
-                    style={{ width: `${(processingStatus.storage_used / processingStatus.storage_total) * 100}%` }}
+                    style={{ width: `${((processingStatus.storage_used || 0) / (processingStatus.storage_total || 1)) * 100}%` }}
                   ></div>
                 </div>
               </div>
@@ -271,7 +264,7 @@ const Analytics: React.FC = () => {
           <div className="text-orange-600 text-3xl mb-2">⏱️</div>
           <p className="text-sm text-gray-600">System Uptime</p>
           <p className="text-2xl font-semibold text-gray-900">
-            {piStatus ? formatUptime(piStatus.uptime) : '—'}
+            {piStatus ? formatUptime(piStatus.uptime || 0) : '—'}
           </p>
         </div>
       </div>

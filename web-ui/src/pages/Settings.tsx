@@ -10,26 +10,17 @@ const Settings: React.FC = () => {
 
   const { data: cameras } = useQuery({
     queryKey: ['cameras'],
-    queryFn: async () => {
-      const response = await api.cameras.list();
-      return response.data.cameras;
-    },
+    queryFn: api.cameras.list,
   });
 
   const { data: motionSettings, isLoading } = useQuery({
     queryKey: ['motionSettings', selectedCamera],
-    queryFn: async () => {
-      const response = await api.motion.getSettings(selectedCamera);
-      return response.data;
-    },
+    queryFn: () => api.motion.getSettings(selectedCamera),
   });
 
   const { data: activePassiveConfig } = useQuery({
     queryKey: ['activePassiveConfig'],
-    queryFn: async () => {
-      const response = await api.motion.getActivePassiveConfig();
-      return response.data;
-    },
+    queryFn: api.motion.getActivePassiveConfig,
   });
 
   const updateMotionMutation = useMutation({
@@ -104,7 +95,7 @@ const Settings: React.FC = () => {
               onChange={(e) => setSelectedCamera(parseInt(e.target.value))}
               className="block w-48 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
-              {cameras.map((camera) => (
+              {cameras.map((camera: any) => (
                 <option key={camera.id} value={camera.id}>
                   {camera.name}
                 </option>
@@ -203,7 +194,7 @@ const Settings: React.FC = () => {
             <div className="aspect-video max-w-2xl">
               <InteractiveCameraFeed
                 cameraId={selectedCamera}
-                cameraName={cameras.find(c => c.id === selectedCamera)?.name || `Camera ${selectedCamera}`}
+                cameraName={cameras.find((c: any) => c.id === selectedCamera)?.name || `Camera ${selectedCamera}`}
                 className="w-full h-full"
                 showMotionBox={true}
                 onMotionBoxChange={(box) => {

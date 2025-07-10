@@ -38,7 +38,7 @@ const LiveFeeds: React.FC = () => {
   }
 
   if (isError) {
-    const errorMessage = error?.userMessage || 'Failed to load cameras. Please check your connection.';
+    const errorMessage = (error as any)?.userMessage || 'Failed to load cameras. Please check your connection.';
     
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">

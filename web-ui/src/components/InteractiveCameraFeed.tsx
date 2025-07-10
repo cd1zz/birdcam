@@ -45,8 +45,7 @@ const InteractiveCameraFeed: React.FC<InteractiveCameraFeedProps> = ({
   useEffect(() => {
     const loadMotionSettings = async () => {
       try {
-        const response = await api.motion.getSettings(cameraId);
-        const settings = response.data;
+        const settings = await api.motion.getSettings(cameraId);
         if (settings) {
           setMotionBox({
             x1: settings.motion_box_x1 || 100,
