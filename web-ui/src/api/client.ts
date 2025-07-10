@@ -1,8 +1,9 @@
 import axios from 'axios';
 
 // API endpoints configuration
-const PI_SERVER = 'http://localhost:8090';
-const PROCESSING_SERVER = 'http://localhost:8091';
+// Use environment variables with sensible fallbacks
+const PI_SERVER = import.meta.env.VITE_PI_SERVER || 'http://localhost:8090';
+const PROCESSING_SERVER = import.meta.env.VITE_PROCESSING_SERVER || '';
 
 // Create axios instances for each server
 export const piApi = axios.create({
@@ -11,7 +12,7 @@ export const piApi = axios.create({
 });
 
 export const processingApi = axios.create({
-  baseURL: PROCESSING_SERVER,
+  baseURL: PROCESSING_SERVER || '', // Empty string uses relative URLs
   timeout: 30000,
 });
 
@@ -99,8 +100,8 @@ export const api = {
       sort?: 'asc' | 'desc';
     }) => processingApi.get<Detection[]>('/api/recent-detections', { params }),
     
-    getThumbnail: (path: string) => `${PROCESSING_SERVER}/thumbnails/${path}`,
-    getVideo: (filename: string) => `${PROCESSING_SERVER}/videos/${filename}`,
+    getThumbnail: (path: string) => `${PROCESSING_SERVER || ''}/thumbnails/${path}`,
+    getVideo: (filename: string) => `${PROCESSING_SERVER || ''}/videos/${filename}`,
   },
 
   // Video processing

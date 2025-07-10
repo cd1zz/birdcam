@@ -1,5 +1,6 @@
 # Environment variables with sensitive data
 .env
+web-ui/.env
 .utec_tokens/
 
 # Python
@@ -56,3 +57,9 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Node.js / React UI
+web-ui/node_modules/
+web-ui/dist/
+web-ui/.vite/
+*.tsbuildinfo
