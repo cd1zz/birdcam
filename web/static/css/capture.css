@@ -1,4 +1,72 @@
 /* web/static/css/capture.css */
+.embedded-metrics {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e3e6f0;
+}
+
+.embedded-metrics h4 {
+    margin: 0 0 10px 0;
+    color: #5a6c7d;
+    font-size: 1em;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.metric-card {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #e3e6f0;
+}
+
+.metric-icon {
+    font-size: 1.2em;
+    flex-shrink: 0;
+}
+
+.metric-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.metric-label {
+    font-size: 0.75em;
+    color: #666;
+    margin-bottom: 3px;
+}
+
+.metric-value {
+    font-weight: 600;
+    font-size: 0.9em;
+    color: #2c3e50;
+}
+
+.metric-bar {
+    height: 4px;
+    background: #e3e6f0;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 3px;
+}
+
+.metric-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.metric-fill.success { background: #28a745; }
+.metric-fill.warning { background: #ffc107; }
+.metric-fill.danger { background: #dc3545; }
+
 .main-grid {
     display: grid;
     grid-template-columns: 500px 1fr;

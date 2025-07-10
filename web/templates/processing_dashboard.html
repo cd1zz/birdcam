@@ -11,34 +11,61 @@
 {% endblock %}
 
 {% block content %}
-<div id="system-metrics" class="metrics-section">
-    <!-- System metrics will be loaded here -->
-</div>
-
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-number" id="total-videos">-</div>
-        <div class="stat-label">Total Videos</div>
+<div class="dashboard-header">
+    <h2>🧠 AI Processing Server</h2>
+    <div class="server-stats-grid">
+        <div class="stat-card">
+            <div class="stat-number" id="total-videos">-</div>
+            <div class="stat-label">Total Videos</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="processed-videos">-</div>
+            <div class="stat-label">Processed</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="queue-size">-</div>
+            <div class="stat-label">Queue Size</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="total-birds">-</div>
+            <div class="stat-label">Birds Found</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="today-birds">-</div>
+            <div class="stat-label">Today's Birds</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="avg-time">-</div>
+            <div class="stat-label">Avg Process Time (s)</div>
+        </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-number" id="processed-videos">-</div>
-        <div class="stat-label">Processed</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number" id="queue-size">-</div>
-        <div class="stat-label">Queue Size</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number" id="total-birds">-</div>
-        <div class="stat-label">Birds Found</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number" id="today-birds">-</div>
-        <div class="stat-label">Today's Birds</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number" id="avg-time">-</div>
-        <div class="stat-label">Avg Process Time (s)</div>
+    
+    <!-- Embedded System Metrics -->
+    <div class="embedded-metrics">
+        <h3>📊 System Metrics</h3>
+        <div id="disk-cards-container" class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon">💻</div>
+                <div class="metric-info">
+                    <div class="metric-label">CPU</div>
+                    <div class="metric-value" id="cpu-value">--</div>
+                    <div class="metric-bar">
+                        <div class="metric-fill" id="cpu-fill"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">🧠</div>
+                <div class="metric-info">
+                    <div class="metric-label">Memory</div>
+                    <div class="metric-value" id="memory-value">--</div>
+                    <div class="metric-bar">
+                        <div class="metric-fill" id="memory-fill"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Disk cards will be dynamically added here -->
+        </div>
     </div>
 </div>
 

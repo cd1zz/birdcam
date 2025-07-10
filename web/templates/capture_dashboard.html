@@ -29,7 +29,7 @@
     
     <div class="right-panel">
         <div class="status-panel">
-            <h3>📊 System Status</h3>
+            <h3>📹 Pi Capture System</h3>
             <div id="status-content">
                 <div class="status-item">
                     <span id="capture-status" class="status-indicator online"></span>
@@ -48,6 +48,34 @@
                     <span id="last-motion" class="status-value">-</span>
                 </div>
             </div>
+            
+            <!-- Embedded System Metrics -->
+            <div class="embedded-metrics">
+                <h4>📊 System Metrics</h4>
+                <div id="disk-cards-container" class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-icon">💻</div>
+                        <div class="metric-info">
+                            <div class="metric-label">CPU</div>
+                            <div class="metric-value" id="cpu-value">--</div>
+                            <div class="metric-bar">
+                                <div class="metric-fill" id="cpu-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">🧠</div>
+                        <div class="metric-info">
+                            <div class="metric-label">Memory</div>
+                            <div class="metric-value" id="memory-value">--</div>
+                            <div class="metric-bar">
+                                <div class="metric-fill" id="memory-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Disk cards will be dynamically added here -->
+                </div>
+            </div>
         </div>
         
         <div class="recent-activity">
@@ -55,10 +83,6 @@
             <div id="activity-log">
                 <p>Activity log will appear here...</p>
             </div>
-        </div>
-        
-        <div id="system-metrics" class="metrics-section">
-            <!-- System metrics will be loaded here -->
         </div>
     </div>
 </div>
