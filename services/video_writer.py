@@ -7,7 +7,7 @@ from core.models import CaptureSegment
 from datetime import datetime
 
 class VideoWriter:
-    def __init__(self, output_dir: Path, fps: int = 10, resolution: Tuple[int, int] = (640, 480)):
+    def __init__(self, output_dir: Path, fps: int = 5, resolution: Tuple[int, int] = (640, 480)):
         self.output_dir = output_dir
         self.fps = fps
         self.resolution = resolution
@@ -27,29 +27,12 @@ class VideoWriter:
         filename = f"segment_{timestamp.strftime('%Y%m%d_%H%M%S')}.mp4"
         filepath = self.output_dir / filename
         
-        # Try different codecs for better compatibility
-        codecs_to_try = [
-            ('XVID', cv2.VideoWriter_fourcc(*'XVID')),  # More reliable
-            ('mp4v', cv2.VideoWriter_fourcc(*'mp4v')),  # Original
-            ('MJPG', cv2.VideoWriter_fourcc(*'MJPG')),  # Fallback
-        ]
+        # Use mp4v codec (simple and reliable)
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        self.writer = cv2.VideoWriter(str(filepath), fourcc, self.fps, self.resolution)
         
-        self.writer = None
-        for codec_name, fourcc in codecs_to_try:
-            try:
-                print(f"🎥 Trying codec: {codec_name}")
-                temp_writer = cv2.VideoWriter(str(filepath), fourcc, self.fps, self.resolution)
-                if temp_writer.isOpened():
-                    self.writer = temp_writer
-                    print(f"✅ Successfully initialized with {codec_name} codec")
-                    break
-                else:
-                    temp_writer.release()
-            except Exception as e:
-                print(f"❌ Failed to initialize with {codec_name}: {e}")
-        
-        if not self.writer or not self.writer.isOpened():
-            raise RuntimeError(f"Failed to initialize video writer for {filename} with any codec")
+        if not self.writer.isOpened():
+            raise RuntimeError(f"Failed to initialize video writer for {filename}")
         
         self.current_segment = CaptureSegment(
             filename=filename,
@@ -88,20 +71,16 @@ class VideoWriter:
             return
         
         try:
-            # Write frame with error checking
-            success = self.writer.write(frame)
-            if success:
-                self.frames_written += 1
-                
-                # Debug every 50 frames
-                if self.frames_written % 50 == 0:
-                    print(f"📝 Written {self.frames_written} frames to {self.current_segment.filename if self.current_segment else 'unknown'}")
-            else:
-                print(f"❌ Failed to write frame {self.frames_written + 1}")
+            # Write frame - cv2.VideoWriter.write() doesn't return success/failure
+            self.writer.write(frame)
+            self.frames_written += 1
+            
+            # Debug every 50 frames
+            if self.frames_written % 50 == 0:
+                print(f"📝 Written {self.frames_written} frames to {self.current_segment.filename if self.current_segment else 'unknown'}")
                 
         except Exception as e:
             print(f"❌ Exception writing frame: {e}")
-            # Don't increment counter on error
     
     def write_frames(self, frames: list):
         """Write multiple frames to the video"""
