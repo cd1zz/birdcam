@@ -167,6 +167,41 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             return jsonify({'message': 'Cleanup started'})
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/debug/queue')
+    def api_debug_queue():
+        """Debug endpoint to check queue state"""
+        try:
+            # Check database state
+            pending_videos = processing_service.video_repo.get_pending_videos()
+            
+            # Get a small sample of all videos to check statuses
+            with processing_service.video_repo.db_manager.get_connection() as conn:
+                cursor = conn.execute('SELECT id, filename, status FROM videos ORDER BY id DESC LIMIT 10')
+                recent_videos = [{'id': row[0], 'filename': row[1], 'status': row[2]} for row in cursor.fetchall()]
+                
+                cursor = conn.execute('SELECT status, COUNT(*) FROM videos GROUP BY status')
+                status_counts = {row[0]: row[1] for row in cursor.fetchall()}
+            
+            # Check if incoming directory exists
+            incoming_dir = processing_service.incoming_dir
+            incoming_exists = incoming_dir.exists()
+            incoming_files = list(incoming_dir.glob('*.mp4')) if incoming_exists else []
+            
+            return jsonify({
+                'pending_videos_count': len(pending_videos),
+                'pending_videos_sample': [{'id': v.id, 'filename': v.filename, 'status': v.status} for v in pending_videos[:5]],
+                'recent_videos': recent_videos,
+                'status_counts': status_counts,
+                'is_processing': processing_service.is_processing,
+                'incoming_dir': str(incoming_dir),
+                'incoming_dir_exists': incoming_exists,
+                'incoming_files_count': len(incoming_files),
+                'incoming_files_sample': [f.name for f in incoming_files[:5]],
+                'model_loaded': processing_service.model_manager.is_loaded
+            })
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
     @app.route('/api/delete-detection', methods=['POST'])
     def api_delete_detection():

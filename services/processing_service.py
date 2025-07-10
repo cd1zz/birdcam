@@ -165,10 +165,12 @@ class ProcessingService:
         """Process all pending videos"""
         with self.processing_lock:
             if self.is_processing:
+                print("⏸️ Processing already in progress, skipping...")
                 return
             
             pending_videos = self.video_repo.get_pending_videos()
             if not pending_videos:
+                print("📭 No pending videos to process")
                 return
                 
             self.is_processing = True
@@ -176,19 +178,28 @@ class ProcessingService:
         # Load model if needed
         if not self.model_manager.is_loaded:
             print("🤖 Loading AI model...")
-            self.model_manager.load_model()
+            try:
+                self.model_manager.load_model()
+                print("✅ AI model loaded successfully")
+            except Exception as e:
+                print(f"❌ Failed to load AI model: {e}")
+                self.is_processing = False
+                return
         
         print(f"🔄 Processing {len(pending_videos)} videos...")
+        processed_count = 0
         
         for video in pending_videos:
             try:
                 self._process_single_video(video)
+                processed_count += 1
+                print(f"✅ Processed {processed_count}/{len(pending_videos)}: {video.filename}")
             except Exception as e:
                 print(f"❌ Error processing {video.filename}: {e}")
                 self.video_repo.update_status(video.id, ProcessingStatus.FAILED)
         
         self.is_processing = False
-        print("✅ Batch processing complete")
+        print(f"✅ Batch processing complete: {processed_count}/{len(pending_videos)} videos processed")
     
     def _process_single_video(self, video: VideoFile):
         """Process a single video for animal/object detection"""
