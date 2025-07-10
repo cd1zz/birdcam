@@ -208,10 +208,10 @@ class CaptureService:
             self.is_capturing = True
             self.segment_start_time = time.time()
             
-            # Write pre-motion buffer if we have frames
+            # EMERGENCY FIX: Skip pre-motion buffer to prevent FFmpeg timestamp errors
+            # TODO: Re-enable with proper timestamp handling
             if self.pre_motion_buffer:
-                print(f"📼 Writing {len(self.pre_motion_buffer)} pre-motion frames")
-                self.video_writer.write_frames(list(self.pre_motion_buffer))
+                print(f"📼 Skipping {len(self.pre_motion_buffer)} pre-motion frames (emergency fix)")
                 self.pre_motion_buffer.clear()
             
             print(f"🎬 Recording started: {segment.filename}")
