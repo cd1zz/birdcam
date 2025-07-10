@@ -17,7 +17,7 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
     default_repo = settings_repos.get(default_service.capture_config.camera_id)
     
     # Initialize system metrics collector
-    metrics_collector = SystemMetricsCollector(default_service.capture_config.storage_path)
+    metrics_collector = SystemMetricsCollector(default_service.processing_config.storage_path)
 
     def get_service() -> 'CaptureService':
         cam_id = request.args.get('camera_id', default_service.capture_config.camera_id)
