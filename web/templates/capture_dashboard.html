@@ -7,6 +7,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/capture.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/metrics.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -54,6 +55,10 @@
             <div id="activity-log">
                 <p>Activity log will appear here...</p>
             </div>
+        </div>
+        
+        <div id="system-metrics" class="metrics-section">
+            <!-- System metrics will be loaded here -->
         </div>
     </div>
 </div>
@@ -114,4 +119,5 @@
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/capture.js') }}"></script>
+<script src="{{ url_for('static', filename='js/metrics.js') }}"></script>
 {% endblock %}

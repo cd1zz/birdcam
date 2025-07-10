@@ -7,9 +7,15 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/unified.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/metrics.css') }}">
 {% endblock %}
 
 {% block content %}
+<!-- System Metrics -->
+<div id="system-metrics" class="metrics-section">
+    <!-- System metrics will be loaded here -->
+</div>
+
 <!-- System Status Overview -->
 <div class="status-overview">
     <div class="status-card">
@@ -281,4 +287,5 @@
         console.log('🔧 Processing server URL loaded from config:', PROCESSING_SERVER_URL);
     </script>
     <script src="{{ url_for('static', filename='js/unified.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/metrics.js') }}"></script>
     {% endblock %}

@@ -4,8 +4,12 @@ Routes for Processing Server with Detections/No-Detections Structure
 """
 import threading
 from flask import request, jsonify, render_template, send_from_directory
+from services.system_metrics import SystemMetricsCollector
 
 def create_processing_routes(app, processing_service, video_repo, detection_repo, config):
+    
+    # Initialize system metrics collector
+    metrics_collector = SystemMetricsCollector(str(config.processing.storage_path))
     
     @app.route('/')
     def dashboard():
@@ -228,3 +232,12 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
     @app.route('/thumbnails/<filename>')
     def serve_thumbnail(filename):
         return send_from_directory(config.processing.storage_path / "thumbnails", filename)
+    
+    @app.route('/api/system-metrics')
+    def api_system_metrics():
+        """Get current system metrics (CPU, memory, disk)"""
+        try:
+            metrics = metrics_collector.get_metrics_dict()
+            return jsonify(metrics)
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500

@@ -128,9 +128,9 @@ Detections are grouped into events based on:
 - Species matching (same detection class)
 
 ### Web Interface
-- **Pi Dashboard**: Live camera feed, motion settings, system status
-- **Processing Dashboard**: Detection results, processing stats, thumbnails
-- **Unified Dashboard**: Combined view of both systems
+- **Pi Dashboard**: Live camera feed, motion settings, system status, system metrics
+- **Processing Dashboard**: Detection results, processing stats, thumbnails, system metrics
+- **Unified Dashboard**: Combined view of both systems with system metrics
 
 ## API Endpoints
 
@@ -139,12 +139,14 @@ Detections are grouped into events based on:
 - `POST /api/motion-settings`: Update motion detection settings
 - `GET /api/recent-videos`: Recent video recordings
 - `GET /api/camera-feed`: Live camera stream
+- `GET /api/system-metrics`: Real-time CPU, memory, disk usage
 
 ### Processing Server API (Port 8091)
 - `GET /api/recent-detections`: Recent detections with clustering
 - `GET /api/processing-stats`: Processing statistics
 - `POST /api/process-video`: Manual video processing
 - `GET /api/thumbnails/<path>`: Serve detection thumbnails
+- `GET /api/system-metrics`: Real-time CPU, memory, disk usage
 
 ### Query Parameters
 - `species`: Filter by detection class
@@ -256,6 +258,7 @@ This is a defensive security and wildlife monitoring tool. When working with thi
 - `flask>=2.3.0`: Web framework
 - `numpy>=1.24.0`: Numerical computing
 - `schedule>=1.2.0`: Task scheduling
+- `psutil>=5.9.0`: System metrics collection
 
 ### System Dependencies
 - `python3-picamera2`: Pi Camera interface (system package)

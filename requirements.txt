@@ -22,6 +22,9 @@ schedule>=1.2.0
 # HTTP requests (for Pi sync)
 requests>=2.31.0
 
+# System metrics
+psutil>=5.9.0
+
 # Development/Optional
 Pillow>=10.0.0
 

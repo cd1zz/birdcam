@@ -9,11 +9,15 @@ import time
 import requests
 from flask import request, jsonify, Response, render_template, send_from_directory, stream_with_context
 from core.models import MotionRegion
+from services.system_metrics import SystemMetricsCollector
 
 def create_capture_routes(app, capture_services, sync_service, settings_repos):
 
     default_service = next(iter(capture_services.values()))
     default_repo = settings_repos.get(default_service.capture_config.camera_id)
+    
+    # Initialize system metrics collector
+    metrics_collector = SystemMetricsCollector(default_service.capture_config.storage_path)
 
     def get_service() -> 'CaptureService':
         cam_id = request.args.get('camera_id', default_service.capture_config.camera_id)
@@ -366,5 +370,14 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
         try:
             service.motion_broadcaster.report_motion(camera_id, confidence=0.9)
             return jsonify({'success': True, 'message': f'Test motion triggered for camera {camera_id}'})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/system-metrics')
+    def api_system_metrics():
+        """Get current system metrics (CPU, memory, disk)"""
+        try:
+            metrics = metrics_collector.get_metrics_dict()
+            return jsonify(metrics)
         except Exception as e:
             return jsonify({'error': str(e)}), 500
