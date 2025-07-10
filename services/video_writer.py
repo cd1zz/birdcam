@@ -123,3 +123,22 @@ class VideoWriter:
     def get_frames_written(self) -> int:
         """Get number of frames written to current segment"""
         return self.frames_written
+    
+    def get_videos_count_today(self) -> int:
+        """Count the number of videos created today"""
+        try:
+            today = datetime.now().date()
+            count = 0
+            for video_file in self.output_dir.glob("segment_*.mp4"):
+                # Extract date from filename: segment_YYYYMMDD_HHMMSS.mp4
+                try:
+                    date_str = video_file.stem.split('_')[1]  # Get YYYYMMDD part
+                    file_date = datetime.strptime(date_str, '%Y%m%d').date()
+                    if file_date == today:
+                        count += 1
+                except (IndexError, ValueError):
+                    continue
+            return count
+        except Exception as e:
+            print(f"Error counting today's videos: {e}")
+            return 0

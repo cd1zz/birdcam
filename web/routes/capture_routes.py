@@ -18,6 +18,9 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
     
     # Initialize system metrics collector
     metrics_collector = SystemMetricsCollector(str(default_service.video_writer.output_dir))
+    
+    # Track startup time for uptime calculation
+    startup_time = time.time()
 
     def get_service() -> 'CaptureService':
         cam_id = request.args.get('camera_id', default_service.capture_config.camera_id)
@@ -52,23 +55,47 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
     
     @app.route('/api/status')
     def api_status():
-        capture_service = get_service()
-        status = capture_service.get_status()
-        server_status = sync_service.get_server_status()
-        
-        return jsonify({
-            'pi': {
-                'is_capturing': status.is_capturing,
-                'has_motion': getattr(capture_service, 'latest_motion', False),
-                'queue_size': status.queue_size,
-                'last_motion': status.last_motion_time.isoformat() if status.last_motion_time else None,
-                'total_videos': 0,  # TODO: Add to capture service
-                'total_size_mb': 0,  # TODO: Add to capture service
-                'pending_sync': status.queue_size
-            },
-            'server_connected': server_status.get('connected', False),
-            'server': server_status if server_status.get('connected') else None
-        })
+        """Return status in the format expected by the Analytics page"""
+        try:
+            capture_service = get_service()
+            status = capture_service.get_status()
+            
+            # Calculate uptime
+            uptime = int(time.time() - startup_time)
+            
+            # Get system metrics
+            metrics = metrics_collector.get_metrics_dict()
+            
+            # Get storage info from metrics
+            storage_info = metrics.get('disks', [{}])[0] if metrics.get('disks') else {}
+            storage_used = int(storage_info.get('used_gb', 0) * 1024 * 1024 * 1024)  # Convert GB to bytes
+            storage_total = int(storage_info.get('total_gb', 100) * 1024 * 1024 * 1024)  # Convert GB to bytes
+            
+            # Count videos and cameras
+            videos_today = capture_service.video_writer.get_videos_count_today() if hasattr(capture_service.video_writer, 'get_videos_count_today') else status.queue_size
+            cameras_active = len([s for s in capture_services.values() if s.is_running()])
+            
+            return jsonify({
+                'status': 'running' if status.is_capturing else 'stopped',
+                'uptime': uptime,
+                'cameras_active': cameras_active,
+                'videos_today': videos_today,
+                'detections_today': 0,  # Pi doesn't do detections
+                'storage_used': storage_used,
+                'storage_total': storage_total
+            })
+        except Exception as e:
+            print(f"Error in /api/status: {e}")
+            # Return a valid response even on error
+            return jsonify({
+                'status': 'error',
+                'uptime': 0,
+                'cameras_active': 0,
+                'videos_today': 0,
+                'detections_today': 0,
+                'storage_used': 0,
+                'storage_total': 1
+            })
     
     @app.route('/api/server-status')
     def api_server_status():

@@ -12,6 +12,10 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
     # Initialize system metrics collector
     metrics_collector = SystemMetricsCollector(str(config.processing.storage_path))
     
+    # Track startup time for uptime calculation
+    import time
+    startup_time = time.time()
+    
     # Serve the React UI
     ui_build_path = Path(__file__).parent.parent.parent / "web-ui" / "dist"
     
@@ -57,32 +61,49 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
     
     @app.route('/api/status')
     def api_status():
-        total_videos = video_repo.get_total_count()
-        processed_videos = video_repo.get_processed_count()
-        
-        # Use the new repository methods for better stats
+        """Return status in the format expected by the Analytics page"""
         try:
-            total_detections = video_repo.get_total_detections()
-            today_detections = video_repo.get_today_detections()
-            avg_processing_time = video_repo.get_average_processing_time()
+            # Calculate uptime
+            uptime = int(time.time() - startup_time)
+            
+            # Get system metrics
+            metrics = metrics_collector.get_metrics_dict()
+            
+            # Get storage info from metrics
+            storage_info = metrics.get('disks', [{}])[0] if metrics.get('disks') else {}
+            storage_used = int(storage_info.get('used_gb', 0) * 1024 * 1024 * 1024)  # Convert GB to bytes
+            storage_total = int(storage_info.get('total_gb', 100) * 1024 * 1024 * 1024)  # Convert GB to bytes
+            
+            # Get today's stats
+            try:
+                today_detections = video_repo.get_today_detections()
+                videos_today = video_repo.get_processed_count()  # Could enhance this to be today only
+            except Exception as e:
+                print(f"Error getting stats: {e}")
+                today_detections = 0
+                videos_today = 0
+            
+            return jsonify({
+                'status': 'running' if processing_service.model_manager.is_loaded else 'stopped',
+                'uptime': uptime,
+                'cameras_active': 0,  # Processing server doesn't have cameras
+                'videos_today': videos_today,
+                'detections_today': today_detections,
+                'storage_used': storage_used,
+                'storage_total': storage_total
+            })
         except Exception as e:
-            print(f"Error getting enhanced stats: {e}")
-            total_detections = 0
-            today_detections = 0
-            avg_processing_time = 0.0
-        
-        return jsonify({
-            'total_videos': total_videos,
-            'processed_videos': processed_videos,
-            'queue_size': total_videos - processed_videos,
-            'total_detections': total_detections,
-            'today_detections': today_detections,
-            'avg_processing_time': avg_processing_time,
-            'is_processing': processing_service.is_processing,
-            'model_loaded': processing_service.model_manager.is_loaded,
-            'gpu_available': processing_service.model_manager.gpu_available,
-            'detection_classes': processing_service.config.detection.classes
-        })
+            print(f"Error in /api/status: {e}")
+            # Return a valid response even on error
+            return jsonify({
+                'status': 'error',
+                'uptime': 0,
+                'cameras_active': 0,
+                'videos_today': 0,
+                'detections_today': 0,
+                'storage_used': 0,
+                'storage_total': 1
+            })
     
     def _bbox_iou(boxA, boxB):
         """Compute Intersection over Union of two bounding boxes"""
