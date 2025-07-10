@@ -1,33 +1,89 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
 
+interface SystemHealth {
+  isOnline: boolean;
+  lastSeen: number;
+  consecutiveFailures: number;
+}
+
 const Analytics: React.FC = () => {
-  const { data: piStatus, error: piError } = useQuery({
+  const [piHealth, setPiHealth] = useState<SystemHealth>({ isOnline: false, lastSeen: 0, consecutiveFailures: 0 });
+  const [processingHealth, setProcessingHealth] = useState<SystemHealth>({ isOnline: false, lastSeen: 0, consecutiveFailures: 0 });
+
+  const { data: piStatus, error: piError, isError: piIsError } = useQuery({
     queryKey: ['piStatus'],
-    queryFn: async () => {
-      const response = await api.status.getPiStatus();
-      console.log('Pi Status Response:', response.data);
-      return response.data;
+    queryFn: api.status.getPiStatus,
+    refetchInterval: 15000, // Reduced frequency from 5s to 15s
+    retry: 3, // Increased retries from 1 to 3
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
+    staleTime: 10000, // Data considered fresh for 10s
+    cacheTime: 30000, // Keep in cache for 30s
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    onSuccess: (data) => {
+      setPiHealth(prev => ({
+        isOnline: true,
+        lastSeen: Date.now(),
+        consecutiveFailures: 0
+      }));
     },
-    refetchInterval: 5000,
-    retry: 1,
+    onError: (error) => {
+      setPiHealth(prev => ({
+        ...prev,
+        consecutiveFailures: prev.consecutiveFailures + 1,
+        isOnline: prev.consecutiveFailures < 3 // Only mark offline after 3 consecutive failures
+      }));
+    }
   });
 
-  const { data: processingStatus, error: processingError } = useQuery({
+  const { data: processingStatus, error: processingError, isError: processingIsError } = useQuery({
     queryKey: ['processingStatus'],
-    queryFn: async () => {
-      const response = await api.status.getProcessingStatus();
-      console.log('Processing Status Response:', response.data);
-      return response.data;
+    queryFn: api.status.getProcessingStatus,
+    refetchInterval: 15000, // Reduced frequency from 5s to 15s
+    retry: 3, // Increased retries from 1 to 3
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
+    staleTime: 10000, // Data considered fresh for 10s
+    cacheTime: 30000, // Keep in cache for 30s
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    onSuccess: (data) => {
+      setProcessingHealth(prev => ({
+        isOnline: true,
+        lastSeen: Date.now(),
+        consecutiveFailures: 0
+      }));
     },
-    refetchInterval: 5000,
-    retry: 1,
+    onError: (error) => {
+      setProcessingHealth(prev => ({
+        ...prev,
+        consecutiveFailures: prev.consecutiveFailures + 1,
+        isOnline: prev.consecutiveFailures < 3 // Only mark offline after 3 consecutive failures
+      }));
+    }
   });
 
-  // Log errors for debugging
-  if (piError) console.error('Pi Status Error:', piError);
-  if (processingError) console.error('Processing Status Error:', processingError);
+  // Initialize health states
+  useEffect(() => {
+    if (piStatus && piHealth.lastSeen === 0) {
+      setPiHealth({ isOnline: true, lastSeen: Date.now(), consecutiveFailures: 0 });
+    }
+    if (processingStatus && processingHealth.lastSeen === 0) {
+      setProcessingHealth({ isOnline: true, lastSeen: Date.now(), consecutiveFailures: 0 });
+    }
+  }, [piStatus, processingStatus, piHealth.lastSeen, processingHealth.lastSeen]);
+
+  // Determine connection status with more resilience
+  const getPiConnectionStatus = () => {
+    if (piStatus && piHealth.isOnline) return 'online';
+    if (piHealth.consecutiveFailures >= 3) return 'offline';
+    return 'checking';
+  };
+
+  const getProcessingConnectionStatus = () => {
+    if (processingStatus && processingHealth.isOnline) return 'online';
+    if (processingHealth.consecutiveFailures >= 3) return 'offline';
+    return 'checking';
+  };
 
   const formatUptime = (seconds: number) => {
     const days = Math.floor(seconds / 86400);
@@ -61,8 +117,12 @@ const Analytics: React.FC = () => {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Status</span>
-                <span className={`font-medium ${piStatus.status === 'running' ? 'text-green-600' : 'text-red-600'}`}>
-                  {piStatus.status === 'running' ? '● Online' : '● Offline'}
+                <span className={`font-medium ${
+                  getPiConnectionStatus() === 'online' ? 'text-green-600' : 
+                  getPiConnectionStatus() === 'checking' ? 'text-yellow-600' : 'text-red-600'
+                }`}>
+                  {getPiConnectionStatus() === 'online' ? '● Online' : 
+                   getPiConnectionStatus() === 'checking' ? '● Checking...' : '● Offline'}
                 </span>
               </div>
               
@@ -98,7 +158,17 @@ const Analytics: React.FC = () => {
             </div>
           ) : (
             <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              {getPiConnectionStatus() === 'offline' ? (
+                <div className="text-center">
+                  <div className="text-red-500 text-3xl mb-2">⚠️</div>
+                  <p className="text-red-600 font-medium">Connection Failed</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    After {piHealth.consecutiveFailures} attempts
+                  </p>
+                </div>
+              ) : (
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              )}
             </div>
           )}
         </div>
@@ -114,8 +184,12 @@ const Analytics: React.FC = () => {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Status</span>
-                <span className={`font-medium ${processingStatus.status === 'running' ? 'text-green-600' : 'text-red-600'}`}>
-                  {processingStatus.status === 'running' ? '● Online' : '● Offline'}
+                <span className={`font-medium ${
+                  getProcessingConnectionStatus() === 'online' ? 'text-green-600' : 
+                  getProcessingConnectionStatus() === 'checking' ? 'text-yellow-600' : 'text-red-600'
+                }`}>
+                  {getProcessingConnectionStatus() === 'online' ? '● Online' : 
+                   getProcessingConnectionStatus() === 'checking' ? '● Checking...' : '● Offline'}
                 </span>
               </div>
               
@@ -151,7 +225,17 @@ const Analytics: React.FC = () => {
             </div>
           ) : (
             <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+              {getProcessingConnectionStatus() === 'offline' ? (
+                <div className="text-center">
+                  <div className="text-red-500 text-3xl mb-2">⚠️</div>
+                  <p className="text-red-600 font-medium">Connection Failed</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    After {processingHealth.consecutiveFailures} attempts
+                  </p>
+                </div>
+              ) : (
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+              )}
             </div>
           )}
         </div>
