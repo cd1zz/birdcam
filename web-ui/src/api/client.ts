@@ -52,17 +52,19 @@ export interface SystemStatus {
 
 export interface MotionSettings {
   motion_threshold: number;
-  min_area: number;
-  max_area: number;
-  motion_timeout: number;
-  pre_capture_seconds: number;
-  post_capture_seconds: number;
-  regions: Array<{
-    id: string;
-    name: string;
-    points: Array<[number, number]>;
-    enabled: boolean;
-  }>;
+  min_contour_area: number;
+  motion_timeout_seconds: number;
+  motion_box_enabled: boolean;
+  motion_box_x1: number;
+  motion_box_y1: number;
+  motion_box_x2: number;
+  motion_box_y2: number;
+  region?: {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+  };
 }
 
 // API functions
@@ -76,9 +78,14 @@ export const api = {
 
   // Motion settings
   motion: {
-    getSettings: () => piApi.get<MotionSettings>('/api/motion-settings'),
-    updateSettings: (settings: Partial<MotionSettings>) => 
-      piApi.post('/api/motion-settings', settings),
+    getSettings: (cameraId?: number) => 
+      piApi.get<MotionSettings>('/api/motion-settings', { 
+        params: cameraId !== undefined ? { camera_id: cameraId } : undefined 
+      }),
+    updateSettings: (settings: Partial<MotionSettings>, cameraId?: number) => 
+      piApi.post('/api/motion-settings', settings, { 
+        params: cameraId !== undefined ? { camera_id: cameraId } : undefined 
+      }),
     getBroadcasterConfig: () => piApi.get('/api/motion-broadcaster/config'),
     updateBroadcasterConfig: (config: any) => 
       piApi.post('/api/motion-broadcaster/config', config),

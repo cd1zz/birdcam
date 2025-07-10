@@ -1,15 +1,25 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, type MotionSettings } from '../api/client';
+import InteractiveCameraFeed from '../components/InteractiveCameraFeed';
 
 const Settings: React.FC = () => {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'motion' | 'broadcast'>('motion');
+  const [activeTab, setActiveTab] = useState<'motion' | 'regions' | 'broadcast'>('motion');
+  const [selectedCamera, setSelectedCamera] = useState<number>(0);
+
+  const { data: cameras } = useQuery({
+    queryKey: ['cameras'],
+    queryFn: async () => {
+      const response = await api.cameras.list();
+      return response.data.cameras;
+    },
+  });
 
   const { data: motionSettings, isLoading } = useQuery({
-    queryKey: ['motionSettings'],
+    queryKey: ['motionSettings', selectedCamera],
     queryFn: async () => {
-      const response = await api.motion.getSettings();
+      const response = await api.motion.getSettings(selectedCamera);
       return response.data;
     },
   });
@@ -23,9 +33,9 @@ const Settings: React.FC = () => {
   });
 
   const updateMotionMutation = useMutation({
-    mutationFn: (settings: Partial<MotionSettings>) => api.motion.updateSettings(settings),
+    mutationFn: (settings: Partial<MotionSettings>) => api.motion.updateSettings(settings, selectedCamera),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['motionSettings'] });
+      queryClient.invalidateQueries({ queryKey: ['motionSettings', selectedCamera] });
     },
   });
 
@@ -58,7 +68,17 @@ const Settings: React.FC = () => {
                   : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
             >
-              Motion Detection
+              Motion Settings
+            </button>
+            <button
+              onClick={() => setActiveTab('regions')}
+              className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
+                activeTab === 'regions'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Motion Regions
             </button>
             <button
               onClick={() => setActiveTab('broadcast')}
@@ -74,6 +94,26 @@ const Settings: React.FC = () => {
         </div>
       </div>
 
+      {/* Camera Selector */}
+      {cameras && cameras.length > 1 && (
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <div className="flex items-center gap-4">
+            <label className="text-sm font-medium text-gray-700">Configure Camera:</label>
+            <select
+              value={selectedCamera}
+              onChange={(e) => setSelectedCamera(parseInt(e.target.value))}
+              className="block w-48 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            >
+              {cameras.map((camera) => (
+                <option key={camera.id} value={camera.id}>
+                  {camera.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
       {/* Motion Detection Settings */}
       {activeTab === 'motion' && motionSettings && (
         <div className="bg-white rounded-lg shadow-sm p-6">
@@ -86,8 +126,8 @@ const Settings: React.FC = () => {
               </label>
               <input
                 type="range"
-                min="10"
-                max="100"
+                min="1000"
+                max="10000"
                 value={motionSettings.motion_threshold}
                 onChange={(e) => handleMotionSettingChange('motion_threshold', parseInt(e.target.value))}
                 className="w-full"
@@ -102,97 +142,43 @@ const Settings: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Minimum Area
+                  Minimum Contour Area
                 </label>
                 <input
                   type="number"
-                  value={motionSettings.min_area}
-                  onChange={(e) => handleMotionSettingChange('min_area', parseInt(e.target.value))}
+                  value={motionSettings.min_contour_area}
+                  onChange={(e) => handleMotionSettingChange('min_contour_area', parseInt(e.target.value))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Maximum Area
+                  Motion Timeout (seconds)
                 </label>
                 <input
                   type="number"
-                  value={motionSettings.max_area}
-                  onChange={(e) => handleMotionSettingChange('max_area', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Pre-Capture Seconds
-                </label>
-                <input
-                  type="number"
-                  value={motionSettings.pre_capture_seconds}
-                  onChange={(e) => handleMotionSettingChange('pre_capture_seconds', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Post-Capture Seconds
-                </label>
-                <input
-                  type="number"
-                  value={motionSettings.post_capture_seconds}
-                  onChange={(e) => handleMotionSettingChange('post_capture_seconds', parseInt(e.target.value))}
+                  value={motionSettings.motion_timeout_seconds}
+                  onChange={(e) => handleMotionSettingChange('motion_timeout_seconds', parseInt(e.target.value))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Motion Timeout (seconds)
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={motionSettings.motion_box_enabled}
+                  onChange={(e) => handleMotionSettingChange('motion_box_enabled', e.target.checked)}
+                  className="mr-2"
+                />
+                <span className="text-sm font-medium text-gray-700">Enable Motion Box Detection</span>
               </label>
-              <input
-                type="number"
-                value={motionSettings.motion_timeout}
-                onChange={(e) => handleMotionSettingChange('motion_timeout', parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              />
               <p className="text-sm text-gray-500 mt-1">
-                Minimum time between motion events
+                Use the Motion Regions tab to visually configure the detection area
               </p>
             </div>
-
-            {/* Motion Regions */}
-            {motionSettings.regions && motionSettings.regions.length > 0 && (
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3">Motion Regions</h4>
-                <div className="space-y-2">
-                  {motionSettings.regions.map((region) => (
-                    <div key={region.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                      <span className="font-medium">{region.name}</span>
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={region.enabled}
-                          onChange={(e) => {
-                            const updatedRegions = motionSettings.regions.map(r =>
-                              r.id === region.id ? { ...r, enabled: e.target.checked } : r
-                            );
-                            handleMotionSettingChange('regions', updatedRegions);
-                          }}
-                          className="mr-2"
-                        />
-                        <span className="text-sm text-gray-600">Enabled</span>
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {updateMotionMutation.isSuccess && (
@@ -200,6 +186,53 @@ const Settings: React.FC = () => {
               Settings updated successfully!
             </div>
           )}
+        </div>
+      )}
+
+      {/* Motion Regions Tab */}
+      {activeTab === 'regions' && cameras && (
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h3 className="text-lg font-semibold mb-6">Configure Motion Detection Area</h3>
+          
+          <div className="space-y-4">
+            <p className="text-gray-600">
+              Use the controls on the camera feed to draw and adjust the motion detection box. 
+              Motion outside this area will be ignored.
+            </p>
+            
+            <div className="aspect-video max-w-2xl">
+              <InteractiveCameraFeed
+                cameraId={selectedCamera}
+                cameraName={cameras.find(c => c.id === selectedCamera)?.name || `Camera ${selectedCamera}`}
+                className="w-full h-full"
+                showMotionBox={true}
+                onMotionBoxChange={(box) => {
+                  console.log('Motion box changed:', box);
+                  queryClient.invalidateQueries({ queryKey: ['motionSettings', selectedCamera] });
+                }}
+              />
+            </div>
+            
+            {motionSettings && (
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-sm font-medium text-gray-700">Motion Box Coordinates</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Top-Left: ({motionSettings.motion_box_x1}, {motionSettings.motion_box_y1})
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Bottom-Right: ({motionSettings.motion_box_x2}, {motionSettings.motion_box_y2})
+                  </p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-sm font-medium text-gray-700">Detection Status</p>
+                  <p className={`text-xs mt-1 ${motionSettings.motion_box_enabled ? 'text-green-600' : 'text-red-600'}`}>
+                    {motionSettings.motion_box_enabled ? 'Enabled' : 'Disabled'}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
