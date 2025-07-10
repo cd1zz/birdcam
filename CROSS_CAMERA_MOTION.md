@@ -1,8 +1,24 @@
-# 🔗 Cross-Camera Motion Triggering
+# 🔗 Cross-Camera Motion Triggering (DEPRECATED)
 
-## Overview
+## ⚠️ DEPRECATED - Replaced with Active-Passive System
 
-The Cross-Camera Motion Triggering feature allows motion detected on one camera to automatically trigger recording on all cameras in the system. This ensures that wildlife activity is captured from multiple angles, providing comprehensive coverage of your monitoring area.
+This complex cross-camera motion triggering system has been replaced with a simplified **Active-Passive** approach for better stability and reliability.
+
+### New Active-Passive System
+- **Camera 0** is the active camera (detects motion)
+- **Camera 1+** are passive cameras (record when triggered)
+- **No motion broadcaster** - direct communication between cameras
+- **More stable** - eliminates feedback loops and crashes
+- **Simpler configuration** - set motion box on Camera 0 only
+
+### Migration
+The system now uses a direct active-passive relationship instead of the complex broadcaster pattern described below.
+
+---
+
+## Overview (Legacy)
+
+The Cross-Camera Motion Triggering feature allowed motion detected on one camera to automatically trigger recording on all cameras in the system. This system was replaced due to stability issues with feedback loops and crashes.
 
 ## ✨ Features
 
@@ -326,4 +342,18 @@ The system is fully thread-safe using:
 - Exception handling to prevent crashes
 - Proper resource cleanup
 
-This cross-camera motion triggering system provides robust, coordinated wildlife monitoring with minimal configuration required.
+## Current Status
+
+This system has been **replaced** with the Active-Passive implementation for better stability. See `ACTIVE_PASSIVE_IMPLEMENTATION.md` for the current approach.
+
+### Why It Was Replaced
+- **Feedback loops**: Cameras triggering each other infinitely
+- **System crashes**: Complex timing and synchronization issues
+- **Difficult debugging**: Hard to trace issues across multiple cameras
+- **Unstable**: Required emergency fixes that disabled key features
+
+### New Approach Benefits
+- **Stable**: No feedback loops or complex synchronization
+- **Simple**: One camera detects, all cameras record
+- **Reliable**: Back to old-state simplicity with dual recording
+- **User-friendly**: Configure motion detection on one camera only

@@ -1,20 +1,20 @@
-# Master-Slave Camera Implementation
+# Active-Passive Camera Implementation
 
 ## Summary
-Successfully implemented a simplified master-slave camera system that replaces the complex motion broadcaster with a direct master-slave relationship.
+Successfully implemented a simplified active-passive camera system that replaces the complex motion broadcaster with a direct active-passive relationship.
 
 ## How It Works
 
-### Master Camera (Camera 0)
-- **Motion Detection**: Only the master camera detects motion
-- **Recording Trigger**: When motion is detected, master starts recording AND triggers slave
-- **Motion Box**: User configures motion detection box only on master camera
-- **Pre-Motion Buffer**: Master camera gets pre-motion buffer frames (15 seconds)
+### Active Camera (Camera 0)
+- **Motion Detection**: Only the active camera detects motion
+- **Recording Trigger**: When motion is detected, active starts recording AND triggers passive
+- **Motion Box**: User configures motion detection box only on active camera
+- **Pre-Motion Buffer**: Active camera gets pre-motion buffer frames (15 seconds)
 
-### Slave Camera (Camera 1+)
-- **No Motion Detection**: Slave cameras don't detect motion
-- **Recording Only**: Slave cameras only record when triggered by master
-- **No Pre-Motion Buffer**: Slave cameras start recording immediately (no pre-motion)
+### Passive Camera (Camera 1+)
+- **No Motion Detection**: Passive cameras don't detect motion
+- **Recording Only**: Passive cameras only record when triggered by active
+- **No Pre-Motion Buffer**: Passive cameras start recording immediately (no pre-motion)
 - **Separate Files**: Each camera saves its own recording file
 
 ## Key Benefits
@@ -29,24 +29,24 @@ Successfully implemented a simplified master-slave camera system that replaces t
 
 ### 1. `/home/craig/birdcam/services/capture_service.py`
 ```python
-# Master-slave setup
+# Active-passive setup
 self.camera_id = capture_config.camera_id
-self.is_master = self.camera_id == 0  # Camera 0 is master
-self.slave_camera_service: Optional['CaptureService'] = None
+self.is_active = self.camera_id == 0  # Camera 0 is active
+self.passive_camera_service: Optional['CaptureService'] = None
 
-# Master-slave methods
-def set_slave_camera(self, slave_service: 'CaptureService'):
-    """Set the slave camera service for master-slave recording"""
+# Active-passive methods
+def set_passive_camera(self, passive_service: 'CaptureService'):
+    """Set the passive camera service for active-passive recording"""
 
-def _start_recording_from_master(self):
-    """Start recording on slave camera when triggered by master"""
+def _start_recording_from_active(self):
+    """Start recording on passive camera when triggered by active"""
 ```
 
 **Key Changes:**
 - Removed motion broadcaster imports and integration
 - Added master/slave camera identification
-- Only master camera does motion detection
-- Master directly triggers slave camera recording
+- Only active camera does motion detection
+- Active directly triggers passive camera recording
 - Simplified timeout logic (back to old-state)
 - Re-enabled pre-motion buffer with timestamp spacing
 
@@ -68,32 +68,32 @@ def write_frames_with_timestamps(self, frames: list):
 
 ### 3. `/home/craig/birdcam/pi_capture/main.py`
 ```python
-# Set up master-slave relationships
-print("🔗 Setting up master-slave camera relationships...")
-master_service = capture_services.get(0)  # Camera 0 is master
-if master_service:
+# Set up active-passive relationships
+print("🔗 Setting up active-passive camera relationships...")
+active_service = capture_services.get(0)  # Camera 0 is active
+if active_service:
     for camera_id, service in capture_services.items():
-        if camera_id != 0:  # All other cameras are slaves
-            master_service.set_slave_camera(service)
-            print(f"✅ Linked master camera 0 to slave camera {camera_id}")
+        if camera_id != 0:  # All other cameras are passive
+            active_service.set_passive_camera(service)
+            print(f"✅ Linked active camera 0 to passive camera {camera_id}")
 ```
 
 **Key Changes:**
 - Removed motion broadcaster initialization
-- Added master-slave linking after all services are created
-- Links Camera 0 as master to all other cameras as slaves
+- Added active-passive linking after all services are created
+- Links Camera 0 as active to all other cameras as passive
 
 ## Recording Flow
 
 ### When Motion is Detected:
-1. **Master Camera 0** detects motion in configured motion box
-2. **Master Camera 0** starts recording with pre-motion buffer
-3. **Master Camera 0** triggers **Slave Camera 1** to start recording
+1. **Active Camera 0** detects motion in configured motion box
+2. **Active Camera 0** starts recording with pre-motion buffer
+3. **Active Camera 0** triggers **Passive Camera 1** to start recording
 4. **Both cameras record simultaneously** to separate files
 
 ### When Motion Stops:
-1. **Master Camera 0** stops recording after timeout
-2. **Master Camera 0** tells **Slave Camera 1** to stop recording
+1. **Active Camera 0** stops recording after timeout
+2. **Active Camera 0** tells **Passive Camera 1** to stop recording
 3. **Both cameras save their segments** as separate files
 
 ## User Experience
@@ -119,4 +119,4 @@ The system should now:
 3. **Check stability** - no more crashes or infinite loops
 4. **Validate motion box** configuration works as expected
 
-The system is now ready for testing with the simplified, stable master-slave approach!
+The system is now ready for testing with the simplified, stable active-passive approach!

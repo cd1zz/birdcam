@@ -86,9 +86,9 @@ export const api = {
       processingApi.post('/api/motion-settings', settings, { 
         params: cameraId !== undefined ? { camera_id: cameraId } : undefined 
       }),
-    getBroadcasterConfig: () => piApi.get('/api/motion-broadcaster/config'),
-    updateBroadcasterConfig: (config: any) => 
-      piApi.post('/api/motion-broadcaster/config', config),
+    getActivePassiveConfig: () => piApi.get('/api/active-passive/config'),
+    getActivePassiveStats: () => piApi.get('/api/active-passive/stats'),
+    testActivePassiveTrigger: () => piApi.get('/api/active-passive/test-trigger'),
   },
 
   // System status

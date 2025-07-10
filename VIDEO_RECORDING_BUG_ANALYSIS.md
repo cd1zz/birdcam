@@ -146,3 +146,12 @@ The video recording bugs were introduced by:
 3. **Overly complex error handling** (tertiary cause)
 
 The old-state branch worked because it had none of these complex features. The emergency fixes have stabilized the system but at the cost of losing the pre-motion buffer functionality.
+
+## Update: Active-Passive Implementation
+
+The system has now been updated to use a simplified active-passive approach:
+- **Camera 0** is the active camera (detects motion)
+- **Camera 1+** are passive cameras (record when triggered)
+- **No motion broadcaster** - direct communication between cameras
+- **Pre-motion buffer re-enabled** with proper timestamp handling
+- **Stable architecture** similar to old-state simplicity

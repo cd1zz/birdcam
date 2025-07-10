@@ -24,10 +24,10 @@ const Settings: React.FC = () => {
     },
   });
 
-  const { data: broadcastConfig } = useQuery({
-    queryKey: ['broadcastConfig'],
+  const { data: activePassiveConfig } = useQuery({
+    queryKey: ['activePassiveConfig'],
     queryFn: async () => {
-      const response = await api.motion.getBroadcasterConfig();
+      const response = await api.motion.getActivePassiveConfig();
       return response.data;
     },
   });
@@ -88,7 +88,7 @@ const Settings: React.FC = () => {
                   : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
             >
-              Cross-Camera Broadcast
+              Active-Passive Mode
             </button>
           </nav>
         </div>
@@ -236,18 +236,28 @@ const Settings: React.FC = () => {
         </div>
       )}
 
-      {/* Broadcast Settings */}
-      {activeTab === 'broadcast' && broadcastConfig && (
+      {/* Active-Passive Settings */}
+      {activeTab === 'broadcast' && activePassiveConfig && (
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold mb-6">Cross-Camera Broadcast Settings</h3>
+          <h3 className="text-lg font-semibold mb-6">Active-Passive Camera Settings</h3>
           
           <div className="space-y-4">
             <p className="text-gray-600">
-              Configure how motion events from one camera trigger recording on other cameras.
+              In active-passive mode, Camera 0 detects motion and triggers recording on all cameras.
             </p>
             
+            <div className="bg-blue-50 p-4 rounded">
+              <h4 className="font-medium text-blue-900 mb-2">How it works:</h4>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• Camera 0 is the <strong>active camera</strong> - detects motion</li>
+                <li>• Other cameras are <strong>passive cameras</strong> - record when triggered</li>
+                <li>• Configure motion detection box only on Camera 0</li>
+                <li>• All cameras save separate recording files</li>
+              </ul>
+            </div>
+            
             <pre className="bg-gray-50 p-4 rounded overflow-auto text-sm">
-              {JSON.stringify(broadcastConfig, null, 2)}
+              {JSON.stringify(activePassiveConfig, null, 2)}
             </pre>
           </div>
         </div>

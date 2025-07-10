@@ -164,10 +164,11 @@ updateTimestamp()                 // Live timestamp updates
 6. **Improved Mobile Experience** - Better touch interaction and responsive design
 
 ### **API Integration:**
-- `/api/motion-broadcaster/config` - Configuration management
-- `/api/motion-broadcaster/stats` - Statistics and status
-- `/api/motion-broadcaster/active-cameras` - Active camera tracking
-- `/api/motion-broadcaster/test-trigger/{id}` - Motion testing
+- `/api/active-passive/config` - Active-passive configuration
+- `/api/active-passive/stats` - Active-passive statistics
+- `/api/active-passive/test-trigger` - Test active-passive trigger
+
+**Note**: The motion broadcaster system has been replaced with a simplified active-passive approach for better stability.
 
 ---
 

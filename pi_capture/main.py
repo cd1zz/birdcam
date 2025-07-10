@@ -18,7 +18,7 @@ from services.camera_manager import CameraManager, print_detected_cameras
 from services.video_writer import VideoWriter
 from services.file_sync import FileSyncService
 from services.capture_service import CaptureService
-# Removed motion_event_broadcaster - using simple master-slave approach
+# Removed motion_event_broadcaster - using simple active-passive approach
 from web.app import create_capture_app
 
 
@@ -171,7 +171,7 @@ def main():
         print("🔗 Initializing motion broadcaster...")
         cross_trigger_enabled = os.getenv('CROSS_CAMERA_TRIGGER', 'true').lower() == 'true'
         trigger_timeout = float(os.getenv('CROSS_TRIGGER_TIMEOUT', '5.0'))
-        # Removed motion broadcaster initialization - using simple master-slave approach
+        # Removed motion broadcaster initialization - using simple active-passive approach
         print(f"✅ Motion broadcaster initialized (cross-trigger: {cross_trigger_enabled}, timeout: {trigger_timeout}s)")
 
         capture_services = {}
@@ -197,16 +197,16 @@ def main():
         if not capture_services:
             raise RuntimeError("No camera configurations found")
         
-        # Set up master-slave relationships
-        print("🔗 Setting up master-slave camera relationships...")
-        master_service = capture_services.get(0)  # Camera 0 is master
-        if master_service:
+        # Set up active-passive relationships
+        print("🔗 Setting up active-passive camera relationships...")
+        active_service = capture_services.get(0)  # Camera 0 is active
+        if active_service:
             for camera_id, service in capture_services.items():
-                if camera_id != 0:  # All other cameras are slaves
-                    master_service.set_slave_camera(service)
-                    print(f"✅ Linked master camera 0 to slave camera {camera_id}")
+                if camera_id != 0:  # All other cameras are passive
+                    active_service.set_passive_camera(service)
+                    print(f"✅ Linked active camera 0 to passive camera {camera_id}")
         else:
-            print("⚠️ No master camera (camera 0) found - using single camera mode")
+            print("⚠️ No active camera (camera 0) found - using single camera mode")
         
         # Start all capture services
         print("🎬 Starting video capture for all cameras...")
@@ -223,7 +223,7 @@ def main():
         print("🎯 This dashboard shows both Pi capture AND AI processing status")
         print("⚙️ Motion settings will be saved and restored on restart")
         if len(capture_services) > 1:
-            print("🔗 Master-slave setup: Camera 0 detects motion, all cameras record")
+            print("🔗 Active-passive setup: Camera 0 detects motion, all cameras record")
         else:
             print("📷 Single camera mode active")
         

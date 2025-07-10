@@ -1,4 +1,4 @@
-# services/capture_service.py - SIMPLIFIED MASTER-SLAVE VERSION
+# services/capture_service.py - SIMPLIFIED ACTIVE-PASSIVE VERSION
 import time
 import threading
 from collections import deque
@@ -42,10 +42,10 @@ class CaptureService:
         # Latest motion state for UI indicators
         self.latest_motion = False
         
-        # Master-slave camera setup
+        # Active-passive camera setup
         self.camera_id = capture_config.camera_id
-        self.is_master = self.camera_id == 0  # Camera 0 is the master
-        self.slave_camera_service: Optional['CaptureService'] = None
+        self.is_active = self.camera_id == 0  # Camera 0 is the active camera
+        self.passive_camera_service: Optional['CaptureService'] = None
         
         # Pre-motion buffer (15 seconds worth of frames)
         buffer_size = capture_config.fps * 15  # 15 seconds of frames
@@ -60,15 +60,15 @@ class CaptureService:
         self.on_segment_completed: Optional[Callable[[CaptureSegment], None]] = None
         
         print(f"🎯 CaptureService initialized:")
-        print(f"   📷 Camera ID: {self.camera_id} ({'MASTER' if self.is_master else 'SLAVE'})")
+        print(f"   📷 Camera ID: {self.camera_id} ({'ACTIVE' if self.is_active else 'PASSIVE'})")
         print(f"   📺 Resolution: {capture_config.resolution}")
         print(f"   🎬 FPS: {capture_config.fps}")
         print(f"   ⏱️ Motion timeout: {motion_config.motion_timeout_seconds}s")
         print(f"   📦 Buffer size: {buffer_size} frames")
-        if self.is_master:
-            print(f"   🎯 Motion detection: ENABLED (master camera)")
+        if self.is_active:
+            print(f"   🎯 Motion detection: ENABLED (active camera)")
         else:
-            print(f"   🎯 Motion detection: DISABLED (slave camera)")
+            print(f"   🎯 Motion detection: DISABLED (passive camera)")
     
     def start_capture(self):
         """Start the capture process in a background thread"""
@@ -97,8 +97,8 @@ class CaptureService:
         print("✅ Capture stopped")
     
     def _capture_loop(self):
-        """Main capture loop - MASTER-SLAVE VERSION"""
-        print(f"🔄 Capture loop started for camera {self.camera_id} ({'MASTER' if self.is_master else 'SLAVE'})")
+        """Main capture loop - ACTIVE-PASSIVE VERSION"""
+        print(f"🔄 Capture loop started for camera {self.camera_id} ({'ACTIVE' if self.is_active else 'PASSIVE'})")
         last_heartbeat = time.time()
         
         while self.is_running:
@@ -110,12 +110,12 @@ class CaptureService:
                 time.sleep(0.1)
                 continue
             
-            # Only master camera does motion detection
-            if self.is_master:
+            # Only active camera does motion detection
+            if self.is_active:
                 has_motion = self.motion_detector.detect_motion(frame)
                 self.latest_motion = has_motion
                 
-                # Handle motion detection on master camera
+                # Handle motion detection on active camera
                 if has_motion:
                     self.last_motion_time = current_time
                     
@@ -124,14 +124,14 @@ class CaptureService:
                     
                     # Start recording on both cameras
                     if not self.is_capturing:
-                        print(f"🎯 Motion detected on master camera {self.camera_id}! Starting recording on both cameras...")
+                        print(f"🎯 Motion detected on active camera {self.camera_id}! Starting recording on both cameras...")
                         self._start_recording()
                         
-                        # Trigger slave camera recording
-                        if self.slave_camera_service and not self.slave_camera_service.is_capturing:
-                            self.slave_camera_service._start_recording_from_master()
+                        # Trigger passive camera recording
+                        if self.passive_camera_service and not self.passive_camera_service.is_capturing:
+                            self.passive_camera_service._start_recording_from_active()
             else:
-                # Slave camera doesn't do motion detection
+                # Passive camera doesn't do motion detection
                 self.latest_motion = False
             
             # Always add frames to pre-motion buffer when NOT recording
@@ -164,10 +164,10 @@ class CaptureService:
                     print(f"🛑 Stopping recording on camera {self.camera_id}: {stop_reason}")
                     self._finish_current_segment()
                     
-                    # If master camera stops, stop slave camera too
-                    if self.is_master and self.slave_camera_service and self.slave_camera_service.is_capturing:
-                        print(f"🛑 Stopping slave camera {self.slave_camera_service.camera_id} recording")
-                        self.slave_camera_service._finish_current_segment()
+                    # If active camera stops, stop passive camera too
+                    if self.is_active and self.passive_camera_service and self.passive_camera_service.is_capturing:
+                        print(f"🛑 Stopping passive camera {self.passive_camera_service.camera_id} recording")
+                        self.passive_camera_service._finish_current_segment()
             
             # Heartbeat every 30 seconds
             if current_time - last_heartbeat > 30:
@@ -190,14 +190,14 @@ class CaptureService:
             self.is_capturing = True
             self.segment_start_time = time.time()
             
-            # Re-enable pre-motion buffer for master camera (fixed timestamp handling)
-            if self.pre_motion_buffer and self.is_master:
+            # Re-enable pre-motion buffer for active camera (fixed timestamp handling)
+            if self.pre_motion_buffer and self.is_active:
                 print(f"📼 Writing {len(self.pre_motion_buffer)} pre-motion frames")
                 self.video_writer.write_frames_with_timestamps(list(self.pre_motion_buffer))
                 self.pre_motion_buffer.clear()
             elif self.pre_motion_buffer:
-                # Slave camera - clear buffer but don't write (no pre-motion for slave)
-                print(f"📼 Clearing {len(self.pre_motion_buffer)} frames from slave camera buffer")
+                # Passive camera - clear buffer but don't write (no pre-motion for passive)
+                print(f"📼 Clearing {len(self.pre_motion_buffer)} frames from passive camera buffer")
                 self.pre_motion_buffer.clear()
             
             print(f"🎬 Recording started: {segment.filename}")
@@ -304,19 +304,19 @@ class CaptureService:
         with self.sync_lock:
             return len(self.sync_queue)
     
-    def set_slave_camera(self, slave_service: 'CaptureService'):
-        """Set the slave camera service for master-slave recording"""
-        if self.is_master:
-            self.slave_camera_service = slave_service
-            print(f"✅ Master camera {self.camera_id} linked to slave camera {slave_service.camera_id}")
+    def set_passive_camera(self, passive_service: 'CaptureService'):
+        """Set the passive camera service for active-passive recording"""
+        if self.is_active:
+            self.passive_camera_service = passive_service
+            print(f"✅ Active camera {self.camera_id} linked to passive camera {passive_service.camera_id}")
         else:
-            print(f"⚠️ Camera {self.camera_id} is not master, cannot set slave camera")
+            print(f"⚠️ Camera {self.camera_id} is not active, cannot set passive camera")
     
-    def _start_recording_from_master(self):
-        """Start recording on slave camera when triggered by master"""
-        if self.is_master:
-            print(f"⚠️ Master camera {self.camera_id} should not be triggered by master")
+    def _start_recording_from_active(self):
+        """Start recording on passive camera when triggered by active"""
+        if self.is_active:
+            print(f"⚠️ Active camera {self.camera_id} should not be triggered by active")
             return
         
-        print(f"🎬 Starting slave camera {self.camera_id} recording (triggered by master)")
+        print(f"🎬 Starting passive camera {self.camera_id} recording (triggered by active)")
         self._start_recording()

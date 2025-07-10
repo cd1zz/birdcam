@@ -374,54 +374,52 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             })
         return jsonify({'cameras': camera_list})
     
-    @app.route('/api/motion-broadcaster/stats')
-    def api_motion_broadcaster_stats():
-        """Get motion broadcaster statistics"""
+    @app.route('/api/active-passive/stats')
+    def api_active_passive_stats():
+        """Get active-passive camera statistics"""
         service = get_service()
-        stats = service.get_motion_broadcaster_stats()
+        if not service.is_active:
+            return jsonify({'error': 'This endpoint only works on the active camera'}), 400
+        
+        stats = {
+            'active_camera_id': service.camera_id,
+            'passive_camera_connected': service.passive_camera_service is not None,
+            'passive_camera_id': service.passive_camera_service.camera_id if service.passive_camera_service else None,
+            'is_recording': service.is_capturing,
+            'passive_is_recording': service.passive_camera_service.is_capturing if service.passive_camera_service else False,
+            'last_motion_time': service.last_motion_time,
+            'latest_motion': service.latest_motion
+        }
         return jsonify(stats)
     
-    @app.route('/api/motion-broadcaster/config', methods=['GET', 'POST'])
-    def api_motion_broadcaster_config():
-        """Get or update motion broadcaster configuration"""
+    @app.route('/api/active-passive/config', methods=['GET'])
+    def api_active_passive_config():
+        """Get active-passive camera configuration"""
         service = get_service()
-        broadcaster = service.motion_broadcaster
-        
-        if request.method == 'GET':
-            return jsonify({
-                'cross_trigger_enabled': broadcaster.cross_trigger_enabled,
-                'trigger_timeout': broadcaster.trigger_timeout
-            })
-        
-        elif request.method == 'POST':
-            data = request.get_json()
-            
-            if 'cross_trigger_enabled' in data:
-                broadcaster.set_cross_trigger_enabled(data['cross_trigger_enabled'])
-            
-            if 'trigger_timeout' in data:
-                timeout = float(data['trigger_timeout'])
-                if timeout > 0:
-                    broadcaster.set_trigger_timeout(timeout)
-                else:
-                    return jsonify({'error': 'Trigger timeout must be positive'}), 400
-            
-            return jsonify({'success': True})
+        return jsonify({
+            'active_camera_enabled': True,  # Always enabled in active-passive mode
+            'camera_count': len(capture_services),
+            'active_camera_id': 0,
+            'passive_camera_ids': [cid for cid in capture_services.keys() if cid != 0],
+            'mode': 'active-passive'
+        })
     
-    @app.route('/api/motion-broadcaster/active-cameras')
-    def api_motion_broadcaster_active_cameras():
-        """Get list of cameras with recent motion"""
+    @app.route('/api/active-passive/test-trigger')
+    def api_test_active_passive_trigger():
+        """Test active-passive trigger (simulate motion on active camera)"""
         service = get_service()
-        active_cameras = service.motion_broadcaster.get_active_cameras()
-        return jsonify({'active_cameras': list(active_cameras)})
-    
-    @app.route('/api/motion-broadcaster/test-trigger/<int:camera_id>')
-    def api_test_motion_trigger(camera_id):
-        """Test motion trigger for a specific camera"""
-        service = get_service()
+        if not service.is_active:
+            return jsonify({'error': 'Test trigger only works on active camera (camera 0)'}), 400
+        
         try:
-            service.motion_broadcaster.report_motion(camera_id, confidence=0.9)
-            return jsonify({'success': True, 'message': f'Test motion triggered for camera {camera_id}'})
+            # Simulate motion detection on active camera
+            if not service.is_capturing:
+                service._start_recording()
+                if service.passive_camera_service and not service.passive_camera_service.is_capturing:
+                    service.passive_camera_service._start_recording_from_active()
+                return jsonify({'success': True, 'message': 'Test recording started on active and passive cameras'})
+            else:
+                return jsonify({'success': True, 'message': 'Cameras are already recording'})
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     
@@ -552,8 +550,13 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             # Get server status
             server_status = sync_service.get_server_status()
             
-            # Get motion broadcaster stats
-            broadcaster_stats = default_service.get_motion_broadcaster_stats()
+            # Get active-passive stats
+            active_passive_stats = {
+                'mode': 'active-passive',
+                'active_camera_id': 0,
+                'passive_camera_ids': [cid for cid in capture_services.keys() if cid != 0],
+                'camera_count': len(capture_services)
+            }
             
             # Get system metrics
             system_metrics = metrics_collector.get_metrics_dict()
@@ -561,7 +564,7 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             return jsonify({
                 'cameras': camera_stats,
                 'server': server_status,
-                'motion_broadcaster': broadcaster_stats,
+                'active_passive': active_passive_stats,
                 'system': system_metrics,
                 'timestamp': time.time()
             })
