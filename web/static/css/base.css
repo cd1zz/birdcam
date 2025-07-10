@@ -93,6 +93,17 @@ body {
     border-color: #065f46;
 }
 
+.btn-warning {
+    background: #d97706;
+    color: white;
+    border: 1px solid #b45309;
+}
+
+.btn-warning:hover {
+    background: #b45309;
+    border-color: #92400e;
+}
+
 /* Status Indicators */
 .status-indicator {
     display: inline-block;

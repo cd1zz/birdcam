@@ -163,15 +163,15 @@ class ProcessingService:
     
     def process_pending_videos(self):
         """Process all pending videos"""
-        if self.is_processing:
-            return
-        
         with self.processing_lock:
+            if self.is_processing:
+                return
+            
             pending_videos = self.video_repo.get_pending_videos()
             if not pending_videos:
                 return
-        
-        self.is_processing = True
+                
+            self.is_processing = True
         
         # Load model if needed
         if not self.model_manager.is_loaded:

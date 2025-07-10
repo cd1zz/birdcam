@@ -6,6 +6,7 @@ Raspberry Pi Capture System Entry Point with Settings Persistence
 import schedule
 import threading
 import time
+import os
 from pathlib import Path
 
 from config.settings import load_all_capture_configs
@@ -17,6 +18,7 @@ from services.camera_manager import CameraManager, print_detected_cameras
 from services.video_writer import VideoWriter
 from services.file_sync import FileSyncService
 from services.capture_service import CaptureService
+from services.motion_event_broadcaster import initialize_motion_broadcaster
 from web.app import create_capture_app
 
 
@@ -164,6 +166,13 @@ def main():
         print("📋 Loading configuration...")
         configs = load_all_capture_configs()
         print(f"✅ Loaded {len(configs)} camera configuration(s)")
+        
+        # Initialize motion broadcaster for cross-camera triggering
+        print("🔗 Initializing motion broadcaster...")
+        cross_trigger_enabled = os.getenv('CROSS_CAMERA_TRIGGER', 'true').lower() == 'true'
+        trigger_timeout = float(os.getenv('CROSS_TRIGGER_TIMEOUT', '5.0'))
+        initialize_motion_broadcaster(cross_trigger_enabled, trigger_timeout)
+        print(f"✅ Motion broadcaster initialized (cross-trigger: {cross_trigger_enabled}, timeout: {trigger_timeout}s)")
 
         capture_services = {}
         sync_service = None

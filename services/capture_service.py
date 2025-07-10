@@ -13,6 +13,7 @@ from services.motion_detector import MotionDetector
 from services.camera_manager import CameraManager
 from services.video_writer import VideoWriter
 from services.file_sync import FileSyncService
+from services.motion_event_broadcaster import get_motion_broadcaster, MotionEvent
 from database.repositories.video_repository import VideoRepository
 
 class CaptureService:
@@ -54,11 +55,19 @@ class CaptureService:
         self.on_motion_detected: Optional[Callable] = None
         self.on_segment_completed: Optional[Callable[[CaptureSegment], None]] = None
         
+        # Motion broadcaster integration
+        self.motion_broadcaster = get_motion_broadcaster()
+        self.camera_id = capture_config.camera_id
+        
+        # Register this camera with the motion broadcaster
+        self.motion_broadcaster.register_camera(self.camera_id, self._handle_cross_camera_motion)
+        
         print(f"🎯 CaptureService initialized:")
         print(f"   📺 Resolution: {capture_config.resolution}")
         print(f"   🎬 FPS: {capture_config.fps}")
         print(f"   ⏱️ Motion timeout: {motion_config.motion_timeout_seconds}s")
         print(f"   📦 Buffer size: {buffer_size} frames")
+        print(f"   🔗 Registered with motion broadcaster for camera {self.camera_id}")
     
     def start_capture(self):
         """Start the capture process in a background thread"""
@@ -83,6 +92,9 @@ class CaptureService:
         # Finish any current segment
         if self.is_capturing:
             self._finish_current_segment()
+        
+        # Unregister from motion broadcaster
+        self.motion_broadcaster.unregister_camera(self.camera_id)
         
         print("✅ Capture stopped")
     
@@ -111,9 +123,16 @@ class CaptureService:
                 if self.on_motion_detected:
                     self.on_motion_detected()
                 
+                # Report motion to broadcaster (this will trigger all cameras)
+                self.motion_broadcaster.report_motion(
+                    camera_id=self.camera_id,
+                    confidence=1.0,  # Could be enhanced with actual confidence from detector
+                    location=None    # Could be enhanced with motion center coordinates
+                )
+                
                 # Start recording if not already recording
                 if not self.is_capturing:
-                    print(f"🎯 Motion detected! Starting recording...")
+                    print(f"🎯 Motion detected on camera {self.camera_id}! Starting recording...")
                     self._start_recording()
             
             # Always add frames to pre-motion buffer when NOT recording
@@ -276,3 +295,28 @@ class CaptureService:
         """Get number of files pending sync"""
         with self.sync_lock:
             return len(self.sync_queue)
+    
+    def _handle_cross_camera_motion(self, motion_event: MotionEvent):
+        """
+        Handle motion events from other cameras (cross-camera triggering).
+        This method is called by the motion broadcaster when any camera detects motion.
+        """
+        # Don't trigger on our own motion events (already handled in _capture_loop)
+        if motion_event.camera_id == self.camera_id:
+            return
+        
+        print(f"🔗 Cross-camera trigger: Camera {motion_event.camera_id} detected motion, triggering camera {self.camera_id}")
+        
+        # Start recording if not already recording
+        if not self.is_capturing:
+            print(f"🎬 Starting recording on camera {self.camera_id} due to cross-camera motion")
+            self._start_recording()
+        else:
+            # If already recording, extend the recording time
+            current_time = time.time()
+            self.last_motion_time = current_time
+            print(f"🔄 Extending recording on camera {self.camera_id} due to cross-camera motion")
+    
+    def get_motion_broadcaster_stats(self) -> dict:
+        """Get statistics from the motion broadcaster"""
+        return self.motion_broadcaster.get_statistics()

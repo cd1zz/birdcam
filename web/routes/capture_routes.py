@@ -158,6 +158,26 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             if not region_data or not all(k in region_data for k in ['x1', 'y1', 'x2', 'y2']):
                 return jsonify({'error': 'Invalid region data'}), 400
             
+            # Validate coordinate values
+            try:
+                x1, y1, x2, y2 = region_data['x1'], region_data['y1'], region_data['x2'], region_data['y2']
+                if not all(isinstance(coord, (int, float)) for coord in [x1, y1, x2, y2]):
+                    return jsonify({'error': 'Coordinates must be numeric'}), 400
+                if x1 >= x2 or y1 >= y2:
+                    return jsonify({'error': 'Invalid region dimensions'}), 400
+                if x1 < 0 or y1 < 0 or x2 < 0 or y2 < 0:
+                    return jsonify({'error': 'Coordinates must be non-negative'}), 400
+            except (KeyError, TypeError):
+                return jsonify({'error': 'Invalid coordinate format'}), 400
+            
+            # Validate other parameters
+            if not isinstance(motion_threshold, (int, float)) or motion_threshold <= 0:
+                return jsonify({'error': 'Motion threshold must be positive'}), 400
+            if not isinstance(min_contour_area, (int, float)) or min_contour_area <= 0:
+                return jsonify({'error': 'Min contour area must be positive'}), 400
+            if not isinstance(motion_timeout_seconds, (int, float)) or motion_timeout_seconds <= 0:
+                return jsonify({'error': 'Motion timeout must be positive'}), 400
+            
             capture_service = get_service()
 
             region = MotionRegion(
@@ -256,7 +276,7 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
         """Proxy video requests to the processing server."""
         try:
             url = f"{sync_service.base_url}/videos/{filename}"
-            resp = requests.get(url, stream=True)  # No timeout to avoid truncated streams
+            resp = requests.get(url, stream=True, timeout=30)  # 30 second timeout
 
             if resp.status_code == 200:
                 return Response(
@@ -273,7 +293,7 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
         """Proxy thumbnail requests to the processing server."""
         try:
             url = f"{sync_service.base_url}/thumbnails/{filename}"
-            resp = requests.get(url, stream=True)  # No timeout to avoid truncated streams
+            resp = requests.get(url, stream=True, timeout=10)  # 10 second timeout for thumbnails
 
             if resp.status_code == 200:
                 return Response(
@@ -297,3 +317,54 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
                 'sensor_type': 'IMX500' if cam_id == 1 else 'OV5647'  
             })
         return jsonify({'cameras': camera_list})
+    
+    @app.route('/api/motion-broadcaster/stats')
+    def api_motion_broadcaster_stats():
+        """Get motion broadcaster statistics"""
+        service = get_service()
+        stats = service.get_motion_broadcaster_stats()
+        return jsonify(stats)
+    
+    @app.route('/api/motion-broadcaster/config', methods=['GET', 'POST'])
+    def api_motion_broadcaster_config():
+        """Get or update motion broadcaster configuration"""
+        service = get_service()
+        broadcaster = service.motion_broadcaster
+        
+        if request.method == 'GET':
+            return jsonify({
+                'cross_trigger_enabled': broadcaster.cross_trigger_enabled,
+                'trigger_timeout': broadcaster.trigger_timeout
+            })
+        
+        elif request.method == 'POST':
+            data = request.get_json()
+            
+            if 'cross_trigger_enabled' in data:
+                broadcaster.set_cross_trigger_enabled(data['cross_trigger_enabled'])
+            
+            if 'trigger_timeout' in data:
+                timeout = float(data['trigger_timeout'])
+                if timeout > 0:
+                    broadcaster.set_trigger_timeout(timeout)
+                else:
+                    return jsonify({'error': 'Trigger timeout must be positive'}), 400
+            
+            return jsonify({'success': True})
+    
+    @app.route('/api/motion-broadcaster/active-cameras')
+    def api_motion_broadcaster_active_cameras():
+        """Get list of cameras with recent motion"""
+        service = get_service()
+        active_cameras = service.motion_broadcaster.get_active_cameras()
+        return jsonify({'active_cameras': list(active_cameras)})
+    
+    @app.route('/api/motion-broadcaster/test-trigger/<int:camera_id>')
+    def api_test_motion_trigger(camera_id):
+        """Test motion trigger for a specific camera"""
+        service = get_service()
+        try:
+            service.motion_broadcaster.report_motion(camera_id, confidence=0.9)
+            return jsonify({'success': True, 'message': f'Test motion triggered for camera {camera_id}'})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500

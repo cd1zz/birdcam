@@ -27,13 +27,13 @@ def get_float_env(key: str, default: float) -> float:
     except ValueError:
         return default
 
-def get_list_env(key: str, default: List[str] = None) -> List[str]:
+def get_list_env(key: str, default: Optional[List[str]] = None) -> List[str]:
     """Get comma-separated list from environment variable"""
     if default is None:
         default = []
     value = os.getenv(key, '')
     if not value:
-        return default
+        return default.copy()  # Return a copy to avoid shared references
     return [item.strip() for item in value.split(',') if item.strip()]
 
 def get_detection_confidences() -> Dict[str, float]:

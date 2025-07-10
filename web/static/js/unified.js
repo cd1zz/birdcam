@@ -33,11 +33,17 @@ document.addEventListener('DOMContentLoaded', function() {
     updateDashboard();
     setInterval(updateDashboard, 5000);
     
+    // Initialize cross-camera motion features
+    initializeCrossCameraMotion();
+    
     // Initialize live feed error handler
     const liveFeed = document.getElementById('live-feed');
     if (liveFeed) {
         liveFeed.onerror = handleImageError;
     }
+    
+    // Update timestamp every second
+    setInterval(updateTimestamp, 1000);
 });
 
 // Main dashboard update function
@@ -645,5 +651,157 @@ async function loadCameras() {
         // Fallback if API fails
         const selector = document.getElementById('camera-selector');
         selector.innerHTML = '<option value="0">Camera 0</option><option value="1">Camera 1</option>';
+    }
+}
+
+// ===============================
+// Cross-Camera Motion Functions
+// ===============================
+
+async function initializeCrossCameraMotion() {
+    // Load initial cross-camera configuration
+    try {
+        const config = await apiCall('/api/motion-broadcaster/config');
+        const crossTriggerToggle = document.getElementById('cross-trigger-enabled');
+        if (crossTriggerToggle) {
+            crossTriggerToggle.checked = config.cross_trigger_enabled;
+        }
+    } catch (error) {
+        console.error('Failed to load cross-camera configuration:', error);
+    }
+    
+    // Initialize camera indicators
+    await updateCameraIndicators();
+    
+    // Start regular updates for cross-camera status
+    setInterval(updateCrossCameraStatus, 2000);
+}
+
+async function updateCameraIndicators() {
+    try {
+        const cameras = await apiCall('/api/cameras');
+        const indicatorsContainer = document.getElementById('camera-indicators');
+        
+        if (indicatorsContainer && cameras.cameras) {
+            indicatorsContainer.innerHTML = cameras.cameras.map(camera => `
+                <div class="camera-dot" data-camera-id="${camera.id}" 
+                     title="Camera ${camera.id}" onclick="switchToCamera(${camera.id})">
+                    ${camera.id}
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Failed to update camera indicators:', error);
+    }
+}
+
+async function updateCrossCameraStatus() {
+    try {
+        // Update motion broadcaster statistics
+        const stats = await apiCall('/api/motion-broadcaster/stats');
+        
+        // Update statistics display
+        updateElement('cross-triggers-today', stats.cross_triggers || 0);
+        updateElement('active-cameras-count', stats.active_cameras || 0);
+        
+        // Update active cameras
+        const activeCameras = await apiCall('/api/motion-broadcaster/active-cameras');
+        updateActiveCameraIndicators(activeCameras.active_cameras || []);
+        
+        // Update global motion status
+        updateGlobalMotionStatus(stats.global_motion_active);
+        
+    } catch (error) {
+        console.debug('Cross-camera status update failed (normal if server is down):', error);
+    }
+}
+
+function updateActiveCameraIndicators(activeCameraIds) {
+    const cameraDots = document.querySelectorAll('.camera-dot');
+    
+    cameraDots.forEach(dot => {
+        const cameraId = parseInt(dot.dataset.cameraId);
+        
+        // Remove all status classes
+        dot.classList.remove('active', 'recording', 'cross-triggered');
+        
+        // Add appropriate class based on status
+        if (activeCameraIds.includes(cameraId)) {
+            dot.classList.add('active');
+        }
+    });
+}
+
+function updateGlobalMotionStatus(isGlobalMotionActive) {
+    // Update cross-trigger indicator on live feed
+    const crossTriggerIndicator = document.getElementById('cross-trigger-indicator');
+    if (crossTriggerIndicator) {
+        if (isGlobalMotionActive) {
+            crossTriggerIndicator.classList.add('active');
+        } else {
+            crossTriggerIndicator.classList.remove('active');
+        }
+    }
+}
+
+async function toggleCrossTrigger() {
+    const crossTriggerToggle = document.getElementById('cross-trigger-enabled');
+    const isEnabled = crossTriggerToggle.checked;
+    
+    try {
+        await apiCall('/api/motion-broadcaster/config', {
+            method: 'POST',
+            body: JSON.stringify({
+                cross_trigger_enabled: isEnabled
+            })
+        });
+        
+        showNotification(
+            `Cross-camera triggering ${isEnabled ? 'enabled' : 'disabled'}`, 
+            'success'
+        );
+        
+        // Update UI to reflect change
+        updateCrossCameraStatus();
+        
+    } catch (error) {
+        // Revert toggle on error
+        crossTriggerToggle.checked = !isEnabled;
+        showNotification('Failed to update cross-camera triggering', 'error');
+    }
+}
+
+function switchToCamera(cameraId) {
+    const cameraSelector = document.getElementById('camera-selector');
+    if (cameraSelector) {
+        cameraSelector.value = cameraId;
+        switchCamera(); // Call existing function
+    }
+}
+
+async function testMotionTrigger(cameraId = 0) {
+    try {
+        const result = await apiCall(`/api/motion-broadcaster/test-trigger/${cameraId}`);
+        showNotification(result.message || 'Test trigger sent', 'success');
+        
+        // Temporarily highlight the triggered camera
+        const cameraDots = document.querySelectorAll(`[data-camera-id="${cameraId}"]`);
+        cameraDots.forEach(dot => {
+            dot.classList.add('cross-triggered');
+            setTimeout(() => {
+                dot.classList.remove('cross-triggered');
+            }, 3000);
+        });
+        
+    } catch (error) {
+        showNotification('Failed to send test trigger', 'error');
+    }
+}
+
+function updateTimestamp() {
+    const timestampElement = document.getElementById('feed-timestamp');
+    if (timestampElement) {
+        const now = new Date();
+        timestampElement.textContent = now.toLocaleTimeString();
     }
 }

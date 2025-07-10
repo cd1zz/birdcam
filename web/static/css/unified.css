@@ -7,6 +7,14 @@
     margin-bottom: 30px;
 }
 
+/* Enhanced status overview with 4 cards in 2x2 grid on larger screens */
+@media (min-width: 1200px) {
+    .status-overview {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+    }
+}
+
 .status-card {
     background: white;
     padding: 20px;
@@ -419,6 +427,252 @@
     padding: 8px;
     border-radius: 3px;
     margin-top: 5px;
+}
+
+/* Cross-Camera Coordination Styles */
+.coordination-card {
+    border-left-color: #8b5cf6;
+}
+
+.coordination-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.coordination-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #8b5cf6;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.toggle-label {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.camera-network {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.camera-indicators {
+    display: flex;
+    gap: 8px;
+}
+
+.camera-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    color: #6b7280;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.camera-dot.active {
+    background: #10b981;
+    color: white;
+    animation: pulse-camera 2s infinite;
+}
+
+.camera-dot.recording {
+    background: #ef4444;
+    color: white;
+    border-color: #fca5a5;
+}
+
+.camera-dot.cross-triggered {
+    background: #8b5cf6;
+    color: white;
+    border-color: #c4b5fd;
+}
+
+.trigger-stats {
+    display: flex;
+    gap: 15px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    display: block;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #8b5cf6;
+}
+
+.stat-label {
+    font-size: 0.75em;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Enhanced Live Feed Indicators */
+.status-indicators-enhanced {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    opacity: 0.6;
+}
+
+.indicator.active {
+    opacity: 1;
+    animation: indicator-pulse 2s infinite;
+}
+
+.indicator .icon {
+    font-size: 14px;
+}
+
+.indicator .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.motion-indicator.active {
+    background: rgba(16, 185, 129, 0.9);
+}
+
+.recording-indicator.active {
+    background: rgba(239, 68, 68, 0.9);
+}
+
+.cross-trigger-indicator.active {
+    background: rgba(139, 92, 246, 0.9);
+}
+
+.camera-info-overlay {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.camera-id {
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.timestamp {
+    opacity: 0.8;
+    font-family: 'Courier New', monospace;
+}
+
+/* Animations */
+@keyframes pulse-camera {
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+@keyframes indicator-pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+/* Enhanced Accessibility */
+.indicator:focus,
+.camera-dot:focus,
+.switch input:focus + .slider {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* Improved contrast for better visibility */
+.feed-overlay {
+    /* Ensure overlays are always visible */
+    z-index: 10;
 }
 
 /* Responsive Design */

@@ -70,8 +70,15 @@ class CameraManager:
             # Picamera2 returns RGB; convert to BGR for OpenCV processing
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             return True, frame
-        except Exception:
-            return False, None
+        except Exception as e:
+            print(f"❌ Camera read error: {e}")
+            # Try to recover by releasing and reinitializing
+            self.release()
+            try:
+                self._initialize_camera()
+                return False, None
+            except Exception:
+                return False, None
 
     def is_opened(self) -> bool:
         return self.picam2 is not None
@@ -80,6 +87,7 @@ class CameraManager:
         if self.picam2:
             try:
                 self.picam2.close()
-            except Exception:
-                pass
-            self.picam2 = None
+            except Exception as e:
+                print(f"❌ Camera release error: {e}")
+            finally:
+                self.picam2 = None

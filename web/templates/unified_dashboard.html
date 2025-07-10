@@ -83,6 +83,35 @@
             </div>
         </div>
     </div>
+
+    <div class="status-card coordination-card">
+        <h3>🔗 Camera Coordination</h3>
+        <div class="coordination-content">
+            <div class="coordination-toggle">
+                <label class="switch">
+                    <input type="checkbox" id="cross-trigger-enabled" onchange="toggleCrossTrigger()">
+                    <span class="slider round"></span>
+                </label>
+                <span class="toggle-label">Cross-Camera Triggering</span>
+            </div>
+            
+            <div class="camera-network">
+                <div class="camera-indicators" id="camera-indicators">
+                    <!-- Camera indicators will be populated by JavaScript -->
+                </div>
+                <div class="trigger-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="cross-triggers-today">-</span>
+                        <span class="stat-label">Cross-triggers</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="active-cameras-count">-</span>
+                        <span class="stat-label">Active Cameras</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Main Content - Camera Feed and Controls Side by Side -->
@@ -99,8 +128,24 @@
         <div class="live-feed-container">
             <img src="/live_feed" alt="Live Camera" id="live-feed" onerror="handleImageError(this)">
             <div class="feed-overlay">
-                <span id="motion-indicator" class="motion-badge" title="Motion">●</span>
-                <span id="recording-indicator" class="recording-badge" title="Recording">●</span>
+                <div class="status-indicators-enhanced">
+                    <div class="indicator motion-indicator" id="motion-indicator" title="Motion detected">
+                        <span class="icon">👁</span>
+                        <span class="label">Motion</span>
+                    </div>
+                    <div class="indicator recording-indicator" id="recording-indicator" title="Recording active">
+                        <span class="icon">🔴</span>
+                        <span class="label">Recording</span>
+                    </div>
+                    <div class="indicator cross-trigger-indicator" id="cross-trigger-indicator" title="Cross-camera triggered">
+                        <span class="icon">🔗</span>
+                        <span class="label">Linked</span>
+                    </div>
+                </div>
+                <div class="camera-info-overlay">
+                    <span class="camera-id" id="current-camera-id">Camera 0</span>
+                    <span class="timestamp" id="feed-timestamp">--:--:--</span>
+                </div>
             </div>
         </div>
         <p class="feed-info">Live camera with motion detection overlay</p>
@@ -111,6 +156,7 @@
                 <button class="btn btn-primary" onclick="syncNow()">📤 Sync Files</button>
                 <button class="btn btn-success" onclick="processNow()">🧠 Process Queue</button>
                 <button class="btn btn-secondary" onclick="showSettings()">⚙️ Motion Settings</button>
+                <button class="btn btn-warning" onclick="testMotionTrigger()" title="Test cross-camera motion triggering">🧪 Test Motion</button>
                 <button class="btn btn-secondary" onclick="location.reload()">🔄 Refresh</button>
             </div>
         </div>
