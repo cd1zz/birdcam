@@ -7,13 +7,17 @@ const LiveFeeds: React.FC = () => {
   const [selectedLayout, setSelectedLayout] = useState<'grid' | 'single'>('grid');
   const [selectedCamera, setSelectedCamera] = useState<number | null>(null);
 
-  const { data: cameras, isLoading, error } = useQuery({
+  const { 
+    data: cameras, 
+    isLoading, 
+    error,
+    isError 
+  } = useQuery({
     queryKey: ['cameras'],
-    queryFn: async () => {
-      const response = await api.cameras.list();
-      return response.data.cameras; // Extract cameras array from response
-    },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    queryFn: api.cameras.list, // Direct function reference - cleaner
+    refetchInterval: 30000,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   useEffect(() => {
@@ -33,10 +37,20 @@ const LiveFeeds: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (isError) {
+    const errorMessage = error?.userMessage || 'Failed to load cameras. Please check your connection.';
+    
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-800">Failed to load cameras. Please check your connection.</p>
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            <span className="text-red-500 text-xl">⚠️</span>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-red-800">Connection Error</h3>
+            <p className="text-red-700 mt-1">{errorMessage}</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -44,7 +58,17 @@ const LiveFeeds: React.FC = () => {
   if (!cameras || cameras.length === 0) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <p className="text-yellow-800">No cameras found. Please check your camera configuration.</p>
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            <span className="text-yellow-500 text-xl">⚠️</span>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-yellow-800">No Cameras Found</h3>
+            <p className="text-yellow-700 mt-1">
+              No cameras are currently configured. Please check your camera setup.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }

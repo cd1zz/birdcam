@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import DetectionGrid from '../components/DetectionGrid';
 import { api, type Detection } from '../api/client';
@@ -8,7 +8,7 @@ const Detections: React.FC = () => {
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'all'>('week');
   const [selectedVideo, setSelectedVideo] = useState<Detection | null>(null);
 
-  const getDateRange = () => {
+  const getDateRange = useCallback(() => {
     const end = new Date();
     const start = new Date();
     
@@ -30,9 +30,15 @@ const Detections: React.FC = () => {
       start: start.toISOString(),
       end: end.toISOString(),
     };
-  };
+  }, [dateRange]);
 
-  const { data: detections, isLoading, error } = useQuery({
+  const { 
+    data: detections, 
+    isLoading, 
+    error,
+    isError,
+    refetch
+  } = useQuery({
     queryKey: ['detections', selectedSpecies, dateRange],
     queryFn: async () => {
       const params = {
@@ -41,22 +47,73 @@ const Detections: React.FC = () => {
         limit: 50,
         sort: 'desc' as const,
       };
-      const response = await api.detections.getRecent(params);
-      return response.data.detections; // Extract detections array from response
+      return api.detections.getRecent(params);
     },
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 60000,
+    retry: (failureCount, error) => {
+      // Don't retry on 4xx errors (client errors)
+      if (error?.response?.status >= 400 && error?.response?.status < 500) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 
   // Get unique species from detections for filter
-  const species = React.useMemo(() => {
+  const species = useMemo(() => {
     if (!detections) return [];
     const uniqueSpecies = new Set(detections.map(d => d.species));
     return Array.from(uniqueSpecies).sort();
   }, [detections]);
 
-  const handleVideoClick = (detection: Detection) => {
+  const handleVideoClick = useCallback((detection: Detection) => {
     setSelectedVideo(detection);
-  };
+  }, []);
+
+  const handleRetry = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  const closeVideoModal = useCallback(() => {
+    setSelectedVideo(null);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading detections...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    const errorMessage = error?.userMessage || 'Failed to load detections. Please try again.';
+    
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <span className="text-red-500 text-xl">⚠️</span>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Loading Error</h3>
+              <p className="text-red-700 mt-1">{errorMessage}</p>
+            </div>
+          </div>
+          <button
+            onClick={handleRetry}
+            className="ml-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -111,41 +168,39 @@ const Detections: React.FC = () => {
       </div>
 
       {/* Detection Grid */}
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading detections...</p>
-          </div>
-        </div>
-      ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">Failed to load detections. Please try again.</p>
-        </div>
-      ) : (
-        <DetectionGrid 
-          detections={detections || []} 
-          onVideoClick={handleVideoClick}
-        />
-      )}
+      <DetectionGrid 
+        detections={detections || []} 
+        onVideoClick={handleVideoClick}
+      />
 
       {/* Video Modal */}
       {selectedVideo && (
         <div 
           className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
-          onClick={() => setSelectedVideo(null)}
+          onClick={closeVideoModal}
         >
           <div 
             className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 border-b flex items-center justify-between">
-              <h3 className="text-lg font-semibold">
-                {selectedVideo.species} Detection
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <span className="text-2xl">
+                  {selectedVideo.species === 'bird' ? '🦅' : 
+                   selectedVideo.species === 'cat' ? '🐱' : 
+                   selectedVideo.species === 'dog' ? '🐕' : '🐾'}
+                </span>
+                {selectedVideo.species.charAt(0).toUpperCase() + selectedVideo.species.slice(1)} Detection
+                {selectedVideo.count && selectedVideo.count > 1 && (
+                  <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                    {selectedVideo.count} detections
+                  </span>
+                )}
               </h3>
               <button
-                onClick={() => setSelectedVideo(null)}
-                className="text-gray-500 hover:text-gray-700"
+                onClick={closeVideoModal}
+                className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+                aria-label="Close video"
               >
                 ✕
               </button>
@@ -155,12 +210,22 @@ const Detections: React.FC = () => {
                 controls
                 autoPlay
                 className="w-full rounded"
-                src={api.detections.getVideo(selectedVideo.video_path.split('/').pop() || '')}
+                src={api.detections.getVideo(selectedVideo.filename || selectedVideo.video_path.split('/').pop() || '')}
+                onError={(e) => {
+                  console.error('Video failed to load:', e);
+                }}
               />
-              <div className="mt-4 text-sm text-gray-600">
-                <p>Confidence: {(selectedVideo.confidence * 100).toFixed(1)}%</p>
-                <p>Time: {new Date(selectedVideo.timestamp).toLocaleString()}</p>
-                <p>File: {selectedVideo.video_path.split('/').pop()}</p>
+              <div className="mt-4 grid grid-cols-2 gap-4 text-sm text-gray-600">
+                <div>
+                  <p><strong>Confidence:</strong> {(selectedVideo.confidence * 100).toFixed(1)}%</p>
+                  <p><strong>Time:</strong> {new Date(selectedVideo.timestamp).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p><strong>File:</strong> {selectedVideo.filename || selectedVideo.video_path.split('/').pop()}</p>
+                  {selectedVideo.duration && (
+                    <p><strong>Duration:</strong> {selectedVideo.duration}s</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>

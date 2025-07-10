@@ -1,22 +1,21 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 
 // API endpoints configuration
-// Use environment variables with sensible fallbacks
 const PI_SERVER = import.meta.env.VITE_PI_SERVER || 'http://localhost:8090';
 const PROCESSING_SERVER = import.meta.env.VITE_PROCESSING_SERVER || '';
 
-// Create axios instances for each server
+// Create axios instances
 export const piApi = axios.create({
   baseURL: PI_SERVER,
   timeout: 30000,
 });
 
 export const processingApi = axios.create({
-  baseURL: PROCESSING_SERVER || '', // Empty string uses relative URLs
+  baseURL: PROCESSING_SERVER || '',
   timeout: 30000,
 });
 
-// Types for API responses
+// Core types
 export interface Camera {
   id: number;
   name: string;
@@ -38,6 +37,9 @@ export interface Detection {
   };
   thumbnail_path?: string;
   event_id?: string;
+  filename?: string; // For video playback
+  count?: number; // For clustered events
+  duration?: number;
 }
 
 export interface SystemStatus {
@@ -67,45 +69,74 @@ export interface MotionSettings {
   };
 }
 
-// API functions
+// API functions with consistent response handling
 export const api = {
   // Pi Camera APIs
   cameras: {
-    list: () => piApi.get<{cameras: Camera[]}>('/api/cameras'),
+    list: async (): Promise<Camera[]> => {
+      const response = await piApi.get<{cameras: Camera[]}>('/api/cameras');
+      return response.data.cameras;
+    },
     getStream: (cameraId: number) => `${PI_SERVER}/api/camera/${cameraId}/stream`,
     getSnapshot: (cameraId: number) => `${PI_SERVER}/api/camera/${cameraId}/snapshot`,
   },
 
   // Motion settings
   motion: {
-    getSettings: (cameraId?: number) => 
-      processingApi.get<MotionSettings>('/api/motion-settings', { 
+    getSettings: async (cameraId?: number): Promise<MotionSettings> => {
+      const response = await processingApi.get<MotionSettings>('/api/motion-settings', { 
         params: cameraId !== undefined ? { camera_id: cameraId } : undefined 
-      }),
-    updateSettings: (settings: Partial<MotionSettings>, cameraId?: number) => 
-      processingApi.post('/api/motion-settings', settings, { 
+      });
+      return response.data;
+    },
+    
+    updateSettings: async (settings: Partial<MotionSettings>, cameraId?: number): Promise<void> => {
+      await processingApi.post('/api/motion-settings', settings, { 
         params: cameraId !== undefined ? { camera_id: cameraId } : undefined 
-      }),
-    getActivePassiveConfig: () => piApi.get('/api/active-passive/config'),
-    getActivePassiveStats: () => piApi.get('/api/active-passive/stats'),
-    testActivePassiveTrigger: () => piApi.get('/api/active-passive/test-trigger'),
+      });
+    },
+    
+    getActivePassiveConfig: async () => {
+      const response = await piApi.get('/api/active-passive/config');
+      return response.data;
+    },
+    
+    getActivePassiveStats: async () => {
+      const response = await piApi.get('/api/active-passive/stats');
+      return response.data;
+    },
+    
+    testActivePassiveTrigger: async () => {
+      const response = await piApi.get('/api/active-passive/test-trigger');
+      return response.data;
+    },
   },
 
   // System status
   status: {
-    getPiStatus: () => piApi.get<SystemStatus>('/api/status'),
-    getProcessingStatus: () => processingApi.get<SystemStatus>('/api/status'),
+    getPiStatus: async (): Promise<SystemStatus> => {
+      const response = await piApi.get<SystemStatus>('/api/status');
+      return response.data;
+    },
+    
+    getProcessingStatus: async (): Promise<SystemStatus> => {
+      const response = await processingApi.get<SystemStatus>('/api/status');
+      return response.data;
+    },
   },
 
   // Detection APIs
   detections: {
-    getRecent: (params?: {
+    getRecent: async (params?: {
       limit?: number;
       species?: string;
       start?: string;
       end?: string;
       sort?: 'asc' | 'desc';
-    }) => processingApi.get<{detections: Detection[]}>('/api/recent-detections', { params }),
+    }): Promise<Detection[]> => {
+      const response = await processingApi.get<{detections: Detection[]}>('/api/recent-detections', { params });
+      return response.data.detections;
+    },
     
     getThumbnail: (path: string) => `${PROCESSING_SERVER || ''}/thumbnails/${path}`,
     getVideo: (filename: string) => `${PROCESSING_SERVER || ''}/videos/${filename}`,
@@ -113,16 +144,32 @@ export const api = {
 
   // Video processing
   processing: {
-    processVideo: (videoPath: string) => 
-      processingApi.post('/api/process-video', { video_path: videoPath }),
+    processVideo: async (videoPath: string): Promise<void> => {
+      await processingApi.post('/api/process-video', { video_path: videoPath });
+    },
   },
 };
 
-// Error handling interceptors
+// Enhanced error handling interceptors
 piApi.interceptors.response.use(
   response => response,
   error => {
-    console.error('Pi API Error:', error.message);
+    console.error('Pi API Error:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      url: error.config?.url
+    });
+    
+    // Add user-friendly error messages
+    if (error.code === 'ECONNREFUSED') {
+      error.userMessage = 'Cannot connect to Pi camera system. Please check if it\'s running.';
+    } else if (error.response?.status === 404) {
+      error.userMessage = 'Requested resource not found.';
+    } else if (error.response?.status >= 500) {
+      error.userMessage = 'Pi camera system error. Please try again.';
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -130,7 +177,22 @@ piApi.interceptors.response.use(
 processingApi.interceptors.response.use(
   response => response,
   error => {
-    console.error('Processing API Error:', error.message);
+    console.error('Processing API Error:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      url: error.config?.url
+    });
+    
+    // Add user-friendly error messages
+    if (error.code === 'ECONNREFUSED') {
+      error.userMessage = 'Cannot connect to AI processing server. Please check if it\'s running.';
+    } else if (error.response?.status === 404) {
+      error.userMessage = 'Requested resource not found.';
+    } else if (error.response?.status >= 500) {
+      error.userMessage = 'AI processing server error. Please try again.';
+    }
+    
     return Promise.reject(error);
   }
 );
