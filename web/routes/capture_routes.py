@@ -132,7 +132,17 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
     def api_get_motion_settings():
         """Get motion detection settings"""
         try:
-            capture_service = get_service()
+            # Get the specific camera service (not just default)
+            camera_id = request.args.get('camera_id')
+            if camera_id:
+                try:
+                    camera_id = int(camera_id)
+                    capture_service = capture_services.get(camera_id, get_service())
+                except ValueError:
+                    capture_service = get_service()
+            else:
+                capture_service = get_service()
+            
             region = capture_service.motion_detector.motion_region
             config = capture_service.motion_detector.config
             
@@ -220,9 +230,18 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             if not isinstance(motion_timeout_seconds, (int, float)) or motion_timeout_seconds <= 0:
                 return jsonify({'error': 'Motion timeout must be positive'}), 400
             
-            capture_service = get_service()
+            # Get the specific camera service (not just default)
+            camera_id = request.args.get('camera_id')
+            if camera_id:
+                try:
+                    camera_id = int(camera_id)
+                    capture_service = capture_services.get(camera_id, get_service())
+                except ValueError:
+                    capture_service = get_service()
+            else:
+                capture_service = get_service()
 
-            # Update motion detector configuration
+            # Update motion detector configuration for this specific camera
             capture_service.motion_detector.config.threshold = motion_threshold
             capture_service.motion_detector.config.min_contour_area = min_contour_area
             capture_service.motion_detector.config.motion_timeout_seconds = motion_timeout_seconds

@@ -42,6 +42,9 @@ class CaptureService:
         self.segment_start_time = 0
         # Latest motion state for UI indicators
         self.latest_motion = False
+        # Cross-camera motion feedback prevention
+        self._suppress_motion_reporting_until = 0
+        self._cross_camera_timeout = 0
         
         # Pre-motion buffer (15 seconds worth of frames)
         buffer_size = capture_config.fps * 15  # 15 seconds of frames
@@ -123,12 +126,16 @@ class CaptureService:
                 if self.on_motion_detected:
                     self.on_motion_detected()
                 
-                # Report motion to broadcaster (this will trigger all cameras)
-                self.motion_broadcaster.report_motion(
-                    camera_id=self.camera_id,
-                    confidence=1.0,  # Could be enhanced with actual confidence from detector
-                    location=None    # Could be enhanced with motion center coordinates
-                )
+                # Only report motion to broadcaster if not suppressed (prevents feedback loops)
+                if current_time > self._suppress_motion_reporting_until:
+                    # Report motion to broadcaster (this will trigger all cameras)
+                    self.motion_broadcaster.report_motion(
+                        camera_id=self.camera_id,
+                        confidence=1.0,  # Could be enhanced with actual confidence from detector
+                        location=None    # Could be enhanced with motion center coordinates
+                    )
+                else:
+                    print(f"🔇 Motion reporting suppressed for camera {self.camera_id} (preventing feedback loop)")
                 
                 # Start recording if not already recording
                 if not self.is_capturing:
@@ -153,9 +160,24 @@ class CaptureService:
                 should_stop = False
                 stop_reason = ""
                 
-                if time_since_motion > self.motion_config.motion_timeout_seconds:
+                # Check if we should stop based on motion timeout
+                motion_timeout_exceeded = time_since_motion > self.motion_config.motion_timeout_seconds
+                
+                # Check if cross-camera timeout has expired
+                cross_camera_timeout_exceeded = (self._cross_camera_timeout > 0 and 
+                                                current_time > self._cross_camera_timeout)
+                
+                if motion_timeout_exceeded and cross_camera_timeout_exceeded:
+                    should_stop = True
+                    stop_reason = f"no motion for {time_since_motion:.1f}s and cross-camera timeout expired"
+                elif motion_timeout_exceeded and self._cross_camera_timeout == 0:
+                    # Normal motion timeout (not cross-camera triggered)
                     should_stop = True
                     stop_reason = f"no motion for {time_since_motion:.1f}s"
+                elif cross_camera_timeout_exceeded and self.last_motion_time == 0:
+                    # Only cross-camera triggered, no own motion
+                    should_stop = True
+                    stop_reason = "cross-camera timeout expired"
                 elif recording_duration > self.motion_config.max_segment_duration:
                     should_stop = True
                     stop_reason = f"max duration reached ({recording_duration:.1f}s)"
@@ -207,6 +229,8 @@ class CaptureService:
             completed_segment = self.video_writer.finish_segment()
             self.is_capturing = False
             self.segment_start_time = 0
+            # Reset cross-camera timeout when stopping recording
+            self._cross_camera_timeout = 0
             
             if not completed_segment:
                 print("⚠️ No segment to finish")
@@ -307,15 +331,23 @@ class CaptureService:
         
         print(f"🔗 Cross-camera trigger: Camera {motion_event.camera_id} detected motion, triggering camera {self.camera_id}")
         
+        # Set a flag to suppress motion reporting for a short time to prevent feedback loops
+        self._suppress_motion_reporting_until = time.time() + 2.0  # Suppress for 2 seconds
+        
         # Start recording if not already recording
         if not self.is_capturing:
             print(f"🎬 Starting recording on camera {self.camera_id} due to cross-camera motion")
             self._start_recording()
+            # Set a shorter timeout for cross-camera triggered recordings
+            self._cross_camera_timeout = time.time() + 10.0  # 10 second timeout for cross-camera triggers
         else:
-            # If already recording, extend the recording time
-            current_time = time.time()
-            self.last_motion_time = current_time
-            print(f"🔄 Extending recording on camera {self.camera_id} due to cross-camera motion")
+            # If already recording due to our own motion, don't interfere with timeout
+            # Only extend if this is also a cross-camera triggered recording
+            if hasattr(self, '_cross_camera_timeout') and time.time() < self._cross_camera_timeout:
+                self._cross_camera_timeout = time.time() + 10.0
+                print(f"🔄 Extending cross-camera recording on camera {self.camera_id}")
+            else:
+                print(f"🔄 Camera {self.camera_id} already recording (own motion), not extending for cross-camera motion")
     
     def get_motion_broadcaster_stats(self) -> dict:
         """Get statistics from the motion broadcaster"""
