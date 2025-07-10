@@ -3,15 +3,42 @@
 Routes for Processing Server with Detections/No-Detections Structure
 """
 import threading
-from flask import request, jsonify, send_from_directory
+from flask import request, jsonify, send_from_directory, send_file
 from services.system_metrics import SystemMetricsCollector
+from pathlib import Path
 
 def create_processing_routes(app, processing_service, video_repo, detection_repo, config):
     
     # Initialize system metrics collector
     metrics_collector = SystemMetricsCollector(str(config.processing.storage_path))
     
-    # Web UI removed - API only
+    # Serve the React UI
+    ui_build_path = Path(__file__).parent.parent.parent / "web-ui" / "dist"
+    
+    @app.route('/')
+    def serve_ui():
+        """Serve the React UI"""
+        index_path = ui_build_path / "index.html"
+        if index_path.exists():
+            return send_file(index_path)
+        else:
+            return "UI not built. Run 'npm run build' in the web-ui directory.", 404
+    
+    @app.route('/<path:path>')
+    def serve_ui_assets(path):
+        """Serve UI assets and handle React routing"""
+        # Check if it's a file request
+        requested_file = ui_build_path / path
+        if requested_file.exists() and requested_file.is_file():
+            return send_file(requested_file)
+        
+        # For React routing (non-API paths), serve index.html
+        if not path.startswith('api/'):
+            index_path = ui_build_path / "index.html"
+            if index_path.exists():
+                return send_file(index_path)
+        
+        return "File not found", 404
     
     @app.route('/upload', methods=['POST'])
     def upload_video():
