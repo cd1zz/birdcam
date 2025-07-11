@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, type SystemStatus } from '../api/client';
 
 interface SystemHealth {
@@ -9,6 +9,7 @@ interface SystemHealth {
 }
 
 const Analytics: React.FC = () => {
+  const queryClient = useQueryClient();
   const [piHealth, setPiHealth] = useState<SystemHealth>({ isOnline: false, lastSeen: 0, consecutiveFailures: 0 });
   const [processingHealth, setProcessingHealth] = useState<SystemHealth>({ isOnline: false, lastSeen: 0, consecutiveFailures: 0 });
 
@@ -78,6 +79,32 @@ const Analytics: React.FC = () => {
     return 'checking';
   };
 
+  // Manual trigger mutations
+  const syncMutation = useMutation({
+    mutationFn: api.system.triggerSync,
+    onSuccess: () => {
+      // Refresh status after sync
+      queryClient.invalidateQueries({ queryKey: ['piStatus'] });
+      queryClient.invalidateQueries({ queryKey: ['processingStatus'] });
+    },
+  });
+
+  const processingMutation = useMutation({
+    mutationFn: api.processing.triggerProcessing,
+    onSuccess: () => {
+      // Refresh processing status
+      queryClient.invalidateQueries({ queryKey: ['processingStatus'] });
+    },
+  });
+
+  const cleanupMutation = useMutation({
+    mutationFn: api.processing.triggerCleanup,
+    onSuccess: () => {
+      // Refresh processing status  
+      queryClient.invalidateQueries({ queryKey: ['processingStatus'] });
+    },
+  });
+
   const formatUptime = (seconds: number) => {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
@@ -97,7 +124,7 @@ const Analytics: React.FC = () => {
   };
 
   return (
-    <div>
+    <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Pi Camera System */}
         <div className="bg-white rounded-lg shadow-sm p-6">
@@ -309,6 +336,136 @@ const Analytics: React.FC = () => {
               ) : (
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
               )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Manual Controls */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <span className="text-2xl">🎛️</span>
+          Manual Controls
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Sync Files Button */}
+          <button
+            onClick={() => syncMutation.mutate()}
+            disabled={syncMutation.isPending || getPiConnectionStatus() !== 'online'}
+            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all ${
+              syncMutation.isPending 
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : getPiConnectionStatus() !== 'online'
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+            }`}
+          >
+            {syncMutation.isPending ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <span>Syncing...</span>
+              </>
+            ) : (
+              <>
+                <span className="text-xl">🔄</span>
+                <div className="text-left">
+                  <div className="font-medium">Sync Files</div>
+                  <div className="text-xs text-gray-600">Pi → AI Server</div>
+                </div>
+              </>
+            )}
+          </button>
+
+          {/* Process Videos Button */}
+          <button
+            onClick={() => processingMutation.mutate()}
+            disabled={processingMutation.isPending || getProcessingConnectionStatus() !== 'online'}
+            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all ${
+              processingMutation.isPending
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : getProcessingConnectionStatus() !== 'online'
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
+            }`}
+          >
+            {processingMutation.isPending ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                <span>Processing...</span>
+              </>
+            ) : (
+              <>
+                <span className="text-xl">🤖</span>
+                <div className="text-left">
+                  <div className="font-medium">Process Videos</div>
+                  <div className="text-xs text-gray-600">Run AI Analysis</div>
+                </div>
+              </>
+            )}
+          </button>
+
+          {/* Cleanup Button */}
+          <button
+            onClick={() => cleanupMutation.mutate()}
+            disabled={cleanupMutation.isPending || getProcessingConnectionStatus() !== 'online'}
+            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all ${
+              cleanupMutation.isPending
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : getProcessingConnectionStatus() !== 'online'
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200'
+            }`}
+          >
+            {cleanupMutation.isPending ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+                <span>Cleaning...</span>
+              </>
+            ) : (
+              <>
+                <span className="text-xl">🧹</span>
+                <div className="text-left">
+                  <div className="font-medium">Cleanup Files</div>
+                  <div className="text-xs text-gray-600">Remove Old Videos</div>
+                </div>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Status Messages */}
+        <div className="mt-4 space-y-2">
+          {syncMutation.isError && (
+            <div className="bg-red-50 border border-red-200 rounded p-2 text-sm text-red-700">
+              ❌ Sync failed: {(syncMutation.error as any)?.userMessage || 'Connection error'}
+            </div>
+          )}
+          {syncMutation.isSuccess && (
+            <div className="bg-green-50 border border-green-200 rounded p-2 text-sm text-green-700">
+              ✅ File sync triggered successfully
+            </div>
+          )}
+          
+          {processingMutation.isError && (
+            <div className="bg-red-50 border border-red-200 rounded p-2 text-sm text-red-700">
+              ❌ Processing failed: {(processingMutation.error as any)?.userMessage || 'Connection error'}
+            </div>
+          )}
+          {processingMutation.isSuccess && (
+            <div className="bg-green-50 border border-green-200 rounded p-2 text-sm text-green-700">
+              ✅ AI processing triggered successfully
+            </div>
+          )}
+          
+          {cleanupMutation.isError && (
+            <div className="bg-red-50 border border-red-200 rounded p-2 text-sm text-red-700">
+              ❌ Cleanup failed: {(cleanupMutation.error as any)?.userMessage || 'Connection error'}
+            </div>
+          )}
+          {cleanupMutation.isSuccess && (
+            <div className="bg-green-50 border border-green-200 rounded p-2 text-sm text-green-700">
+              ✅ Cleanup triggered successfully
             </div>
           )}
         </div>

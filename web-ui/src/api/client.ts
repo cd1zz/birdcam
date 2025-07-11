@@ -171,6 +171,28 @@ export const api = {
     processVideo: async (videoPath: string): Promise<void> => {
       await processingApi.post('/api/process-video', { video_path: videoPath });
     },
+    
+    // Manual triggers
+    triggerProcessing: async (): Promise<void> => {
+      await processingApi.post('/api/process-now');
+    },
+    
+    triggerCleanup: async (): Promise<void> => {
+      await processingApi.post('/api/cleanup-now');
+    },
+  },
+
+  // System operations
+  system: {
+    // Manual sync from Pi to processing server
+    triggerSync: async (): Promise<void> => {
+      await piApi.post('/api/sync-now');
+    },
+    
+    // Trigger processing via Pi (proxy to processing server)
+    triggerRemoteProcessing: async (): Promise<void> => {
+      await piApi.post('/api/process-server-queue');
+    },
   },
 };
 
