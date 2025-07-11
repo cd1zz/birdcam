@@ -61,7 +61,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
     
     @app.route('/api/status')
     def api_status():
-        """Return status in the format expected by the Analytics page"""
+        """Enhanced status endpoint with detailed processing metrics"""
         try:
             # Calculate uptime
             uptime = int(time.time() - startup_time)
@@ -74,23 +74,69 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             storage_used = int(storage_info.get('used_gb', 0) * 1024 * 1024 * 1024)  # Convert GB to bytes
             storage_total = int(storage_info.get('total_gb', 100) * 1024 * 1024 * 1024)  # Convert GB to bytes
             
-            # Get today's stats
+            # Get enhanced processing metrics
             try:
                 today_detections = video_repo.get_today_detections()
-                videos_today = video_repo.get_processed_count()  # Could enhance this to be today only
+                videos_today = video_repo.get_processed_count()
+                
+                # Get queue metrics
+                queue_stats = processing_service.get_queue_metrics()
+                
+                # Get processing performance
+                processing_stats = processing_service.get_processing_rate_metrics()
+                
+                # Get detailed statistics
+                detailed_stats = processing_service.get_detailed_processing_stats()
+                
             except Exception as e:
-                print(f"Error getting stats: {e}")
+                print(f"Error getting enhanced stats: {e}")
                 today_detections = 0
                 videos_today = 0
+                queue_stats = {'queue_length': 0, 'currently_processing': 0, 'failed_videos': 0, 'is_processing': False}
+                processing_stats = {'videos_per_hour': 0, 'videos_per_day': 0, 'avg_processing_time': 0, 'session_processed': 0, 'session_failed': 0}
+                detailed_stats = {'total_processed': 0, 'videos_with_detections': 0, 'detection_rate': 0, 'total_detections': 0}
             
             return jsonify({
+                # Basic metrics (backward compatibility)
                 'status': 'running' if processing_service.model_manager.is_loaded else 'stopped',
                 'uptime': uptime,
                 'cameras_active': 0,  # Processing server doesn't have cameras
                 'videos_today': videos_today,
                 'detections_today': today_detections,
                 'storage_used': storage_used,
-                'storage_total': storage_total
+                'storage_total': storage_total,
+                
+                # Enhanced queue metrics
+                'queue': {
+                    'pending': queue_stats['queue_length'],
+                    'processing': queue_stats['currently_processing'],
+                    'failed': queue_stats['failed_videos'],
+                    'is_processing': queue_stats['is_processing']
+                },
+                
+                # Performance metrics
+                'performance': {
+                    'processing_rate_hour': processing_stats['videos_per_hour'],
+                    'processing_rate_day': processing_stats['videos_per_day'],
+                    'avg_processing_time': processing_stats['avg_processing_time'],
+                    'detection_rate': detailed_stats['detection_rate'],
+                    'session_processed': processing_stats.get('session_processed', 0),
+                    'session_failed': processing_stats.get('session_failed', 0)
+                },
+                
+                # System resources
+                'system': {
+                    'cpu_percent': metrics.get('cpu_percent', 0),
+                    'memory_percent': metrics.get('memory_percent', 0),
+                    'model_loaded': processing_service.model_manager.is_loaded
+                },
+                
+                # Historical stats
+                'totals': {
+                    'videos_processed': detailed_stats['total_processed'],
+                    'total_detections': detailed_stats['total_detections'],
+                    'videos_with_detections': detailed_stats['videos_with_detections']
+                }
             })
         except Exception as e:
             print(f"Error in /api/status: {e}")
@@ -102,7 +148,11 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
                 'videos_today': 0,
                 'detections_today': 0,
                 'storage_used': 0,
-                'storage_total': 1
+                'storage_total': 1,
+                'queue': {'pending': 0, 'processing': 0, 'failed': 0, 'is_processing': False},
+                'performance': {'processing_rate_hour': 0, 'processing_rate_day': 0, 'avg_processing_time': 0, 'detection_rate': 0},
+                'system': {'cpu_percent': 0, 'memory_percent': 0, 'model_loaded': False},
+                'totals': {'videos_processed': 0, 'total_detections': 0, 'videos_with_detections': 0}
             })
     
     def _bbox_iou(boxA, boxB):

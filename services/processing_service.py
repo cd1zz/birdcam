@@ -30,6 +30,14 @@ class ProcessingService:
         self.is_processing = False
         self.processing_lock = threading.Lock()
         
+        # Performance tracking
+        self.processing_stats = {
+            'start_time': time.time(),
+            'videos_processed': 0,
+            'total_processing_time': 0,
+            'failed_count': 0
+        }
+        
         # Directories
         self.incoming_dir = config.storage_path / "incoming"
         self.processed_dir = config.storage_path / "processed"
@@ -197,6 +205,7 @@ class ProcessingService:
             except Exception as e:
                 print(f"❌ Error processing {video.filename}: {e}")
                 self.video_repo.update_status(video.id, ProcessingStatus.FAILED)
+                self.processing_stats['failed_count'] += 1
         
         self.is_processing = False
         print(f"✅ Batch processing complete: {processed_count}/{len(pending_videos)} videos processed")
@@ -288,6 +297,10 @@ class ProcessingService:
                         self.detection_repo.update_thumbnail_path(detection_id, thumbnail_path)
                     thumbnail_count += 1
         
+        # Update processing stats
+        self.processing_stats['videos_processed'] += 1
+        self.processing_stats['total_processing_time'] += processing_time
+        
         # Update video record
         self.video_repo.update_status(
             video.id, ProcessingStatus.COMPLETED, 
@@ -312,6 +325,96 @@ class ProcessingService:
             print(f"✅ {video.filename}: no detections found in {processing_time:.1f}s")
         
         print(f"   📂 Stored in: {category} (kept for {retention_days} days)")
+    
+    def get_queue_metrics(self):
+        """Get current processing queue statistics"""
+        try:
+            pending_videos = self.video_repo.get_pending_videos()
+            processing_count = self.video_repo.get_processing_count()
+            failed_count = self.video_repo.get_failed_count()
+            
+            return {
+                'queue_length': len(pending_videos),
+                'currently_processing': processing_count,
+                'failed_videos': failed_count,
+                'is_processing': self.is_processing
+            }
+        except Exception as e:
+            print(f"Error getting queue metrics: {e}")
+            return {
+                'queue_length': 0,
+                'currently_processing': 0,
+                'failed_videos': 0,
+                'is_processing': False
+            }
+    
+    def get_processing_rate_metrics(self):
+        """Get processing throughput statistics"""
+        try:
+            # Calculate session stats
+            session_duration = time.time() - self.processing_stats['start_time']
+            avg_processing_time = (
+                self.processing_stats['total_processing_time'] / 
+                max(1, self.processing_stats['videos_processed'])
+            )
+            
+            # Get recent processing rates
+            last_hour_count = self.video_repo.get_videos_completed_in_hours(1)
+            last_24h_count = self.video_repo.get_videos_completed_in_hours(24)
+            
+            return {
+                'videos_per_hour': last_hour_count,
+                'videos_per_day': last_24h_count,
+                'avg_processing_time': avg_processing_time,
+                'session_processed': self.processing_stats['videos_processed'],
+                'session_failed': self.processing_stats['failed_count'],
+                'session_duration': session_duration
+            }
+        except Exception as e:
+            print(f"Error getting processing rate metrics: {e}")
+            return {
+                'videos_per_hour': 0,
+                'videos_per_day': 0,
+                'avg_processing_time': 0,
+                'session_processed': 0,
+                'session_failed': 0,
+                'session_duration': 0
+            }
+    
+    def get_detailed_processing_stats(self):
+        """Get comprehensive processing statistics"""
+        try:
+            # Get database statistics
+            total_processed = self.video_repo.get_processed_count()
+            total_detections = self.detection_repo.get_total_detections()
+            videos_with_detections = self.video_repo.get_videos_with_detections_count()
+            
+            # Calculate detection rate
+            detection_rate = videos_with_detections / max(1, total_processed)
+            
+            # Get processing time stats
+            processing_time_stats = self.video_repo.get_processing_time_stats()
+            
+            return {
+                'total_processed': total_processed,
+                'videos_with_detections': videos_with_detections,
+                'detection_rate': detection_rate,
+                'total_detections': total_detections,
+                'processing_time_min': processing_time_stats.get('min', 0),
+                'processing_time_max': processing_time_stats.get('max', 0),
+                'processing_time_avg': processing_time_stats.get('avg', 0)
+            }
+        except Exception as e:
+            print(f"Error getting detailed processing stats: {e}")
+            return {
+                'total_processed': 0,
+                'videos_with_detections': 0,
+                'detection_rate': 0,
+                'total_detections': 0,
+                'processing_time_min': 0,
+                'processing_time_max': 0,
+                'processing_time_avg': 0
+            }
     
     def _generate_thumbnail(self, frame, bbox, video_filename, detection_id, confidence, timestamp, detection_class):
         """Generate thumbnail for detection"""

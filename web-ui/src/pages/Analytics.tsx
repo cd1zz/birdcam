@@ -191,15 +191,95 @@ const Analytics: React.FC = () => {
                 <span className="font-medium">{formatUptime(processingStatus.uptime || 0)}</span>
               </div>
               
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Detections Today</span>
-                <span className="font-medium">{processingStatus.detections_today || 0}</span>
-              </div>
+              {/* Enhanced Processing Queue Info */}
+              {processingStatus.queue && (
+                <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-700">Processing Queue</span>
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      processingStatus.queue.is_processing ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {processingStatus.queue.is_processing ? 'Active' : 'Idle'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-sm">
+                    <div className="text-center">
+                      <div className="font-medium text-yellow-600">{processingStatus.queue.pending}</div>
+                      <div className="text-gray-500">Pending</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-medium text-blue-600">{processingStatus.queue.processing}</div>
+                      <div className="text-gray-500">Processing</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-medium text-red-600">{processingStatus.queue.failed}</div>
+                      <div className="text-gray-500">Failed</div>
+                    </div>
+                  </div>
+                </div>
+              )}
               
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Videos Processed</span>
-                <span className="font-medium">{processingStatus.videos_today || 0}</span>
-              </div>
+              {/* Performance Metrics */}
+              {processingStatus.performance && (
+                <div className="bg-blue-50 rounded-lg p-3 space-y-2">
+                  <div className="text-sm font-medium text-gray-700">Performance</div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <div className="font-medium text-blue-600">
+                        {processingStatus.performance.processing_rate_hour}/hr
+                      </div>
+                      <div className="text-gray-500">Processing Rate</div>
+                    </div>
+                    <div>
+                      <div className="font-medium text-blue-600">
+                        {processingStatus.performance.avg_processing_time.toFixed(1)}s
+                      </div>
+                      <div className="text-gray-500">Avg Time</div>
+                    </div>
+                    <div>
+                      <div className="font-medium text-green-600">
+                        {(processingStatus.performance.detection_rate * 100).toFixed(1)}%
+                      </div>
+                      <div className="text-gray-500">Detection Rate</div>
+                    </div>
+                    <div>
+                      <div className="font-medium text-purple-600">
+                        {processingStatus.performance.session_processed}
+                      </div>
+                      <div className="text-gray-500">Session Total</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* System Resources */}
+              {processingStatus.system && (
+                <div className="bg-green-50 rounded-lg p-3 space-y-2">
+                  <div className="text-sm font-medium text-gray-700">System Resources</div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-600">CPU</span>
+                      <span className="font-medium">{processingStatus.system.cpu_percent.toFixed(1)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-green-600 h-2 rounded-full transition-all"
+                        style={{ width: `${processingStatus.system.cpu_percent}%` }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-600">Memory</span>
+                      <span className="font-medium">{processingStatus.system.memory_percent.toFixed(1)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-green-600 h-2 rounded-full transition-all"
+                        style={{ width: `${processingStatus.system.memory_percent}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <div className="pt-4 border-t">
                 <div className="flex justify-between items-center mb-2">
@@ -234,11 +314,11 @@ const Analytics: React.FC = () => {
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Enhanced Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="bg-blue-50 rounded-lg p-4">
           <div className="text-blue-600 text-3xl mb-2">📹</div>
-          <p className="text-sm text-gray-600">Total Videos</p>
+          <p className="text-sm text-gray-600">Videos Today</p>
           <p className="text-2xl font-semibold text-gray-900">
             {(piStatus?.videos_today || 0) + (processingStatus?.videos_today || 0)}
           </p>
@@ -246,25 +326,33 @@ const Analytics: React.FC = () => {
         
         <div className="bg-green-50 rounded-lg p-4">
           <div className="text-green-600 text-3xl mb-2">🦅</div>
-          <p className="text-sm text-gray-600">Wildlife Detected</p>
+          <p className="text-sm text-gray-600">Detections Today</p>
           <p className="text-2xl font-semibold text-gray-900">
             {processingStatus?.detections_today || 0}
           </p>
         </div>
         
         <div className="bg-purple-50 rounded-lg p-4">
-          <div className="text-purple-600 text-3xl mb-2">📷</div>
-          <p className="text-sm text-gray-600">Active Cameras</p>
+          <div className="text-purple-600 text-3xl mb-2">📊</div>
+          <p className="text-sm text-gray-600">Total Processed</p>
           <p className="text-2xl font-semibold text-gray-900">
-            {piStatus?.cameras_active || 0}
+            {processingStatus?.totals?.videos_processed || 0}
+          </p>
+        </div>
+        
+        <div className="bg-yellow-50 rounded-lg p-4">
+          <div className="text-yellow-600 text-3xl mb-2">⏳</div>
+          <p className="text-sm text-gray-600">Queue Length</p>
+          <p className="text-2xl font-semibold text-gray-900">
+            {processingStatus?.queue?.pending || 0}
           </p>
         </div>
         
         <div className="bg-orange-50 rounded-lg p-4">
-          <div className="text-orange-600 text-3xl mb-2">⏱️</div>
-          <p className="text-sm text-gray-600">System Uptime</p>
+          <div className="text-orange-600 text-3xl mb-2">⚡</div>
+          <p className="text-sm text-gray-600">Processing Rate</p>
           <p className="text-2xl font-semibold text-gray-900">
-            {piStatus ? formatUptime(piStatus.uptime || 0) : '—'}
+            {processingStatus?.performance?.processing_rate_hour || 0}/hr
           </p>
         </div>
       </div>

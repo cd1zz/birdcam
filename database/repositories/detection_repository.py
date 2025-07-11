@@ -124,3 +124,9 @@ class DetectionRepository(BaseRepository):
             params.append(limit)
             cursor = conn.execute(query, params)
             return [self._row_to_detection_with_video(row) for row in cursor.fetchall()]
+    
+    def get_total_detections(self) -> int:
+        """Get total count of all detections"""
+        with self.db_manager.get_connection() as conn:
+            cursor = conn.execute('SELECT COUNT(*) FROM detections')
+            return cursor.fetchone()[0]

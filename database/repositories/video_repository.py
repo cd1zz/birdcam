@@ -111,6 +111,58 @@ class VideoRepository(BaseRepository):
             ''', ('completed',))
             result = cursor.fetchone()[0]
             return round(result, 2) if result else 0.0
+    
+    def get_processing_count(self) -> int:
+        """Get count of videos currently being processed"""
+        with self.db_manager.get_connection() as conn:
+            cursor = conn.execute('''
+                SELECT COUNT(*) FROM videos WHERE status = ?
+            ''', ('processing',))
+            return cursor.fetchone()[0]
+    
+    def get_failed_count(self) -> int:
+        """Get count of videos that failed processing"""
+        with self.db_manager.get_connection() as conn:
+            cursor = conn.execute('''
+                SELECT COUNT(*) FROM videos WHERE status = ?
+            ''', ('failed',))
+            return cursor.fetchone()[0]
+    
+    def get_videos_completed_in_hours(self, hours: int) -> int:
+        """Get count of videos completed in the last N hours"""
+        with self.db_manager.get_connection() as conn:
+            cursor = conn.execute('''
+                SELECT COUNT(*) FROM videos 
+                WHERE status = ? AND created_at >= datetime('now', '-{} hours')
+            '''.format(hours), ('completed',))
+            return cursor.fetchone()[0]
+    
+    def get_videos_with_detections_count(self) -> int:
+        """Get count of videos that have detections"""
+        with self.db_manager.get_connection() as conn:
+            cursor = conn.execute('''
+                SELECT COUNT(*) FROM videos 
+                WHERE status = ? AND detection_count > 0
+            ''', ('completed',))
+            return cursor.fetchone()[0]
+    
+    def get_processing_time_stats(self) -> dict:
+        """Get processing time statistics"""
+        with self.db_manager.get_connection() as conn:
+            cursor = conn.execute('''
+                SELECT 
+                    MIN(processing_time) as min_time,
+                    MAX(processing_time) as max_time,
+                    AVG(processing_time) as avg_time
+                FROM videos 
+                WHERE status = ? AND processing_time IS NOT NULL
+            ''', ('completed',))
+            row = cursor.fetchone()
+            return {
+                'min': round(row[0], 2) if row[0] else 0,
+                'max': round(row[1], 2) if row[1] else 0,
+                'avg': round(row[2], 2) if row[2] else 0
+            } if row else {'min': 0, 'max': 0, 'avg': 0}
 
     def delete(self, video_id: int):
         with self.db_manager.get_connection() as conn:

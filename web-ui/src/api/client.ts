@@ -50,6 +50,30 @@ export interface SystemStatus {
   detections_today: number;
   storage_used: number;
   storage_total: number;
+  queue?: {
+    pending: number;
+    processing: number;
+    failed: number;
+    is_processing: boolean;
+  };
+  performance?: {
+    processing_rate_hour: number;
+    processing_rate_day: number;
+    avg_processing_time: number;
+    detection_rate: number;
+    session_processed: number;
+    session_failed: number;
+  };
+  system?: {
+    cpu_percent: number;
+    memory_percent: number;
+    model_loaded: boolean;
+  };
+  totals?: {
+    videos_processed: number;
+    total_detections: number;
+    videos_with_detections: number;
+  };
 }
 
 export interface MotionSettings {
