@@ -1,11 +1,11 @@
 # BirdCam - Distributed Bird/Animal Detection System
 
-A complete dual-camera bird and animal detection system with real-time monitoring, AI-powered detection, and web-based management interface.
+A complete multi-camera bird and animal detection system with real-time monitoring, AI-powered detection, and web-based management interface.
 
 ## System Overview
 
 The system consists of three main components:
-- **Pi Capture** (Raspberry Pi): Motion-triggered video capture with dual camera support
+- **Pi Capture** (Raspberry Pi): Motion-triggered video capture with multi-camera support using active/passive architecture
 - **AI Processor** (Server): YOLO-based object detection on video segments  
 - **Web UI** (React/TypeScript): Live monitoring, detection viewing, and system management
 
@@ -31,8 +31,8 @@ The system consists of three main components:
 ### 1. Prerequisites
 
 **Raspberry Pi:**
-- Raspberry Pi 4+ with Raspberry Pi OS
-- Two CSI cameras or USB cameras connected
+- Raspberry Pi 5 with Raspberry Pi OS (Pi 4+ also supported)
+- Multiple CSI cameras or USB cameras connected
 - Python 3.8+
 
 **Processing Server:**
@@ -170,20 +170,21 @@ VITE_PROCESSING_SERVER=http://192.168.1.100:8091  # Processing URL
 
 ## How It Works
 
-### Dual Camera System
-- **Camera 0 (Active):** Performs motion detection
-- **Camera 1 (Passive):** Records when Camera 0 detects motion
-- **Synchronized Recording:** Both cameras capture the same events from different angles
+### Multi-Camera System (Active/Passive Architecture)
+- **Camera 0 (Active):** Performs motion detection and triggers recording
+- **Camera 1+ (Passive):** Records when the active camera detects motion
+- **Synchronized Recording:** All cameras capture the same events from different angles
+- **Scalable:** Support for multiple cameras beyond just two
 
 ### Detection Pipeline
 1. **Motion Detection:** Camera 0 monitors for movement
-2. **Video Capture:** Both cameras record 15s pre-motion + event + 30s post-motion
+2. **Video Capture:** All cameras record 15s pre-motion + event + 30s post-motion
 3. **File Sync:** Videos automatically sync to processing server every 15 minutes
 4. **AI Processing:** YOLO analyzes videos for birds/animals
 5. **Storage:** Detections kept 30 days, non-detections 7 days
 
 ### Web Interface Features
-- **Live Feeds:** Real-time streams from both cameras
+- **Live Feeds:** Real-time streams from all connected cameras
 - **Detection Gallery:** Browse all detected animals with thumbnails
 - **System Monitoring:** Status, storage usage, processing queue
 - **Settings:** Configure motion detection, AI parameters, retention
@@ -237,7 +238,7 @@ npm run build                 # Production build
 
 **"Only Camera 0 detections showing"**
 - This is fixed in the latest version with camera-specific filenames
-- Both cameras now create unique video files
+- All cameras now create unique video files with camera IDs
 
 ### Log Files
 - Pi Capture: Check console output
