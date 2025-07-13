@@ -31,7 +31,7 @@ const LiveFeeds: React.FC = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading cameras...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">Loading cameras...</p>
         </div>
       </div>
     );
@@ -41,14 +41,14 @@ const LiveFeeds: React.FC = () => {
     const errorMessage = (error as any)?.userMessage || 'Failed to load cameras. Please check your connection.';
     
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
         <div className="flex items-center">
           <div className="flex-shrink-0">
             <span className="text-red-500 text-xl">⚠️</span>
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-red-800">Connection Error</h3>
-            <p className="text-red-700 mt-1">{errorMessage}</p>
+            <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Connection Error</h3>
+            <p className="text-red-700 dark:text-red-300 mt-1">{errorMessage}</p>
           </div>
         </div>
       </div>
@@ -57,14 +57,14 @@ const LiveFeeds: React.FC = () => {
 
   if (!cameras || cameras.length === 0) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
         <div className="flex items-center">
           <div className="flex-shrink-0">
             <span className="text-yellow-500 text-xl">⚠️</span>
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-yellow-800">No Cameras Found</h3>
-            <p className="text-yellow-700 mt-1">
+            <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">No Cameras Found</h3>
+            <p className="text-yellow-700 dark:text-yellow-300 mt-1">
               No cameras are currently configured. Please check your camera setup.
             </p>
           </div>
@@ -76,22 +76,22 @@ const LiveFeeds: React.FC = () => {
   return (
     <div>
       {/* Controls */}
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-medium text-gray-900">Camera Feeds</h3>
-            <p className="text-sm text-gray-500">{cameras.length} camera{cameras.length > 1 ? 's' : ''} active</p>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Camera Feeds</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{cameras.length} camera{cameras.length > 1 ? 's' : ''} active</p>
           </div>
           
           <div className="flex items-center gap-4">
             {/* Layout Toggle */}
-            <div className="flex bg-gray-100 rounded-lg p-1">
+            <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
               <button
                 onClick={() => setSelectedLayout('grid')}
                 className={`px-4 py-2 rounded transition-colors ${
                   selectedLayout === 'grid'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
                 }`}
               >
                 Grid View
@@ -100,8 +100,8 @@ const LiveFeeds: React.FC = () => {
                 onClick={() => setSelectedLayout('single')}
                 className={`px-4 py-2 rounded transition-colors ${
                   selectedLayout === 'single'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
                 }`}
               >
                 Single View
@@ -113,11 +113,11 @@ const LiveFeeds: React.FC = () => {
         {/* Camera Selector for Single View */}
         {selectedLayout === 'single' && cameras.length > 1 && (
           <div className="mt-4 flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">Select Camera:</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Select Camera:</label>
             <select
               value={selectedCamera || ''}
               onChange={(e) => setSelectedCamera(parseInt(e.target.value))}
-              className="block w-48 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="block w-48 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
               {cameras.map((camera) => (
                 <option key={camera.id} value={camera.id}>

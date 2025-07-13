@@ -102,15 +102,15 @@ const Settings: React.FC = () => {
   return (
     <div>
       {/* Tab Navigation */}
-      <div className="bg-white rounded-lg shadow-sm mb-6">
-        <div className="border-b">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
+        <div className="border-b border-gray-200 dark:border-gray-700">
           <nav className="flex">
             <button
               onClick={() => setActiveTab('motion')}
               className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
                 activeTab === 'motion'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
               Motion Settings
@@ -119,8 +119,8 @@ const Settings: React.FC = () => {
               onClick={() => setActiveTab('regions')}
               className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
                 activeTab === 'regions'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
               Motion Regions
@@ -129,8 +129,8 @@ const Settings: React.FC = () => {
               onClick={() => setActiveTab('broadcast')}
               className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
                 activeTab === 'broadcast'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
               Active-Passive Mode
@@ -139,8 +139,8 @@ const Settings: React.FC = () => {
               onClick={() => setActiveTab('system')}
               className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
                 activeTab === 'system'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
               System Settings
@@ -151,7 +151,7 @@ const Settings: React.FC = () => {
 
       {/* Warning Message */}
       {warningMessage && (
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-6">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-orange-400" viewBox="0 0 20 20" fill="currentColor">
@@ -159,7 +159,7 @@ const Settings: React.FC = () => {
               </svg>
             </div>
             <div className="ml-3">
-              <p className="text-sm text-orange-700">{warningMessage}</p>
+              <p className="text-sm text-orange-700 dark:text-orange-300">{warningMessage}</p>
             </div>
           </div>
         </div>
@@ -167,13 +167,13 @@ const Settings: React.FC = () => {
 
       {/* Camera Selector */}
       {cameras && cameras.length > 1 && (
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700">Configure Camera:</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Configure Camera:</label>
             <select
               value={selectedCamera}
               onChange={(e) => setSelectedCamera(parseInt(e.target.value))}
-              className="block w-48 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="block w-48 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
               {cameras.map((camera: Camera) => (
                 <option key={camera.id} value={camera.id}>
@@ -187,12 +187,12 @@ const Settings: React.FC = () => {
 
       {/* Motion Detection Settings */}
       {activeTab === 'motion' && motionSettings && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold mb-6">Motion Detection Settings</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Motion Detection Settings</h3>
           
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Motion Threshold
               </label>
               <input
@@ -203,7 +203,7 @@ const Settings: React.FC = () => {
                 onChange={(e) => handleMotionSettingChange('motion_threshold', parseInt(e.target.value))}
                 className="w-full"
               />
-              <div className="flex justify-between text-sm text-gray-500 mt-1">
+              <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mt-1">
                 <span>Less Sensitive</span>
                 <span>{motionSettings.motion_threshold}</span>
                 <span>More Sensitive</span>
@@ -212,26 +212,26 @@ const Settings: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Minimum Contour Area
                 </label>
                 <input
                   type="number"
                   value={motionSettings.min_contour_area}
                   onChange={(e) => handleMotionSettingChange('min_contour_area', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Motion Timeout (seconds)
                 </label>
                 <input
                   type="number"
                   value={motionSettings.motion_timeout_seconds}
                   onChange={(e) => handleMotionSettingChange('motion_timeout_seconds', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
@@ -244,16 +244,16 @@ const Settings: React.FC = () => {
                   onChange={(e) => handleMotionSettingChange('motion_box_enabled', e.target.checked)}
                   className="mr-2"
                 />
-                <span className="text-sm font-medium text-gray-700">Enable Motion Box Detection</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Enable Motion Box Detection</span>
               </label>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Use the Motion Regions tab to visually configure the detection area
               </p>
             </div>
           </div>
 
           {updateMotionMutation.isSuccess && (
-            <div className="mt-4 p-3 bg-green-50 text-green-800 rounded">
+            <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 rounded">
               Settings updated successfully!
             </div>
           )}
@@ -262,11 +262,11 @@ const Settings: React.FC = () => {
 
       {/* Motion Regions Tab */}
       {activeTab === 'regions' && cameras && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold mb-6">Configure Motion Detection Area</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Configure Motion Detection Area</h3>
           
           <div className="space-y-4">
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               Use the controls on the camera feed to draw and adjust the motion detection box. 
               Motion outside this area will be ignored.
             </p>
@@ -286,17 +286,17 @@ const Settings: React.FC = () => {
             
             {motionSettings && (
               <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-sm font-medium text-gray-700">Motion Box Coordinates</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Motion Box Coordinates</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     Top-Left: ({motionSettings.motion_box_x1}, {motionSettings.motion_box_y1})
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Bottom-Right: ({motionSettings.motion_box_x2}, {motionSettings.motion_box_y2})
                   </p>
                 </div>
-                <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-sm font-medium text-gray-700">Detection Status</p>
+                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Detection Status</p>
                   <p className={`text-xs mt-1 ${motionSettings.motion_box_enabled ? 'text-green-600' : 'text-red-600'}`}>
                     {motionSettings.motion_box_enabled ? 'Enabled' : 'Disabled'}
                   </p>
@@ -309,17 +309,17 @@ const Settings: React.FC = () => {
 
       {/* Active-Passive Settings */}
       {activeTab === 'broadcast' && activePassiveConfig && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold mb-6">Active-Passive Camera Settings</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Active-Passive Camera Settings</h3>
           
           <div className="space-y-4">
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               In active-passive mode, Camera 0 detects motion and triggers recording on all cameras.
             </p>
             
-            <div className="bg-blue-50 p-4 rounded">
-              <h4 className="font-medium text-blue-900 mb-2">How it works:</h4>
-              <ul className="text-sm text-blue-800 space-y-1">
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded">
+              <h4 className="font-medium text-blue-900 dark:text-blue-200 mb-2">How it works:</h4>
+              <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
                 <li>• Camera 0 is the <strong>active camera</strong> - detects motion</li>
                 <li>• Other cameras are <strong>passive cameras</strong> - record when triggered</li>
                 <li>• Configure motion detection box only on Camera 0</li>
@@ -327,7 +327,7 @@ const Settings: React.FC = () => {
               </ul>
             </div>
             
-            <pre className="bg-gray-50 p-4 rounded overflow-auto text-sm">
+            <pre className="bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white p-4 rounded overflow-auto text-sm">
               {JSON.stringify(activePassiveConfig, null, 2)}
             </pre>
           </div>
@@ -338,22 +338,22 @@ const Settings: React.FC = () => {
       {activeTab === 'system' && systemSettings && (
         <div className="space-y-6">
           {/* Storage Configuration */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-semibold mb-6">Storage Configuration</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Storage Configuration</h3>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Storage Path
                 </label>
                 <input
                   type="text"
                   value={systemSettings.storage.storage_path}
                   onChange={(e) => handleSystemSettingChange('storage', 'storage_path', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="/path/to/storage"
                 />
-                <p className="text-sm text-orange-600 mt-1">
+                <p className="text-sm text-orange-600 dark:text-orange-400 mt-1">
                   ⚠️ Changing storage path requires service restart. Existing files will remain in the old location.
                 </p>
               </div>
@@ -361,13 +361,13 @@ const Settings: React.FC = () => {
           </div>
 
           {/* Detection Settings */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-semibold mb-6">Detection Configuration</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Detection Configuration</h3>
             
             <div className="space-y-6">
               {/* Available Classes */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   Enabled Detection Classes
                 </label>
                 <div className="grid grid-cols-3 gap-3">
@@ -379,7 +379,7 @@ const Settings: React.FC = () => {
                         onChange={(e) => handleClassToggle(className, e.target.checked)}
                         className="mr-2"
                       />
-                      <span className="text-sm capitalize">{className}</span>
+                      <span className="text-sm capitalize text-gray-900 dark:text-white">{className}</span>
                     </label>
                   ))}
                 </div>
@@ -387,13 +387,13 @@ const Settings: React.FC = () => {
 
               {/* Confidence Thresholds */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   Confidence Thresholds
                 </label>
                 <div className="grid grid-cols-2 gap-4">
                   {Object.entries(systemSettings.detection.confidences).map(([className, confidence]) => (
                     <div key={className}>
-                      <label className="block text-xs text-gray-600 mb-1 capitalize">
+                      <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1 capitalize">
                         {className === 'default' ? 'Default Confidence' : `${className} Confidence`}
                       </label>
                       <div className="flex items-center space-x-2">
@@ -406,7 +406,7 @@ const Settings: React.FC = () => {
                           onChange={(e) => handleConfidenceChange(className, parseFloat(e.target.value))}
                           className="flex-1"
                         />
-                        <span className="text-sm w-12">{confidence.toFixed(2)}</span>
+                        <span className="text-sm w-12 text-gray-900 dark:text-white">{confidence.toFixed(2)}</span>
                       </div>
                     </div>
                   ))}
@@ -416,13 +416,13 @@ const Settings: React.FC = () => {
               {/* Model Settings */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     YOLO Model
                   </label>
                   <select
                     value={systemSettings.detection.model_name}
                     onChange={(e) => handleSystemSettingChange('detection', 'model_name', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="yolov5n">YOLOv5 Nano (fastest)</option>
                     <option value="yolov5s">YOLOv5 Small</option>
@@ -433,7 +433,7 @@ const Settings: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Process Every Nth Frame
                   </label>
                   <input
@@ -442,14 +442,14 @@ const Settings: React.FC = () => {
                     max="10"
                     value={systemSettings.detection.process_every_nth_frame}
                     onChange={(e) => handleSystemSettingChange('detection', 'process_every_nth_frame', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Higher = faster processing, lower accuracy</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Higher = faster processing, lower accuracy</p>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Max Thumbnails Per Video
                 </label>
                 <input
@@ -458,19 +458,19 @@ const Settings: React.FC = () => {
                   max="20"
                   value={systemSettings.detection.max_thumbnails_per_video}
                   onChange={(e) => handleSystemSettingChange('detection', 'max_thumbnails_per_video', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
           </div>
 
           {/* Retention Policies */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-semibold mb-6">Retention Policies</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Retention Policies</h3>
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Detection Retention (days)
                 </label>
                 <input
@@ -479,13 +479,13 @@ const Settings: React.FC = () => {
                   max="365"
                   value={systemSettings.retention.detection_retention_days}
                   onChange={(e) => handleSystemSettingChange('retention', 'detection_retention_days', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">How long to keep videos with detections</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">How long to keep videos with detections</p>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   No Detection Retention (days)
                 </label>
                 <input
@@ -494,20 +494,20 @@ const Settings: React.FC = () => {
                   max="90"
                   value={systemSettings.retention.no_detection_retention_days}
                   onChange={(e) => handleSystemSettingChange('retention', 'no_detection_retention_days', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">How long to keep videos without detections</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">How long to keep videos without detections</p>
               </div>
             </div>
           </div>
 
           {/* Sync Settings */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-semibold mb-6">Sync & Performance</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Sync & Performance</h3>
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Sync Interval (minutes)
                 </label>
                 <input
@@ -516,13 +516,13 @@ const Settings: React.FC = () => {
                   max="120"
                   value={systemSettings.sync.sync_interval_minutes}
                   onChange={(e) => handleSystemSettingChange('sync', 'sync_interval_minutes', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">How often Pi syncs to processing server</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">How often Pi syncs to processing server</p>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Upload Timeout (seconds)
                 </label>
                 <input
@@ -531,15 +531,15 @@ const Settings: React.FC = () => {
                   max="1800"
                   value={systemSettings.sync.upload_timeout_seconds}
                   onChange={(e) => handleSystemSettingChange('sync', 'upload_timeout_seconds', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">Timeout for file uploads</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Timeout for file uploads</p>
               </div>
             </div>
           </div>
 
           {updateSystemMutation.isSuccess && !warningMessage && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
                   <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
@@ -547,7 +547,7 @@ const Settings: React.FC = () => {
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm text-green-700">System settings updated successfully!</p>
+                  <p className="text-sm text-green-700 dark:text-green-300">System settings updated successfully!</p>
                 </div>
               </div>
             </div>

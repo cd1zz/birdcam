@@ -83,7 +83,7 @@ const Detections: React.FC = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading detections...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">Loading detections...</p>
         </div>
       </div>
     );
@@ -93,20 +93,20 @@ const Detections: React.FC = () => {
     const errorMessage = (error as any)?.userMessage || 'Failed to load detections. Please try again.';
     
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <span className="text-red-500 text-xl">⚠️</span>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Loading Error</h3>
-              <p className="text-red-700 mt-1">{errorMessage}</p>
+              <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Loading Error</h3>
+              <p className="text-red-700 dark:text-red-300 mt-1">{errorMessage}</p>
             </div>
           </div>
           <button
             onClick={handleRetry}
-            className="ml-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+            className="ml-4 px-4 py-2 bg-red-600 dark:bg-red-700 text-white rounded hover:bg-red-700 dark:hover:bg-red-600 transition-colors"
           >
             Retry
           </button>
@@ -118,15 +118,15 @@ const Detections: React.FC = () => {
   return (
     <div>
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
         <div className="flex flex-wrap items-center gap-4">
           {/* Species Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Species</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Species</label>
             <select
               value={selectedSpecies}
               onChange={(e) => setSelectedSpecies(e.target.value)}
-              className="block w-40 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="block w-40 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Species</option>
               {species.map((s) => (
@@ -139,16 +139,16 @@ const Detections: React.FC = () => {
 
           {/* Date Range Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Time Period</label>
-            <div className="flex bg-gray-100 rounded-lg p-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time Period</label>
+            <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
               {(['today', 'week', 'month', 'all'] as const).map((range) => (
                 <button
                   key={range}
                   onClick={() => setDateRange(range)}
                   className={`px-3 py-1 rounded capitalize transition-colors ${
                     dateRange === range
-                      ? 'bg-white text-blue-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
                   }`}
                 >
                   {range === 'week' ? 'This Week' : range === 'all' ? 'All Time' : range}
@@ -160,8 +160,8 @@ const Detections: React.FC = () => {
           {/* Stats */}
           {detections && (
             <div className="ml-auto text-right">
-              <p className="text-sm text-gray-500">Total Detections</p>
-              <p className="text-2xl font-semibold text-gray-900">{detections.length}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Total Detections</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{detections.length}</p>
             </div>
           )}
         </div>
@@ -180,11 +180,11 @@ const Detections: React.FC = () => {
           onClick={closeVideoModal}
         >
           <div 
-            className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden"
+            className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 border-b flex items-center justify-between">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <span className="text-2xl">
                   {selectedVideo.species === 'bird' ? '🦅' : 
                    selectedVideo.species === 'cat' ? '🐱' : 
@@ -199,7 +199,7 @@ const Detections: React.FC = () => {
               </h3>
               <button
                 onClick={closeVideoModal}
-                className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl leading-none"
                 aria-label="Close video"
               >
                 ✕
@@ -215,7 +215,7 @@ const Detections: React.FC = () => {
                   console.error('Video failed to load:', e);
                 }}
               />
-              <div className="mt-4 grid grid-cols-2 gap-4 text-sm text-gray-600">
+              <div className="mt-4 grid grid-cols-2 gap-4 text-sm text-gray-600 dark:text-gray-300">
                 <div>
                   <p><strong>Confidence:</strong> {(selectedVideo.confidence * 100).toFixed(1)}%</p>
                   <p><strong>Time:</strong> {new Date(selectedVideo.received_time || selectedVideo.timestamp || '').toLocaleString()}</p>
