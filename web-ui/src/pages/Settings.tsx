@@ -104,46 +104,50 @@ const Settings: React.FC = () => {
       {/* Tab Navigation */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
         <div className="border-b border-gray-200 dark:border-gray-700">
-          <nav className="flex">
+          <nav className="flex overflow-x-auto scrollbar-hide">
             <button
               onClick={() => setActiveTab('motion')}
-              className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
+              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === 'motion'
                   ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
-              Motion Settings
+              <span className="hidden sm:inline">Motion Settings</span>
+              <span className="sm:hidden">Motion</span>
             </button>
             <button
               onClick={() => setActiveTab('regions')}
-              className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
+              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === 'regions'
                   ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
-              Motion Regions
+              <span className="hidden sm:inline">Motion Regions</span>
+              <span className="sm:hidden">Regions</span>
             </button>
             <button
               onClick={() => setActiveTab('broadcast')}
-              className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
+              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === 'broadcast'
                   ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
-              Active-Passive Mode
+              <span className="hidden sm:inline">Active-Passive Mode</span>
+              <span className="sm:hidden">A-P Mode</span>
             </button>
             <button
               onClick={() => setActiveTab('system')}
-              className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
+              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === 'system'
                   ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
-              System Settings
+              <span className="hidden sm:inline">System Settings</span>
+              <span className="sm:hidden">System</span>
             </button>
           </nav>
         </div>
@@ -168,12 +172,12 @@ const Settings: React.FC = () => {
       {/* Camera Selector */}
       {cameras && cameras.length > 1 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Configure Camera:</label>
             <select
               value={selectedCamera}
               onChange={(e) => setSelectedCamera(parseInt(e.target.value))}
-              className="block w-48 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="block w-full sm:w-48 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
               {cameras.map((camera: Camera) => (
                 <option key={camera.id} value={camera.id}>

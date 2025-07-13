@@ -229,7 +229,7 @@ const Analytics: React.FC = () => {
                       {processingStatus.queue.is_processing ? 'Active' : 'Idle'}
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div className="grid grid-cols-3 gap-1 sm:gap-2 text-xs sm:text-sm">
                     <div className="text-center">
                       <div className="font-medium text-yellow-600">{processingStatus.queue.pending}</div>
                       <div className="text-gray-500 dark:text-gray-400">Pending</div>
@@ -250,7 +250,7 @@ const Analytics: React.FC = () => {
               {processingStatus.performance && (
                 <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 space-y-2">
                   <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Performance</div>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
                     <div>
                       <div className="font-medium text-blue-600">
                         {processingStatus.performance.processing_rate_hour}/hr
@@ -343,17 +343,17 @@ const Analytics: React.FC = () => {
 
       {/* Manual Controls */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
           <span className="text-2xl">🎛️</span>
           Manual Controls
         </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           {/* Sync Files Button */}
           <button
             onClick={() => syncMutation.mutate()}
             disabled={syncMutation.isPending || getPiConnectionStatus() !== 'online'}
-            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all ${
+            className={`flex flex-col sm:flex-row items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-lg transition-all text-center sm:text-left ${
               syncMutation.isPending 
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                 : getPiConnectionStatus() !== 'online'
@@ -369,9 +369,9 @@ const Analytics: React.FC = () => {
             ) : (
               <>
                 <span className="text-xl">🔄</span>
-                <div className="text-left">
-                  <div className="font-medium">Sync Files</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Pi → AI Server</div>
+                <div>
+                  <div className="font-medium text-sm sm:text-base">Sync Files</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">Pi → AI Server</div>
                 </div>
               </>
             )}
@@ -381,7 +381,7 @@ const Analytics: React.FC = () => {
           <button
             onClick={() => processingMutation.mutate()}
             disabled={processingMutation.isPending || getProcessingConnectionStatus() !== 'online'}
-            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all ${
+            className={`flex flex-col sm:flex-row items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-lg transition-all text-center sm:text-left ${
               processingMutation.isPending
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                 : getProcessingConnectionStatus() !== 'online'
@@ -397,9 +397,9 @@ const Analytics: React.FC = () => {
             ) : (
               <>
                 <span className="text-xl">🤖</span>
-                <div className="text-left">
-                  <div className="font-medium">Process Videos</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Run AI Analysis</div>
+                <div>
+                  <div className="font-medium text-sm sm:text-base">Process Videos</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">Run AI Analysis</div>
                 </div>
               </>
             )}
@@ -409,7 +409,7 @@ const Analytics: React.FC = () => {
           <button
             onClick={() => cleanupMutation.mutate()}
             disabled={cleanupMutation.isPending || getProcessingConnectionStatus() !== 'online'}
-            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all ${
+            className={`flex flex-col sm:flex-row items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-lg transition-all text-center sm:text-left ${
               cleanupMutation.isPending
                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                 : getProcessingConnectionStatus() !== 'online'
@@ -425,9 +425,9 @@ const Analytics: React.FC = () => {
             ) : (
               <>
                 <span className="text-xl">🧹</span>
-                <div className="text-left">
-                  <div className="font-medium">Cleanup Files</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Remove Old Videos</div>
+                <div>
+                  <div className="font-medium text-sm sm:text-base">Cleanup Files</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">Remove Old Videos</div>
                 </div>
               </>
             )}
@@ -438,7 +438,7 @@ const Analytics: React.FC = () => {
         <div className="mt-4 space-y-2">
           {syncMutation.isError && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-2 text-sm text-red-700 dark:text-red-300">
-              ❌ Sync failed: {(syncMutation.error as any)?.userMessage || 'Connection error'}
+              ❌ Sync failed: {(syncMutation.error as Error)?.message || 'Connection error'}
             </div>
           )}
           {syncMutation.isSuccess && (
@@ -449,7 +449,7 @@ const Analytics: React.FC = () => {
           
           {processingMutation.isError && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-2 text-sm text-red-700 dark:text-red-300">
-              ❌ Processing failed: {(processingMutation.error as any)?.userMessage || 'Connection error'}
+              ❌ Processing failed: {(processingMutation.error as Error)?.message || 'Connection error'}
             </div>
           )}
           {processingMutation.isSuccess && (
@@ -460,7 +460,7 @@ const Analytics: React.FC = () => {
           
           {cleanupMutation.isError && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-2 text-sm text-red-700 dark:text-red-300">
-              ❌ Cleanup failed: {(cleanupMutation.error as any)?.userMessage || 'Connection error'}
+              ❌ Cleanup failed: {(cleanupMutation.error as Error)?.message || 'Connection error'}
             </div>
           )}
           {cleanupMutation.isSuccess && (
@@ -472,43 +472,43 @@ const Analytics: React.FC = () => {
       </div>
 
       {/* Enhanced Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-          <div className="text-blue-600 text-3xl mb-2">📹</div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Videos Today</p>
-          <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 sm:p-4">
+          <div className="text-blue-600 text-2xl sm:text-3xl mb-1 sm:mb-2">📹</div>
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Videos Today</p>
+          <p className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
             {(piStatus?.videos_today || 0) + (processingStatus?.videos_today || 0)}
           </p>
         </div>
         
-        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-          <div className="text-green-600 text-3xl mb-2">🦅</div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Detections Today</p>
-          <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 sm:p-4">
+          <div className="text-green-600 text-2xl sm:text-3xl mb-1 sm:mb-2">🦅</div>
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Detections Today</p>
+          <p className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
             {processingStatus?.detections_today || 0}
           </p>
         </div>
         
-        <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
-          <div className="text-purple-600 text-3xl mb-2">📊</div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Total Processed</p>
-          <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+        <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 sm:p-4">
+          <div className="text-purple-600 text-2xl sm:text-3xl mb-1 sm:mb-2">📊</div>
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Processed</p>
+          <p className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
             {processingStatus?.totals?.videos_processed || 0}
           </p>
         </div>
         
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
-          <div className="text-yellow-600 text-3xl mb-2">⏳</div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Queue Length</p>
-          <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 sm:p-4">
+          <div className="text-yellow-600 text-2xl sm:text-3xl mb-1 sm:mb-2">⏳</div>
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Queue Length</p>
+          <p className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
             {processingStatus?.queue?.pending || 0}
           </p>
         </div>
         
-        <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4">
-          <div className="text-orange-600 text-3xl mb-2">⚡</div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Processing Rate</p>
-          <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+        <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3 sm:p-4 col-span-2 sm:col-span-1">
+          <div className="text-orange-600 text-2xl sm:text-3xl mb-1 sm:mb-2">⚡</div>
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Processing Rate</p>
+          <p className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
             {processingStatus?.performance?.processing_rate_hour || 0}/hr
           </p>
         </div>

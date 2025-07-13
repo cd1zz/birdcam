@@ -38,7 +38,7 @@ const LiveFeeds: React.FC = () => {
   }
 
   if (isError) {
-    const errorMessage = (error as any)?.userMessage || 'Failed to load cameras. Please check your connection.';
+    const errorMessage = (error as Error)?.message || 'Failed to load cameras. Please check your connection.';
     
     return (
       <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
@@ -77,34 +77,36 @@ const LiveFeeds: React.FC = () => {
     <div>
       {/* Controls */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">Camera Feeds</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">{cameras.length} camera{cameras.length > 1 ? 's' : ''} active</p>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {/* Layout Toggle */}
             <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
               <button
                 onClick={() => setSelectedLayout('grid')}
-                className={`px-4 py-2 rounded transition-colors ${
+                className={`px-2 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base rounded transition-colors ${
                   selectedLayout === 'grid'
                     ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
                 }`}
               >
-                Grid View
+                <span className="hidden sm:inline">Grid View</span>
+                <span className="sm:hidden">Grid</span>
               </button>
               <button
                 onClick={() => setSelectedLayout('single')}
-                className={`px-4 py-2 rounded transition-colors ${
+                className={`px-2 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base rounded transition-colors ${
                   selectedLayout === 'single'
                     ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
                 }`}
               >
-                Single View
+                <span className="hidden sm:inline">Single View</span>
+                <span className="sm:hidden">Single</span>
               </button>
             </div>
           </div>
@@ -112,12 +114,12 @@ const LiveFeeds: React.FC = () => {
 
         {/* Camera Selector for Single View */}
         {selectedLayout === 'single' && cameras.length > 1 && (
-          <div className="mt-4 flex items-center gap-2">
+          <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Select Camera:</label>
             <select
               value={selectedCamera || ''}
               onChange={(e) => setSelectedCamera(parseInt(e.target.value))}
-              className="block w-48 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="block w-full sm:w-48 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
               {cameras.map((camera) => (
                 <option key={camera.id} value={camera.id}>
@@ -133,8 +135,8 @@ const LiveFeeds: React.FC = () => {
       {selectedLayout === 'grid' ? (
         <div className={`grid gap-4 ${
           cameras.length === 1 ? 'grid-cols-1' : 
-          cameras.length === 2 ? 'grid-cols-2' : 
-          'grid-cols-2 lg:grid-cols-3'
+          cameras.length === 2 ? 'grid-cols-1 sm:grid-cols-2' : 
+          'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
         }`}>
           {cameras.map((camera) => (
             <CameraFeed

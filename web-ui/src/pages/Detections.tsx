@@ -50,9 +50,10 @@ const Detections: React.FC = () => {
       return api.detections.getRecent(params);
     },
     refetchInterval: 60000,
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: unknown) => {
       // Don't retry on 4xx errors (client errors)
-      if (error?.response?.status >= 400 && error?.response?.status < 500) {
+      const apiError = error as { response?: { status?: number } };
+      if (apiError?.response?.status && apiError.response.status >= 400 && apiError.response.status < 500) {
         return false;
       }
       return failureCount < 3;
@@ -90,7 +91,7 @@ const Detections: React.FC = () => {
   }
 
   if (isError) {
-    const errorMessage = (error as any)?.userMessage || 'Failed to load detections. Please try again.';
+    const errorMessage = (error as Error)?.message || 'Failed to load detections. Please try again.';
     
     return (
       <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
@@ -119,14 +120,14 @@ const Detections: React.FC = () => {
     <div>
       {/* Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4">
           {/* Species Filter */}
-          <div>
+          <div className="w-full sm:w-auto">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Species</label>
             <select
               value={selectedSpecies}
               onChange={(e) => setSelectedSpecies(e.target.value)}
-              className="block w-40 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="block w-full sm:w-40 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Species</option>
               {species.map((s) => (
@@ -138,14 +139,14 @@ const Detections: React.FC = () => {
           </div>
 
           {/* Date Range Filter */}
-          <div>
+          <div className="w-full sm:w-auto">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time Period</label>
-            <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+            <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 overflow-x-auto">
               {(['today', 'week', 'month', 'all'] as const).map((range) => (
                 <button
                   key={range}
                   onClick={() => setDateRange(range)}
-                  className={`px-3 py-1 rounded capitalize transition-colors ${
+                  className={`px-2 sm:px-3 py-1 text-sm sm:text-base rounded capitalize transition-colors whitespace-nowrap ${
                     dateRange === range
                       ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
                       : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
@@ -159,7 +160,7 @@ const Detections: React.FC = () => {
 
           {/* Stats */}
           {detections && (
-            <div className="ml-auto text-right">
+            <div className="w-full sm:ml-auto sm:w-auto text-center sm:text-right">
               <p className="text-sm text-gray-500 dark:text-gray-400">Total Detections</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white">{detections.length}</p>
             </div>
@@ -176,15 +177,15 @@ const Detections: React.FC = () => {
       {/* Video Modal */}
       {selectedVideo && (
         <div 
-          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-2 sm:p-4"
           onClick={closeVideoModal}
         >
           <div 
             className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 flex-1 min-w-0">
                 <span className="text-2xl">
                   {selectedVideo.species === 'bird' ? '🦅' : 
                    selectedVideo.species === 'cat' ? '🐱' : 
@@ -199,13 +200,13 @@ const Detections: React.FC = () => {
               </h3>
               <button
                 onClick={closeVideoModal}
-                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl leading-none"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xl sm:text-2xl leading-none p-1 ml-2 flex-shrink-0"
                 aria-label="Close video"
               >
                 ✕
               </button>
             </div>
-            <div className="p-4">
+            <div className="p-3 sm:p-4">
               <video
                 controls
                 autoPlay
@@ -215,7 +216,7 @@ const Detections: React.FC = () => {
                   console.error('Video failed to load:', e);
                 }}
               />
-              <div className="mt-4 grid grid-cols-2 gap-4 text-sm text-gray-600 dark:text-gray-300">
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                 <div>
                   <p><strong>Confidence:</strong> {(selectedVideo.confidence * 100).toFixed(1)}%</p>
                   <p><strong>Time:</strong> {new Date(selectedVideo.received_time || selectedVideo.timestamp || '').toLocaleString()}</p>

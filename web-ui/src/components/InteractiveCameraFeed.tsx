@@ -157,7 +157,7 @@ const InteractiveCameraFeed: React.FC<InteractiveCameraFeedProps> = ({
     const deltaX = coords.x - dragStart.x;
     const deltaY = coords.y - dragStart.y;
     
-    let newBox = { ...originalBox };
+    const newBox = { ...originalBox };
     
     if (dragMode === 'move') {
       // Move the entire box
@@ -225,7 +225,7 @@ const InteractiveCameraFeed: React.FC<InteractiveCameraFeedProps> = ({
   useEffect(() => {
     const handleDocumentMouseMove = (e: MouseEvent) => {
       if (isDragging) {
-        handleMouseMove(e as any);
+        handleMouseMove(e as unknown as React.MouseEvent<HTMLElement>);
       }
     };
 

@@ -37,7 +37,7 @@ const DetectionGrid: React.FC<DetectionGridProps> = ({ detections, onVideoClick 
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
       {detections.map((detection) => (
         <div
           key={detection.id}
@@ -62,39 +62,40 @@ const DetectionGrid: React.FC<DetectionGridProps> = ({ detections, onVideoClick 
             )}
             
             {/* Confidence Badge */}
-            <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+            <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-black/70 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs">
               {(detection.confidence * 100).toFixed(0)}%
             </div>
 
             {/* Event Badge */}
             {detection.event_id && (
-              <div className="absolute top-2 left-2 bg-blue-600 text-white px-2 py-1 rounded text-xs">
+              <div className="absolute top-1 left-1 sm:top-2 sm:left-2 bg-blue-600 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs">
                 Event
               </div>
             )}
           </div>
 
           {/* Details */}
-          <div className="p-4">
+          <div className="p-3 sm:p-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-lg capitalize flex items-center gap-2 text-gray-900 dark:text-white">
-                <span>{getSpeciesEmoji(detection.species)}</span>
-                {detection.species}
+              <h3 className="font-semibold text-base sm:text-lg capitalize flex items-center gap-1 sm:gap-2 text-gray-900 dark:text-white">
+                <span className="text-base sm:text-lg">{getSpeciesEmoji(detection.species)}</span>
+                <span className="truncate">{detection.species}</span>
               </h3>
             </div>
             
-            <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mb-1">
               {formatDate(detection.received_time || detection.timestamp || '')}
             </p>
             
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
               {detection.filename || detection.video_path?.split('/').pop() || 'No file'}
             </p>
 
             {/* Play Button */}
-            <button className="mt-3 w-full bg-blue-600 dark:bg-blue-700 text-white py-2 rounded hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
+            <button className="mt-2 sm:mt-3 w-full bg-blue-600 dark:bg-blue-700 text-white py-1.5 sm:py-2 rounded hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base">
               <span>▶️</span>
-              <span>Play Video</span>
+              <span className="hidden sm:inline">Play Video</span>
+              <span className="sm:hidden">Play</span>
             </button>
           </div>
         </div>

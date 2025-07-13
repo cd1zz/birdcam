@@ -49,23 +49,23 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ cameraId, cameraName, className
     <>
       <div className={`relative bg-gray-900 rounded-lg overflow-hidden ${className}`}>
         {/* Camera Header */}
-        <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 to-transparent p-3 z-10">
+        <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 to-transparent p-2 sm:p-3 z-10">
           <div className="flex justify-between items-center">
-            <h3 className="text-white font-medium">{cameraName}</h3>
-            <div className="flex gap-2">
+            <h3 className="text-white font-medium text-sm sm:text-base">{cameraName}</h3>
+            <div className="flex gap-1 sm:gap-2">
               <button
                 onClick={refreshFeed}
-                className="text-white hover:text-gray-300 transition-colors"
+                className="text-white hover:text-gray-300 transition-colors p-1 sm:p-0"
                 title="Refresh feed"
               >
-                🔄
+                <span className="text-base sm:text-lg">🔄</span>
               </button>
               <button
                 onClick={toggleFullscreen}
-                className="text-white hover:text-gray-300 transition-colors"
+                className="text-white hover:text-gray-300 transition-colors p-1 sm:p-0"
                 title="Fullscreen"
               >
-                🔳
+                <span className="text-base sm:text-lg">🔳</span>
               </button>
             </div>
           </div>
@@ -74,9 +74,9 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ cameraId, cameraName, className
         {/* Loading State */}
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-white">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-              <p className="mt-2 text-sm">Loading feed...</p>
+            <div className="text-white text-center">
+              <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-white mx-auto"></div>
+              <p className="mt-2 text-xs sm:text-sm">Loading feed...</p>
             </div>
           </div>
         )}
@@ -107,8 +107,8 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ cameraId, cameraName, className
         />
 
         {/* Status Indicator */}
-        <div className="absolute bottom-3 left-3 flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${error ? 'bg-red-500' : 'bg-green-500'} animate-pulse`}></div>
+        <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 flex items-center gap-1 sm:gap-2">
+          <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${error ? 'bg-red-500' : 'bg-green-500'} animate-pulse`}></div>
           <span className="text-white text-xs">
             {error ? 'Offline' : 'Live'}
           </span>
@@ -128,7 +128,7 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ cameraId, cameraName, className
           />
           <button
             onClick={toggleFullscreen}
-            className="absolute top-4 right-4 text-white text-2xl hover:text-gray-300"
+            className="absolute top-2 right-2 sm:top-4 sm:right-4 text-white text-xl sm:text-2xl hover:text-gray-300 p-2"
           >
             ✕
           </button>
