@@ -17,16 +17,44 @@ fi
 
 # Enable camera interface
 echo "📷 Enabling camera interface..."
-if ! grep -q "camera_auto_detect=1" /boot/config.txt; then
-    echo "Adding camera_auto_detect=1 to /boot/config.txt"
-    echo "camera_auto_detect=1" | sudo tee -a /boot/config.txt
-    REBOOT_REQUIRED=1
+
+# Check for boot config in multiple possible locations
+BOOT_CONFIG=""
+if [ -f "/boot/firmware/config.txt" ]; then
+    BOOT_CONFIG="/boot/firmware/config.txt"
+    echo "Found boot config at /boot/firmware/config.txt"
+elif [ -f "/boot/config.txt" ]; then
+    BOOT_CONFIG="/boot/config.txt"
+    echo "Found boot config at /boot/config.txt"
+else
+    echo "⚠️  Warning: Could not find boot config file"
+    echo "   Please manually enable camera in raspi-config"
+fi
+
+if [ -n "$BOOT_CONFIG" ]; then
+    if ! grep -q "camera_auto_detect=1" "$BOOT_CONFIG"; then
+        echo "Adding camera_auto_detect=1 to $BOOT_CONFIG"
+        echo "camera_auto_detect=1" | sudo tee -a "$BOOT_CONFIG"
+        REBOOT_REQUIRED=1
+    fi
+    
+    # Add GPU memory configuration for better camera performance
+    if ! grep -q "gpu_mem=" "$BOOT_CONFIG"; then
+        echo "Adding gpu_mem=128 to $BOOT_CONFIG for better camera performance"
+        echo "gpu_mem=128" | sudo tee -a "$BOOT_CONFIG"
+        REBOOT_REQUIRED=1
+    fi
 fi
 
 # Install system dependencies
 echo "📦 Installing system dependencies..."
 sudo apt update
-sudo apt install -y python3-picamera2 libcamera-apps libcamera-dev python3-venv
+sudo apt install -y python3-picamera2 libcamera-apps libcamera-dev python3-venv ffmpeg libopencv-dev python3-dev
+
+# Add user to video group for camera permissions
+echo "🔐 Adding user to video group for camera permissions..."
+sudo usermod -a -G video $USER
+echo "✅ User $USER added to video group"
 
 # Check if venv exists and has system packages
 if [ -d ".venv" ]; then
@@ -79,6 +107,8 @@ echo "🎉 Setup complete!"
 echo ""
 echo "📋 Summary:"
 echo "   ✅ System camera packages installed"
+echo "   ✅ FFmpeg and OpenCV system libraries installed"
+echo "   ✅ User added to video group for camera permissions"
 echo "   ✅ Virtual environment configured with system access"
 echo "   ✅ Python requirements installed"
 echo "   ✅ Camera tested successfully"
@@ -92,3 +122,7 @@ if [ "$REBOOT_REQUIRED" = "1" ]; then
 else
     echo "🚀 Ready to start! Run: python3 pi_capture/main.py"
 fi
+
+echo ""
+echo "🔍 Note: If you added the user to the video group, you may need to"
+echo "   log out and back in for permissions to take effect."

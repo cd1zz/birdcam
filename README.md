@@ -33,11 +33,30 @@ The system consists of three main components:
 **Raspberry Pi:**
 - Raspberry Pi 5 with Raspberry Pi OS (Pi 4+ also supported)
 - Multiple CSI cameras or USB cameras connected
-- Python 3.8+
+- Python 3.9+ (3.8+ supported but 3.9+ recommended)
 
 **Processing Server:**
-- Linux/Windows/macOS machine with Python 3.8+
+- Linux/Windows/macOS machine with Python 3.9+
+- FFmpeg (required for video processing)
 - GPU optional but recommended for faster processing
+
+**System Dependencies:**
+```bash
+# Ubuntu/Debian (including Raspberry Pi OS):
+sudo apt update && sudo apt install ffmpeg libopencv-dev python3-dev
+
+# Raspberry Pi additional requirements:
+sudo apt install python3-picamera2 libcamera-apps libcamera-dev
+
+# Add user to video group for camera permissions:
+sudo usermod -a -G video $USER
+
+# macOS:
+brew install ffmpeg
+
+# Windows:
+# Download FFmpeg from https://ffmpeg.org/
+```
 
 ### 2. Configuration Setup
 
@@ -91,11 +110,16 @@ VITE_PROCESSING_SERVER=http://192.168.1.100:8091
 
 **On Raspberry Pi:**
 ```bash
+# Install system dependencies first (see Prerequisites section above)
+
 # Install Python dependencies
 pip install -r requirements.txt
 
-# Setup camera permissions
+# Setup camera permissions and configuration
 ./setup_pi_camera.sh
+
+# IMPORTANT: Reboot if camera was just enabled
+# sudo reboot
 
 # Start the capture service
 python pi_capture/main.py
@@ -103,6 +127,8 @@ python pi_capture/main.py
 
 **On Processing Server:**
 ```bash
+# Install system dependencies first (see Prerequisites section above)
+
 # Install Python dependencies
 pip install -r requirements.txt
 
@@ -123,6 +149,13 @@ npm run preview  # Or 'npm run dev' for development
 - **Pi Dashboard:** http://YOUR_PI_IP:8090
 - **Processing Dashboard:** http://YOUR_PROCESSING_SERVER:8091  
 - **Web UI:** Served from either dashboard
+
+### 5. Network Configuration
+
+**Important:** Ensure network connectivity between components:
+- **Ports 8090 and 8091** must be accessible between Pi and Processing Server
+- **Firewall rules** may need to be configured to allow these ports
+- Both services need **bidirectional network access** for file sync and status updates
 
 ## Configuration Details
 
@@ -167,6 +200,12 @@ PROCESSING_PORT=8091
 VITE_PI_SERVER=http://192.168.1.50:8090        # Pi URL
 VITE_PROCESSING_SERVER=http://192.168.1.100:8091  # Processing URL
 ```
+
+#### Database Storage
+- **SQLite databases** are automatically created in camera-specific directories
+- **Pi Capture:** `./bird_footage/camera_X/capture.db` 
+- **AI Processor:** `./bird_footage/processing.db`
+- No additional database setup required
 
 ## How It Works
 
