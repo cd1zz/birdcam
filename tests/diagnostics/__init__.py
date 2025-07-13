@@ -1,0 +1,1 @@
+# Diagnostic tests for BirdCam bug fixes

@@ -1,0 +1,35 @@
+# Raspberry Pi Bird Detection Client Requirements
+
+# Core web framework
+flask>=2.3.0
+
+# Computer vision and image processing
+opencv-python>=4.8.0
+
+# HTTP requests for server communication
+requests>=2.31.0
+
+# Database
+# sqlite3 is included in Python standard library
+
+# Scheduling tasks
+schedule>=1.2.0
+
+# CORS support (if needed for local testing)
+flask-cors>=4.0.0
+
+# Optional: For better performance on Pi
+# numpy>=1.24.0  # Usually comes with opencv-python
+
+# System/OS utilities (included in Python standard library)
+# pathlib - included
+# threading - included
+# datetime - included
+# json - included
+# os - included
+# time - included
+
+# Note: You may also need system packages:
+# sudo apt-get update
+# sudo apt-get install python3-opencv python3-pip
+# sudo apt-get install libgl1-mesa-glx libglib2.0-0  # For OpenCV on some systems
