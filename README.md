@@ -2,6 +2,10 @@
 
 A complete multi-camera bird and animal detection system with real-time monitoring, AI-powered detection, and web-based management interface.
 
+![alt text](image.png)
+
+![alt text](image-1.png)
+
 ## System Overview
 
 The system consists of three main components:
