@@ -36,7 +36,7 @@ The system consists of three main components:
 
 **Raspberry Pi:**
 - Raspberry Pi 5 with Raspberry Pi OS (Pi 4+ also supported)
-- Multiple CSI cameras or USB cameras connected
+- At least one CSI camera or USB camera connected, supports multiple
 - Python 3.9+ (3.8+ supported but 3.9+ recommended)
 
 **Processing Server:**
