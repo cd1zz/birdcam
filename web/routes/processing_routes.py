@@ -231,21 +231,61 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
 
     @app.route('/api/recent-detections')
     def api_recent_detections():
-        species = request.args.get('species')
-        start = request.args.get('start')
-        end = request.args.get('end')
-        sort = request.args.get('sort', 'desc')
-        limit = request.args.get('limit', default=20, type=int)
+        try:
+            species = request.args.get('species')
+            start = request.args.get('start')
+            end = request.args.get('end')
+            sort = request.args.get('sort', 'desc')
+            limit = request.args.get('limit', default=20, type=int)
 
-        raw_items = detection_repo.get_recent_filtered_with_thumbnails(
-            species=species, start=start, end=end, limit=100)
-        events = _cluster_detections(raw_items, limit=None)
-        events.sort(key=lambda e: e['abs_time'], reverse=(sort != 'asc'))
-        events = events[:limit]
-        for e in events:
-            e.pop('bbox', None)
-            e.pop('abs_time', None)
-        return jsonify({'detections': events})
+            print(f"🔍 API request: species={species}, start={start}, end={end}, limit={limit}, sort={sort}")
+            
+            # Validate parameters
+            if limit > 1000:
+                return jsonify({'error': 'Limit cannot exceed 1000'}), 400
+            
+            # Query database with detailed error handling
+            try:
+                raw_items = detection_repo.get_recent_filtered_with_thumbnails(
+                    species=species, start=start, end=end, limit=100)
+                print(f"📊 Found {len(raw_items)} raw detection items")
+            except Exception as db_error:
+                print(f"❌ Database query failed: {db_error}")
+                print(f"   Database path: {config.database.path}")
+                print(f"   Storage path: {config.processing.storage_path}")
+                return jsonify({
+                    'error': 'Database query failed',
+                    'details': str(db_error),
+                    'database_path': str(config.database.path)
+                }), 500
+            
+            # Process and cluster detections
+            try:
+                events = _cluster_detections(raw_items, limit=None)
+                events.sort(key=lambda e: e['abs_time'], reverse=(sort != 'asc'))
+                events = events[:limit]
+                for e in events:
+                    e.pop('bbox', None)
+                    e.pop('abs_time', None)
+                
+                print(f"✅ Returning {len(events)} clustered detection events")
+                return jsonify({'detections': events})
+                
+            except Exception as cluster_error:
+                print(f"❌ Detection clustering failed: {cluster_error}")
+                return jsonify({
+                    'error': 'Detection processing failed',
+                    'details': str(cluster_error)
+                }), 500
+                
+        except Exception as e:
+            print(f"❌ Unexpected error in /api/recent-detections: {e}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({
+                'error': 'Internal server error',
+                'details': str(e)
+            }), 500
     
     @app.route('/api/process-now', methods=['POST'])
     def api_process_now():

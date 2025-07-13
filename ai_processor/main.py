@@ -14,6 +14,7 @@ from database.repositories.video_repository import VideoRepository
 from database.repositories.detection_repository import DetectionRepository
 from services.ai_model_manager import AIModelManager
 from services.processing_service import ProcessingService
+from services.startup_validator import validate_startup
 from web.app import create_processing_app
 
 def setup_services(config):
@@ -88,6 +89,13 @@ def main():
         print("📋 Loading configuration...")
         config = load_processing_config()
         print(f"✅ Configuration loaded - Storage: {config.processing.storage_path}")
+        
+        # Run startup validation
+        print("\n🔍 Running startup validation...")
+        if not validate_startup(config):
+            print("🚫 Startup validation failed. Please fix the errors above.")
+            sys.exit(1)
+        print("✅ Startup validation passed!\n")
         print(f"🎯 Detection classes: {', '.join(config.processing.detection.classes)}")
         print(f"🤖 Model: {config.processing.detection.model_name}")
         

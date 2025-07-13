@@ -232,16 +232,35 @@ VITE_PROCESSING_SERVER=http://192.168.1.100:8091  # Processing URL
 
 ### Running Tests
 ```bash
-# Run all tests
-pytest
+# Install test dependencies
+pip install -r tests/requirements.txt
 
-# Run specific test categories  
-pytest tests/unit/
-pytest tests/integration/
+# Run comprehensive test suite
+python run_tests.py
 
-# Run with coverage
-pytest --cov=.
+# Run specific test types
+python run_tests.py --unit          # Unit tests only
+python run_tests.py --integration   # Integration tests only
+python run_tests.py --coverage      # With coverage report
+python run_tests.py --html          # Generate HTML report
+
+# Traditional pytest usage
+pytest                    # Run all tests
+pytest tests/unit/        # Unit tests only  
+pytest tests/integration/ # Integration tests only
+pytest --cov=.           # With coverage
 ```
+
+### Startup Validation
+The system includes comprehensive startup validation that checks:
+- Python version and dependencies
+- Database connectivity and table structure  
+- Storage directory permissions
+- Configuration validity
+- System resources
+- Network connectivity
+
+Validation runs automatically when starting services and will prevent startup if critical issues are found.
 
 ### Development Commands
 ```bash
@@ -271,9 +290,16 @@ npm run build                 # Production build
 - Verify permissions: `./setup_pi_camera.sh`
 
 **"No detections appearing"**
-- Check processing server is running
-- Verify videos are syncing: check `/bird_footage/incoming/`
+- Check processing server is running: `python ai_processor/main.py`
+- Verify videos are syncing: check `/bird_processing/incoming/`
 - Review motion detection settings
+- Check database path in logs - ensure it points to correct location
+
+**"500 Internal Server Error"**
+- Check startup validation logs for detailed error information
+- Verify database tables exist: run `python run_tests.py --integration`
+- Check storage path configuration in `.env`
+- Review server logs for specific error details
 
 **"Only Camera 0 detections showing"**
 - This is fixed in the latest version with camera-specific filenames
