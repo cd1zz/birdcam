@@ -148,17 +148,17 @@ const Analytics: React.FC = () => {
               
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-300">Uptime</span>
-                <span className="font-medium">{formatUptime(piStatus.uptime || 0)}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{formatUptime(piStatus.uptime || 0)}</span>
               </div>
               
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-300">Active Cameras</span>
-                <span className="font-medium">{piStatus.cameras_active || 0}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{piStatus.cameras_active || 0}</span>
               </div>
               
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-300">Videos Today</span>
-                <span className="font-medium">{piStatus.videos_today || 0}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{piStatus.videos_today || 0}</span>
               </div>
               
               <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -215,7 +215,7 @@ const Analytics: React.FC = () => {
               
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-300">Uptime</span>
-                <span className="font-medium">{formatUptime(processingStatus.uptime || 0)}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{formatUptime(processingStatus.uptime || 0)}</span>
               </div>
               
               {/* Enhanced Processing Queue Info */}
