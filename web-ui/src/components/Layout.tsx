@@ -38,7 +38,6 @@ const Layout: React.FC = () => {
       <div className="hidden lg:block w-64 bg-white dark:bg-gray-800 shadow-md">
         <div className="p-4">
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">BirdCam</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-300">Wildlife Monitoring System</p>
         </div>
         
         <nav className="mt-8">
@@ -99,8 +98,7 @@ const Layout: React.FC = () => {
         <div className={`relative flex-1 flex flex-col max-w-xs w-full bg-white dark:bg-gray-800 shadow-xl transform transition-transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="p-4 pt-16">
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white">BirdCam</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-300">Wildlife Monitoring System</p>
-          </div>
+            </div>
           
           <nav className="mt-8">
             {navigation.map((item) => {

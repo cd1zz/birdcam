@@ -16,7 +16,7 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ cameraId, cameraName, className
   const streamUrl = api.cameras.getStream(cameraId);
 
   useEffect(() => {
-    // Reset loading state when camera changes
+    // Initialize loading state for new camera
     setIsLoading(true);
     setError(null);
   }, [cameraId]);

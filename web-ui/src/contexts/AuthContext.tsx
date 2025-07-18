@@ -102,11 +102,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     
     const { access_token, refresh_token: newRefreshToken } = response.data;
     
-    // Update tokens
+    // Store new tokens
     localStorage.setItem('accessToken', access_token);
     localStorage.setItem('refreshToken', newRefreshToken);
     
-    // Update auth header
+    // Configure API authentication
     setAuthToken(access_token);
   };
   
