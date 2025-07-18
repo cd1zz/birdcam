@@ -6,14 +6,26 @@ const PROCESSING_SERVER = import.meta.env.VITE_PROCESSING_SERVER || '';
 // For Pi server, we still need the full URL since it's a different server
 const PI_SERVER = import.meta.env.VITE_PI_SERVER || '';
 
+// Helper function to ensure HTTPS when the page is loaded over HTTPS
+function ensureHttps(url: string): string {
+  if (!url) return url;
+  
+  // If the current page is HTTPS and the URL is HTTP, convert it
+  if (window.location.protocol === 'https:' && url.startsWith('http://')) {
+    return url.replace('http://', 'https://');
+  }
+  
+  return url;
+}
+
 // Create axios instances
 export const piApi = axios.create({
-  baseURL: PI_SERVER,
+  baseURL: ensureHttps(PI_SERVER),
   timeout: 30000,
 });
 
 export const processingApi = axios.create({
-  baseURL: PROCESSING_SERVER, // Empty string means relative paths
+  baseURL: ensureHttps(PROCESSING_SERVER), // Empty string means relative paths
   timeout: 30000,
 });
 
@@ -140,8 +152,8 @@ export const api = {
       const response = await piApi.get<{cameras: Camera[]}>('/api/cameras');
       return response.data.cameras;
     },
-    getStream: (cameraId: number) => PI_SERVER ? `${PI_SERVER}/api/camera/${cameraId}/stream` : `/api/camera/${cameraId}/stream`,
-    getSnapshot: (cameraId: number) => PI_SERVER ? `${PI_SERVER}/api/camera/${cameraId}/snapshot` : `/api/camera/${cameraId}/snapshot`,
+    getStream: (cameraId: number) => PI_SERVER ? ensureHttps(`${PI_SERVER}/api/camera/${cameraId}/stream`) : `/api/camera/${cameraId}/stream`,
+    getSnapshot: (cameraId: number) => PI_SERVER ? ensureHttps(`${PI_SERVER}/api/camera/${cameraId}/snapshot`) : `/api/camera/${cameraId}/snapshot`,
   },
 
   // Motion settings
@@ -201,8 +213,8 @@ export const api = {
       return response.data.detections;
     },
     
-    getThumbnail: (path: string) => PROCESSING_SERVER ? `${PROCESSING_SERVER}/thumbnails/${path}` : `/thumbnails/${path}`,
-    getVideo: (filename: string) => PROCESSING_SERVER ? `${PROCESSING_SERVER}/videos/${filename}` : `/videos/${filename}`,
+    getThumbnail: (path: string) => PROCESSING_SERVER ? ensureHttps(`${PROCESSING_SERVER}/thumbnails/${path}`) : `/thumbnails/${path}`,
+    getVideo: (filename: string) => PROCESSING_SERVER ? ensureHttps(`${PROCESSING_SERVER}/videos/${filename}`) : `/videos/${filename}`,
   },
 
   // Video processing

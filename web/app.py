@@ -17,17 +17,8 @@ def create_capture_app(capture_services, sync_service, config):
     
     # Import and register routes
     from web.routes.capture_routes import create_capture_routes
-    from web.routes.auth_routes import auth_bp
     
     create_capture_routes(app, capture_services, sync_service, {})
-    app.register_blueprint(auth_bp, url_prefix='/api/auth')
-    
-    # Initialize user table
-    from database.connection import DatabaseManager
-    from database.repositories.user_repository import UserRepository
-    db_manager = DatabaseManager(config.database.path)
-    user_repo = UserRepository(db_manager)
-    user_repo.create_table()
     
     return app
 
