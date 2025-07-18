@@ -10,7 +10,6 @@ import requests
 from flask import request, jsonify, Response, send_from_directory, stream_with_context
 from core.models import MotionRegion
 from services.system_metrics import SystemMetricsCollector
-from web.middleware.auth import require_auth, require_admin
 
 def create_capture_routes(app, capture_services, sync_service, settings_repos):
 
@@ -55,7 +54,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
         '''
     
     @app.route('/api/status')
-    @require_auth
     def api_status():
         """Return status in the format expected by the Analytics page"""
         try:
@@ -100,7 +98,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             })
     
     @app.route('/api/server-status')
-    @require_auth
     def api_server_status():
         """Proxy to get server status"""
         server_status = sync_service.get_server_status()
@@ -110,7 +107,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
         })
     
     @app.route('/api/sync-now', methods=['POST'])
-    @require_auth
     def api_sync_now():
         capture_service = get_service()
         try:
@@ -120,7 +116,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/server-detections')
-    @require_auth
     def api_server_detections():
         """Get recent detections from processing server"""
         try:
@@ -131,7 +126,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             return jsonify({'detections': [], 'error': str(e)})
     
     @app.route('/api/server-metrics')
-    @require_auth
     def api_server_metrics():
         """Proxy to get server system metrics"""
         try:
@@ -149,7 +143,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             return jsonify({'error': str(e)}), 500
 
     @app.route('/api/delete-detection', methods=['POST'])
-    @require_auth
     def api_delete_detection():
         data = request.get_json()
         detection_id = data.get('detection_id') if data else None
@@ -163,7 +156,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/motion-settings', methods=['GET'])
-    @require_auth
     def api_get_motion_settings():
         """Get motion detection settings"""
         try:
@@ -202,7 +194,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/motion-debug')
-    @require_auth
     def api_motion_debug():
         """Get real-time motion detection debug info"""
         try:
@@ -220,7 +211,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             return jsonify({'error': f'Debug failed: {str(e)}'})
 
     @app.route('/api/motion-settings', methods=['POST'])
-    @require_admin
     def api_set_motion_settings():
         """Save motion detection settings persistently"""
         try:
@@ -338,7 +328,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             return jsonify({'error': f'Failed to save settings: {str(e)}'}), 500
     
     @app.route('/api/process-server-queue', methods=['POST'])
-    @require_auth
     def api_process_server_queue():
         """Trigger processing on the server"""
         try:
@@ -400,7 +389,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             return f"Error: {str(e)}", 500
 
     @app.route('/api/cameras')
-    @require_auth
     def api_list_cameras():
         """List available cameras"""
         camera_list = []
@@ -414,7 +402,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
         return jsonify({'cameras': camera_list})
     
     @app.route('/api/active-passive/stats')
-    @require_auth
     def api_active_passive_stats():
         """Get active-passive camera statistics"""
         service = get_service()
@@ -433,7 +420,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
         return jsonify(stats)
     
     @app.route('/api/active-passive/config', methods=['GET'])
-    @require_auth
     def api_active_passive_config():
         """Get active-passive camera configuration"""
         service = get_service()
@@ -446,7 +432,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
         })
     
     @app.route('/api/active-passive/test-trigger')
-    @require_admin
     def api_test_active_passive_trigger():
         """Test active-passive trigger (simulate motion on active camera)"""
         service = get_service()
@@ -466,7 +451,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/system-metrics')
-    @require_auth
     def api_system_metrics():
         """Get current system metrics (CPU, memory, disk)"""
         try:
@@ -476,7 +460,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/camera/<int:camera_id>/stream')
-    @require_auth
     def api_camera_stream(camera_id):
         """Live MJPEG stream for a specific camera"""
         try:
@@ -533,7 +516,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/camera/<int:camera_id>/snapshot')
-    @require_auth
     def api_camera_snapshot(camera_id):
         """Get single frame snapshot from camera"""
         try:
@@ -577,7 +559,6 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/statistics/summary')
-    @require_auth
     def api_statistics_summary():
         """Get comprehensive system statistics"""
         try:
