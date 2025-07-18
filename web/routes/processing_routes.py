@@ -6,6 +6,7 @@ import threading
 from flask import request, jsonify, send_from_directory, send_file
 from services.system_metrics import SystemMetricsCollector
 from pathlib import Path
+from web.middleware.auth import require_auth, require_admin
 
 def create_processing_routes(app, processing_service, video_repo, detection_repo, config):
     
@@ -60,6 +61,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/status')
+    @require_auth
     def api_status():
         """Enhanced status endpoint with detailed processing metrics"""
         try:
@@ -230,6 +232,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
         return events
 
     @app.route('/api/recent-detections')
+    @require_auth
     def api_recent_detections():
         try:
             species = request.args.get('species')
@@ -288,6 +291,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             }), 500
     
     @app.route('/api/process-now', methods=['POST'])
+    @require_auth
     def api_process_now():
         try:
             threading.Thread(target=processing_service.process_pending_videos, daemon=True).start()
@@ -296,6 +300,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/cleanup-now', methods=['POST'])
+    @require_admin
     def api_cleanup_now():
         """Manually trigger video cleanup"""
         try:
@@ -305,6 +310,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/reset-queue', methods=['POST'])
+    @require_admin
     def api_reset_queue():
         """Reset failed/stuck videos back to pending status"""
         try:
@@ -339,6 +345,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
         return jsonify({'test': 'passed', 'service': 'AI Processing Server'})
 
     @app.route('/api/delete-detection', methods=['POST'])
+    @require_auth
     def api_delete_detection():
         data = request.get_json()
         detection_id = data.get('detection_id') if data else None
@@ -353,6 +360,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/motion-settings', methods=['GET'])
+    @require_auth
     def api_get_motion_settings():
         """Get motion detection settings"""
         import json
@@ -409,6 +417,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             })
     
     @app.route('/api/motion-settings', methods=['POST'])
+    @require_admin
     def api_set_motion_settings():
         """Set motion detection settings"""
         import json
@@ -484,6 +493,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
         return send_from_directory(config.processing.storage_path / "thumbnails", filename)
     
     @app.route('/api/system-metrics')
+    @require_auth
     def api_system_metrics():
         """Get current system metrics (CPU, memory, disk)"""
         try:
@@ -493,6 +503,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/system-settings', methods=['GET'])
+    @require_auth
     def api_get_system_settings():
         """Get current system settings"""
         import json
@@ -544,6 +555,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/system-settings', methods=['POST'])
+    @require_admin
     def api_set_system_settings():
         """Update system settings"""
         import json

@@ -1,8 +1,10 @@
 import axios from 'axios';
 
 // API endpoints configuration
-const PI_SERVER = import.meta.env.VITE_PI_SERVER || 'http://localhost:8090';
+// When VITE_PROCESSING_SERVER is not set, use relative paths (same origin)
 const PROCESSING_SERVER = import.meta.env.VITE_PROCESSING_SERVER || '';
+// For Pi server, we still need the full URL since it's a different server
+const PI_SERVER = import.meta.env.VITE_PI_SERVER || '';
 
 // Create axios instances
 export const piApi = axios.create({
@@ -11,9 +13,23 @@ export const piApi = axios.create({
 });
 
 export const processingApi = axios.create({
-  baseURL: PROCESSING_SERVER || '',
+  baseURL: PROCESSING_SERVER, // Empty string means relative paths
   timeout: 30000,
 });
+
+// API client for auth (uses processing server)
+export const apiClient = processingApi;
+
+// Function to set auth token on all axios instances
+export function setAuthToken(token: string | null) {
+  if (token) {
+    piApi.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    processingApi.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete piApi.defaults.headers.common['Authorization'];
+    delete processingApi.defaults.headers.common['Authorization'];
+  }
+}
 
 // Core types
 export interface Camera {
@@ -124,8 +140,8 @@ export const api = {
       const response = await piApi.get<{cameras: Camera[]}>('/api/cameras');
       return response.data.cameras;
     },
-    getStream: (cameraId: number) => `${PI_SERVER}/api/camera/${cameraId}/stream`,
-    getSnapshot: (cameraId: number) => `${PI_SERVER}/api/camera/${cameraId}/snapshot`,
+    getStream: (cameraId: number) => PI_SERVER ? `${PI_SERVER}/api/camera/${cameraId}/stream` : `/api/camera/${cameraId}/stream`,
+    getSnapshot: (cameraId: number) => PI_SERVER ? `${PI_SERVER}/api/camera/${cameraId}/snapshot` : `/api/camera/${cameraId}/snapshot`,
   },
 
   // Motion settings
@@ -185,8 +201,8 @@ export const api = {
       return response.data.detections;
     },
     
-    getThumbnail: (path: string) => `${PROCESSING_SERVER || ''}/thumbnails/${path}`,
-    getVideo: (filename: string) => `${PROCESSING_SERVER || ''}/videos/${filename}`,
+    getThumbnail: (path: string) => PROCESSING_SERVER ? `${PROCESSING_SERVER}/thumbnails/${path}` : `/thumbnails/${path}`,
+    getVideo: (filename: string) => PROCESSING_SERVER ? `${PROCESSING_SERVER}/videos/${filename}` : `/videos/${filename}`,
   },
 
   // Video processing
@@ -230,10 +246,74 @@ export const api = {
   },
 };
 
+// Token refresh logic
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  
+  failedQueue = [];
+};
+
 // Enhanced error handling interceptors
 piApi.interceptors.response.use(
   response => response,
-  error => {
+  async error => {
+    const originalRequest = error.config;
+    
+    // Handle 401 errors (unauthorized)
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers['Authorization'] = 'Bearer ' + token;
+          return piApi(originalRequest);
+        }).catch(err => {
+          return Promise.reject(err);
+        });
+      }
+      
+      originalRequest._retry = true;
+      isRefreshing = true;
+      
+      const refreshToken = localStorage.getItem('refreshToken');
+      
+      if (refreshToken) {
+        try {
+          const response = await apiClient.post('/api/auth/refresh', {
+            refresh_token: refreshToken
+          });
+          
+          const { access_token, refresh_token: newRefreshToken } = response.data;
+          localStorage.setItem('accessToken', access_token);
+          localStorage.setItem('refreshToken', newRefreshToken);
+          setAuthToken(access_token);
+          
+          processQueue(null, access_token);
+          
+          return piApi(originalRequest);
+        } catch (refreshError) {
+          processQueue(refreshError, null);
+          // Clear tokens and redirect to login
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          setAuthToken(null);
+          window.location.href = '/login';
+          return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
+        }
+      }
+    }
+    
     console.error('Pi API Error:', {
       message: error.message,
       status: error.response?.status,
@@ -256,7 +336,55 @@ piApi.interceptors.response.use(
 
 processingApi.interceptors.response.use(
   response => response,
-  error => {
+  async error => {
+    const originalRequest = error.config;
+    
+    // Handle 401 errors (unauthorized)
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers['Authorization'] = 'Bearer ' + token;
+          return processingApi(originalRequest);
+        }).catch(err => {
+          return Promise.reject(err);
+        });
+      }
+      
+      originalRequest._retry = true;
+      isRefreshing = true;
+      
+      const refreshToken = localStorage.getItem('refreshToken');
+      
+      if (refreshToken) {
+        try {
+          const response = await apiClient.post('/api/auth/refresh', {
+            refresh_token: refreshToken
+          });
+          
+          const { access_token, refresh_token: newRefreshToken } = response.data;
+          localStorage.setItem('accessToken', access_token);
+          localStorage.setItem('refreshToken', newRefreshToken);
+          setAuthToken(access_token);
+          
+          processQueue(null, access_token);
+          
+          return processingApi(originalRequest);
+        } catch (refreshError) {
+          processQueue(refreshError, null);
+          // Clear tokens and redirect to login
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          setAuthToken(null);
+          window.location.href = '/login';
+          return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
+        }
+      }
+    }
+    
     console.error('Processing API Error:', {
       message: error.message,
       status: error.response?.status,

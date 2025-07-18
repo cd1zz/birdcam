@@ -33,6 +33,10 @@ schedule>=1.2.0
 # System metrics
 psutil>=5.9.0
 
+# Authentication
+PyJWT>=2.8.0
+passlib[bcrypt]>=1.7.4
+
 # NOTE: picamera2 is installed system-wide, not via pip
 # System dependencies (install separately if needed):
 # Ubuntu/Debian: sudo apt update && sudo apt install ffmpeg

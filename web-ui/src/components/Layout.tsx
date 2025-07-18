@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useTheme } from '../hooks/useTheme';
+import { useAuth } from '../contexts/AuthContext';
 
 const Layout: React.FC = () => {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigation = [
     { name: 'Live Feeds', href: '/', icon: '📷' },
     { name: 'Detections', href: '/detections', icon: '🦅' },
-    { name: 'Analytics', href: '/analytics', icon: '📊' },
-    { name: 'Settings', href: '/settings', icon: '⚙️' },
+    ...(user?.role === 'admin' ? [
+      { name: 'Analytics', href: '/analytics', icon: '📊' },
+      { name: 'Settings', href: '/settings', icon: '⚙️' }
+    ] : []),
   ];
 
   return (
@@ -55,14 +59,32 @@ const Layout: React.FC = () => {
           })}
         </nav>
 
-        {/* Theme Toggle */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        {/* User info and actions */}
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
+          <div className="px-3 py-2 text-sm">
+            <div className="text-gray-700 dark:text-gray-300">
+              <span className="mr-2">👤</span>
+              {user?.username}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+              {user?.role} account
+            </div>
+          </div>
+          
           <button
             onClick={toggleTheme}
             className="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
           >
             <span className="mr-3 text-xl">{theme === 'light' ? '🌙' : '☀️'}</span>
             <span className="font-medium">{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+          </button>
+          
+          <button
+            onClick={logout}
+            className="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+          >
+            <span className="mr-3 text-xl">🚪</span>
+            <span className="font-medium">Logout</span>
           </button>
         </div>
 
@@ -99,14 +121,32 @@ const Layout: React.FC = () => {
             })}
           </nav>
 
-          {/* Theme Toggle */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          {/* User info and actions - Mobile */}
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
+            <div className="px-3 py-2 text-sm">
+              <div className="text-gray-700 dark:text-gray-300">
+                <span className="mr-2">👤</span>
+                {user?.username}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                {user?.role} account
+              </div>
+            </div>
+            
             <button
               onClick={toggleTheme}
               className="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
             >
               <span className="mr-3 text-xl">{theme === 'light' ? '🌙' : '☀️'}</span>
               <span className="font-medium">{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+            </button>
+            
+            <button
+              onClick={logout}
+              className="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+            >
+              <span className="mr-3 text-xl">🚪</span>
+              <span className="font-medium">Logout</span>
             </button>
           </div>
         </div>

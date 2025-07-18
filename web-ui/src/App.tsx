@@ -1,7 +1,10 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
+import Login from './pages/Login';
 import LiveFeeds from './pages/LiveFeeds';
 import Detections from './pages/Detections';
 import Analytics from './pages/Analytics';
@@ -23,14 +26,29 @@ function App() {
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <Router>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<LiveFeeds />} />
-              <Route path="detections" element={<Detections />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="settings" element={<Settings />} />
-            </Route>
-          </Routes>
+          <AuthProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<LiveFeeds />} />
+                <Route path="detections" element={<Detections />} />
+                <Route path="analytics" element={
+                  <ProtectedRoute requireAdmin>
+                    <Analytics />
+                  </ProtectedRoute>
+                } />
+                <Route path="settings" element={
+                  <ProtectedRoute requireAdmin>
+                    <Settings />
+                  </ProtectedRoute>
+                } />
+              </Route>
+            </Routes>
+          </AuthProvider>
         </Router>
       </QueryClientProvider>
     </ThemeProvider>

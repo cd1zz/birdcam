@@ -98,3 +98,33 @@ class CaptureSegment:
     has_motion: bool = False
     synced: bool = False
     file_size: Optional[int] = None
+
+class UserRole(Enum):
+    ADMIN = "admin"
+    VIEWER = "viewer"
+
+@dataclass
+class User:
+    id: Optional[int]
+    username: str
+    password_hash: str
+    role: UserRole
+    created_at: Optional[datetime] = None
+    last_login: Optional[datetime] = None
+    is_active: bool = True
+    
+    def __post_init__(self):
+        if self.created_at is None:
+            self.created_at = datetime.now()
+    
+    def has_admin_access(self) -> bool:
+        return self.role == UserRole.ADMIN
+    
+    def can_view(self) -> bool:
+        return self.is_active
+    
+    def can_manage_users(self) -> bool:
+        return self.role == UserRole.ADMIN
+    
+    def can_manage_settings(self) -> bool:
+        return self.role == UserRole.ADMIN

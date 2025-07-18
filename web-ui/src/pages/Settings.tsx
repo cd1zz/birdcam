@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, type MotionSettings, type SystemSettings, type Camera } from '../api/client';
+import { useAuth } from '../contexts/AuthContext';
 import InteractiveCameraFeed from '../components/InteractiveCameraFeed';
+import UserManagement from '../components/UserManagement';
 
 const Settings: React.FC = () => {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'motion' | 'regions' | 'broadcast' | 'system'>('motion');
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<'motion' | 'regions' | 'broadcast' | 'system' | 'users'>('motion');
   const [selectedCamera, setSelectedCamera] = useState<number>(0);
   const [warningMessage, setWarningMessage] = useState<string>('');
 
@@ -149,6 +152,19 @@ const Settings: React.FC = () => {
               <span className="hidden sm:inline">System Settings</span>
               <span className="sm:hidden">System</span>
             </button>
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap ${
+                  activeTab === 'users'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+                }`}
+              >
+                <span className="hidden sm:inline">Users</span>
+                <span className="sm:hidden">Users</span>
+              </button>
+            )}
           </nav>
         </div>
       </div>
@@ -557,6 +573,11 @@ const Settings: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* Users Tab */}
+      {activeTab === 'users' && (
+        <UserManagement />
       )}
     </div>
   );
