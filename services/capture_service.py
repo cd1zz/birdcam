@@ -1,4 +1,4 @@
-# services/capture_service.py - SIMPLIFIED ACTIVE-PASSIVE VERSION
+# services/capture_service.py
 import time
 import threading
 from collections import deque
@@ -59,13 +59,12 @@ class CaptureService:
         self.on_motion_detected: Optional[Callable] = None
         self.on_segment_completed: Optional[Callable[[CaptureSegment], None]] = None
         
-        print(f"🎯 CaptureService initialized: [BUG-FIX-v2.1]")
+        print(f"🎯 CaptureService initialized:")
         print(f"   📷 Camera ID: {self.camera_id} ({'ACTIVE' if self.is_active else 'PASSIVE'})")
         print(f"   📺 Resolution: {capture_config.resolution}")
         print(f"   🎬 FPS: {capture_config.fps}")
         print(f"   ⏱️ Motion timeout: {motion_config.motion_timeout_seconds}s")
         print(f"   📦 Buffer size: {buffer_size} frames")
-        print(f"   🛡️ Bug fixes: has_motion scoping fix + pre-motion buffer disabled")
         if self.is_active:
             print(f"   🎯 Motion detection: ENABLED (active camera)")
         else:
@@ -98,9 +97,8 @@ class CaptureService:
         print("✅ Capture stopped")
     
     def _capture_loop(self):
-        """Main capture loop - ACTIVE-PASSIVE VERSION"""
-        print(f"🔄 Capture loop started for camera {self.camera_id} ({'ACTIVE' if self.is_active else 'PASSIVE'}) [BUG-FIX-v2.1]")
-        print(f"🛡️ Safety: has_motion initialized at loop start to prevent UnboundLocalError")
+        """Main capture loop with active-passive camera support"""
+        print(f"🔄 Capture loop started for camera {self.camera_id} ({'ACTIVE' if self.is_active else 'PASSIVE'})")
         last_heartbeat = time.time()
         
         while self.is_running:
@@ -196,13 +194,11 @@ class CaptureService:
             self.is_capturing = True
             self.segment_start_time = time.time()
             
-            # EMERGENCY FIX v2: Absolutely prevent pre-motion buffer writing
-            # This fixes FFmpeg timestamp crashes and segmentation faults
+            # Clear pre-motion buffer to prevent timestamp issues
             if self.pre_motion_buffer:
                 buffer_count = len(self.pre_motion_buffer)
                 self.pre_motion_buffer.clear()
-                print(f"⚠️ SAFETY: Cleared {buffer_count} pre-motion frames to prevent crashes (FIXED v2)")
-                print(f"🛡️ Pre-motion buffer disabled until proper timestamp handling is implemented")
+                print(f"⚠️ Cleared {buffer_count} pre-motion frames")
             
             print(f"🎬 Recording started: {segment.filename}")
             
@@ -244,8 +240,7 @@ class CaptureService:
                 frames = self.video_writer.get_frames_written()
                 print(f"🗑️ Deleted short segment: {completed_segment.filename} ({duration}s, {frames} frames)")
             
-            # DO NOT RESTART RECORDING HERE!
-            # Let the main loop handle new motion detection
+            # Recording finished, main loop will handle new motion
             print("✅ Segment finished, waiting for new motion...")
                 
         except Exception as e:

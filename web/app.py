@@ -34,9 +34,11 @@ def create_processing_app(processing_service, video_repo, detection_repo, config
     # Import and register routes
     from web.routes.processing_routes import create_processing_routes
     from web.routes.auth_routes import auth_bp
+    from web.routes.setup_routes import setup_bp
     
     create_processing_routes(app, processing_service, video_repo, detection_repo, config)
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(setup_bp, url_prefix='/api/setup')
     
     # Initialize user table
     from database.connection import DatabaseManager

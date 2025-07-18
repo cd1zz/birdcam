@@ -1,7 +1,9 @@
-# pi_capture/main.py - UPDATED WITH SETTINGS PERSISTENCE
 #!/usr/bin/env python3
 """
-Raspberry Pi Capture System Entry Point with Settings Persistence
+Raspberry Pi Capture System Entry Point
+
+Manages video capture from multiple cameras with motion detection,
+file synchronization, and web interface for monitoring and configuration.
 """
 import schedule
 import threading
@@ -18,7 +20,7 @@ from services.camera_manager import CameraManager, print_detected_cameras
 from services.video_writer import VideoWriter
 from services.file_sync import FileSyncService
 from services.capture_service import CaptureService
-# Removed motion_event_broadcaster - using simple active-passive approach
+# Core service imports
 from web.app import create_capture_app
 
 
@@ -36,7 +38,7 @@ def setup_services(config):
     video_repo.create_table()
     settings_repo.create_table()
     
-    # ADDED: Migrate existing database if needed
+    # Ensure database schema is up to date
     settings_repo.migrate_settings_table()
     
     print("✅ Database ready")
@@ -52,7 +54,7 @@ def setup_services(config):
         )
         config.motion.threshold = saved_settings['motion_threshold']
         config.motion.min_contour_area = saved_settings['min_contour_area']
-        config.motion.motion_timeout_seconds = saved_settings['motion_timeout_seconds']  # ADDED
+        config.motion.motion_timeout_seconds = saved_settings['motion_timeout_seconds']
         print(f"✅ Loaded saved settings: region={config.motion.region}, "
               f"threshold={config.motion.threshold}, timeout={config.motion.motion_timeout_seconds}s")
     else:
@@ -172,7 +174,7 @@ def main():
         print("🔗 Initializing motion broadcaster...")
         cross_trigger_enabled = os.getenv('CROSS_CAMERA_TRIGGER', 'true').lower() == 'true'
         trigger_timeout = float(os.getenv('CROSS_TRIGGER_TIMEOUT', '5.0'))
-        # Removed motion broadcaster initialization - using simple active-passive approach
+        # Cross-camera triggering configuration
         print(f"✅ Motion broadcaster initialized (cross-trigger: {cross_trigger_enabled}, timeout: {trigger_timeout}s)")
 
         capture_services = {}

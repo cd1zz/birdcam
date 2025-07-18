@@ -2,11 +2,38 @@
 from dataclasses import dataclass
 from pathlib import Path
 import os
+import sys
 from typing import Tuple, Optional, List, Dict
 from dotenv import load_dotenv
 
-# Load .env file
-load_dotenv()
+# Determine which .env file to load based on the running service
+def load_environment():
+    """Load the appropriate .env file based on which service is running"""
+    # Check command line to determine which service is running
+    if any('pi_capture' in arg for arg in sys.argv):
+        # Running on Raspberry Pi
+        env_files = ['.env.pi', '.env']  # Try .env.pi first, fall back to .env
+    elif any('ai_processor' in arg for arg in sys.argv):
+        # Running on Processing Server
+        env_files = ['.env.processor', '.env']  # Try .env.processor first, fall back to .env
+    else:
+        # Default or unknown context
+        env_files = ['.env']
+    
+    # Try to load each file in order
+    for env_file in env_files:
+        env_path = Path(env_file)
+        if env_path.exists():
+            load_dotenv(env_path)
+            print(f"✅ Loaded configuration from {env_file}")
+            return
+    
+    # If no file found, just load default
+    load_dotenv()
+    print("⚠️  No .env file found, using defaults")
+
+# Load environment on import
+load_environment()
 
 def get_bool_env(key: str, default: bool = False) -> bool:
     """Get boolean from environment variable"""

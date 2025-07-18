@@ -1,4 +1,4 @@
-# services/video_writer_fixed.py - EMERGENCY FIX
+# services/video_writer.py
 import cv2
 import numpy as np
 from pathlib import Path
@@ -47,7 +47,7 @@ class VideoWriter:
         return self.current_segment
     
     def write_frame(self, frame: np.ndarray):
-        """Write a single frame to the video - SIMPLIFIED VERSION"""
+        """Write a single frame to the video"""
         if not self.writer or not self.writer.isOpened():
             return
         
@@ -59,7 +59,7 @@ class VideoWriter:
         if frame.shape[:2] != (self.resolution[1], self.resolution[0]):
             frame = cv2.resize(frame, self.resolution)
         
-        # Simple write without error checking that was causing issues
+        # Write frame to video
         try:
             self.writer.write(frame)
             self.frames_written += 1
@@ -75,13 +75,13 @@ class VideoWriter:
             self.write_frame(frame)
     
     def write_frames_with_timestamps(self, frames: list):
-        """DISABLED: This method was causing FFmpeg crashes"""
+        """Write frames with timestamp handling (currently disabled)"""
         if not frames:
             return
         
-        print(f"⚠️ WARNING: write_frames_with_timestamps is disabled to prevent crashes!")
-        print(f"📼 Skipping {len(frames)} frames (emergency fix)")
-        # Do nothing - this prevents FFmpeg timestamp crashes
+        # Timestamp-based frame writing is disabled to prevent codec issues
+        print(f"⚠️ Timestamp-based frame writing is disabled")
+        print(f"📼 Skipping {len(frames)} frames")
         return
     
     def finish_segment(self) -> Optional[CaptureSegment]:

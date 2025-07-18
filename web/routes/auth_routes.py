@@ -136,12 +136,12 @@ def update_user(user_id: int):
     
     auth_service = get_auth_service()
     
-    # Update password if provided
+    # Handle password update request
     if 'password' in data:
         if not auth_service.update_password(user_id, data['password']):
             return jsonify({'error': 'User not found'}), 404
     
-    # Update role if provided
+    # Handle role update request
     if 'role' in data:
         try:
             role = UserRole(data['role'])

@@ -219,7 +219,7 @@ class ProcessingService:
         print(f"🔍 Processing: {video.filename}")
         start_time = time.time()
         
-        # Update status to processing
+        # Set video status to processing
         self.video_repo.update_status(video.id, ProcessingStatus.PROCESSING)
         
         # Open video
@@ -253,7 +253,7 @@ class ProcessingService:
                         timestamp=timestamp,
                         confidence=detection_data['confidence'],
                         bbox=tuple(detection_data['bbox']),
-                        species=detection_data['class']  # Now stores actual detection class
+                        species=detection_data['class']
                     )
                     
                     # Store frame for thumbnail generation
@@ -297,11 +297,11 @@ class ProcessingService:
                         self.detection_repo.update_thumbnail_path(detection_id, thumbnail_path)
                     thumbnail_count += 1
         
-        # Update processing stats
+        # Track processing statistics
         self.processing_stats['videos_processed'] += 1
         self.processing_stats['total_processing_time'] += processing_time
         
-        # Update video record
+        # Mark video as completed
         self.video_repo.update_status(
             video.id, ProcessingStatus.COMPLETED, 
             processing_time, len(detections)

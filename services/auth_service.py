@@ -67,7 +67,7 @@ class AuthService:
     
     def create_user(self, username: str, password: str, role: UserRole = UserRole.VIEWER) -> Optional[User]:
         """Create a new user."""
-        # Check if username already exists
+        # Check if username already exists (case-insensitive)
         if self.user_repository.get_by_username(username):
             logger.warning(f"Attempted to create duplicate user: {username}")
             return None
@@ -75,10 +75,10 @@ class AuthService:
         # Hash password
         password_hash = hash_password(password)
         
-        # Create user
+        # Create user with lowercase username
         user = User(
             id=None,
-            username=username,
+            username=username.lower(),
             password_hash=password_hash,
             role=role,
             is_active=True
@@ -87,7 +87,7 @@ class AuthService:
         user_id = self.user_repository.create(user)
         user.id = user_id
         
-        logger.info(f"Created new user: {username} with role {role.value}")
+        logger.info(f"Created new user: {username.lower()} with role {role.value}")
         return user
     
     def update_password(self, user_id: int, new_password: str) -> bool:

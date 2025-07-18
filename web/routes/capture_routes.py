@@ -1,6 +1,7 @@
-# web/routes/capture_routes.py - UPDATED FOR UNIFIED DASHBOARD
+# web/routes/capture_routes.py
 """
-Routes for Pi Capture System with Unified Dashboard
+Routes for Pi Capture System - provides API endpoints for camera streaming,
+motion detection status, and system configuration.
 """
 import threading
 import cv2
@@ -268,7 +269,7 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             else:
                 capture_service = get_service()
 
-            # Update motion detector configuration for this specific camera
+            # Configure motion detector parameters
             capture_service.motion_detector.config.threshold = motion_threshold
             capture_service.motion_detector.config.min_contour_area = min_contour_area
             capture_service.motion_detector.config.motion_timeout_seconds = motion_timeout_seconds
@@ -278,7 +279,7 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             capture_service.motion_detector.config.motion_box_x2 = motion_box_x2
             capture_service.motion_detector.config.motion_box_y2 = motion_box_y2
 
-            # Update motion region based on motion box settings
+            # Configure motion detection region
             if motion_box_enabled:
                 region = MotionRegion(motion_box_x1, motion_box_y1, motion_box_x2, motion_box_y2)
                 capture_service.motion_detector.set_motion_region(region)
@@ -289,7 +290,7 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
                 )
                 capture_service.motion_detector.set_motion_region(region)
             
-            # IMPORTANT: Update the capture service timeout too
+            # Apply timeout to capture service
             capture_service.motion_config.motion_timeout_seconds = motion_timeout_seconds
             
             # Save to database for persistence
@@ -304,7 +305,7 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
                 repo.save_motion_settings(region_for_db, motion_threshold, min_contour_area, motion_timeout_seconds, 
                                         motion_box_enabled, motion_box_x1, motion_box_y1, motion_box_x2, motion_box_y2)
             
-            # Try to update server settings too
+            # Attempt to sync settings with processing server
             server_updated = False
             try:
                 if sync_service.update_server_motion_settings(data):
@@ -338,7 +339,7 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
         except Exception as e:
             return jsonify({'error': f'Failed to contact server: {str(e)}'}), 500
     
-    # Live feed UI route removed - API only
+    # API endpoints only - UI served from processing server
     
     @app.route('/api/health')
     def api_health():

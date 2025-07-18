@@ -272,6 +272,12 @@ export const api = {
       return response.data;
     },
   },
+  
+  // Raw API access for endpoints not yet wrapped
+  get: processingApi.get.bind(processingApi),
+  post: processingApi.post.bind(processingApi),
+  put: processingApi.put.bind(processingApi),
+  delete: processingApi.delete.bind(processingApi),
 };
 
 // Token refresh logic

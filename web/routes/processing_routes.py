@@ -332,7 +332,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
     
     @app.route('/api/debug/simple')
     def api_debug_simple():
-        """Simple debug endpoint - completely rewritten"""
+        """Simple debug endpoint for basic connectivity testing"""
         return jsonify({
             'status': 'working',
             'timestamp': time.time(),
@@ -440,7 +440,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
                 except Exception as e:
                     print(f"Error loading existing settings: {e}")
             
-            # Update with new settings
+            # Merge provided settings with current settings
             current_settings.update(data)
             
             # Save to file
@@ -574,7 +574,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
                 except Exception:
                     pass
             
-            # Update with new settings
+            # Merge provided settings with current settings
             for category, values in data.items():
                 if isinstance(values, dict):
                     if category not in existing_settings:

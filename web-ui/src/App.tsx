@@ -3,8 +3,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import SetupGuard from './components/SetupGuard';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import Setup from './pages/Setup';
 import LiveFeeds from './pages/LiveFeeds';
 import Detections from './pages/Detections';
 import Analytics from './pages/Analytics';
@@ -27,13 +29,15 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <Router>
           <AuthProvider>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }>
+            <SetupGuard>
+              <Routes>
+                <Route path="/setup" element={<Setup />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/" element={
+                  <ProtectedRoute>
+                    <Layout />
+                  </ProtectedRoute>
+                }>
                 <Route index element={<LiveFeeds />} />
                 <Route path="detections" element={<Detections />} />
                 <Route path="analytics" element={
@@ -48,6 +52,7 @@ function App() {
                 } />
               </Route>
             </Routes>
+            </SetupGuard>
           </AuthProvider>
         </Router>
       </QueryClientProvider>

@@ -1,0 +1,21 @@
+# Raspberry Pi Camera System Requirements
+
+# Core dependencies
+flask>=3.0.0
+flask-cors>=4.0.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+schedule>=1.2.0
+
+# OpenCV for video processing
+opencv-python>=4.8.0
+
+# Camera support
+picamera2>=0.3.12  # For Raspberry Pi camera
+numpy>=1.24.0      # Required by picamera2
+
+# Database
+# No database dependencies needed - using built-in sqlite3
+
+# Development tools (optional)
+ipython>=8.12.0

@@ -32,7 +32,7 @@ def setup_services(config):
         print("✅ Database initialized")
         
         print("🤖 Setting up AI model manager...")
-        # AI services - now uses detection config
+        # Initialize AI model manager with detection configuration
         model_manager = AIModelManager(config.processing.detection)
         print("✅ AI model manager ready")
         
