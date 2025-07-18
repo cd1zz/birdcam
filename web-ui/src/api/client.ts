@@ -10,6 +10,22 @@ const PI_SERVER = import.meta.env.VITE_PI_SERVER || '';
 function ensureHttps(url: string): string {
   if (!url) return url;
   
+  try {
+    // Check if URL contains a private/local IP address
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname;
+    
+    // Regular expressions for private IP ranges
+    const privateIPRegex = /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|localhost)/;
+    
+    // If it's a private IP or localhost, keep it as HTTP
+    if (privateIPRegex.test(hostname)) {
+      return url;
+    }
+  } catch (e) {
+    // If URL parsing fails, continue with simple string replacement
+  }
+  
   // If the current page is HTTPS and the URL is HTTP, convert it
   if (window.location.protocol === 'https:' && url.startsWith('http://')) {
     return url.replace('http://', 'https://');
