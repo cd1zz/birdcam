@@ -8,6 +8,7 @@ User=pi
 Group=pi
 WorkingDirectory=/home/pi/birdcam
 Environment="PATH=/home/pi/birdcam/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="PYTHONPATH=/home/pi/birdcam"
 ExecStart=/home/pi/birdcam/.venv/bin/python -m pi_capture.main
 Restart=always
 RestartSec=10
@@ -20,7 +21,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/home/pi/birdcam/storage /home/pi/birdcam/database
+ReadWritePaths=/home/pi/bird_footage /home/pi/birdcam/database /home/pi/birdcam
 
 # Device access for camera
 DeviceAllow=/dev/video0 rw
