@@ -104,7 +104,10 @@ def generate_config():
     
     # Camera selection
     print("\n🎯 Camera Setup")
-    print("Camera 0 will be used for motion detection (this is required)")
+    print("Note: In BirdCam, 'Camera 0' is always the primary motion detection camera.")
+    print("This is a software ID, not related to physical connections.")
+    print("\nYou can assign ANY physical camera (CSI or USB) to be 'Camera 0'.")
+    
     print("\nHow many cameras do you want to use?")
     print("1. Single camera")
     print("2. Two cameras")
@@ -127,25 +130,29 @@ def generate_config():
         config_lines.append(f"CAMERA_IDS=0")
         config_lines.append(f"")
         
-        if csi_cameras:
-            print("\nWould you like to use:")
-            print("1. CSI Camera (Recommended for Raspberry Pi Camera)")
-            print("2. USB Camera")
+        if csi_cameras and usb_cameras:
+            print("\nWhich physical camera should be used as Camera 0 (motion detection)?")
+            print(f"1. CSI Camera ({csi_cameras[0]['model']}) - Recommended")
+            print(f"2. USB Camera ({usb_cameras[0]['name']})")
             cam_type = input("Select [1]: ").strip() or "1"
             
             if cam_type == "1":
-                config_lines.append(f"# Camera 0 - CSI Camera")
+                config_lines.append(f"# Camera 0 - Using CSI Camera for motion detection")
                 config_lines.append(f"CAMERA_0_TYPE=picamera2")
             else:
-                config_lines.append(f"# Camera 0 - USB Camera")
+                config_lines.append(f"# Camera 0 - Using USB Camera for motion detection")
                 config_lines.append(f"CAMERA_0_TYPE=opencv")
-                if usb_cameras:
-                    config_lines.append(f"CAMERA_0_DEVICE={usb_cameras[0]['device']}")
+                config_lines.append(f"CAMERA_0_DEVICE={usb_cameras[0]['device']}")
+        elif csi_cameras:
+            config_lines.append(f"# Camera 0 - CSI Camera (only camera available)")
+            config_lines.append(f"CAMERA_0_TYPE=picamera2")
+            print(f"\nUsing CSI camera ({csi_cameras[0]['model']}) as Camera 0")
         else:
-            config_lines.append(f"# Camera 0 - USB Camera")
+            config_lines.append(f"# Camera 0 - USB Camera (only camera available)")
             config_lines.append(f"CAMERA_0_TYPE=opencv")
             if usb_cameras:
                 config_lines.append(f"CAMERA_0_DEVICE={usb_cameras[0]['device']}")
+                print(f"\nUsing USB camera ({usb_cameras[0]['name']}) as Camera 0")
     
     elif choice == "2":
         # Two camera setup
@@ -155,38 +162,45 @@ def generate_config():
         config_lines.append(f"")
         
         if csi_cameras and usb_cameras:
-            print("\nRecommended setup: CSI camera for motion detection, USB as secondary")
-            use_recommended = input("Use recommended setup? [Y/n]: ").strip().lower()
+            print("\nFor dual cameras, Camera 0 will detect motion and trigger Camera 1.")
+            print("\nRecommended: Use CSI camera for motion detection (better performance)")
+            print(f"  Camera 0: {csi_cameras[0]['model']} (CSI) - Motion Detection")
+            print(f"  Camera 1: {usb_cameras[0]['name']} (USB) - Secondary Recording")
+            
+            use_recommended = input("\nUse recommended setup? [Y/n]: ").strip().lower()
             
             if use_recommended != 'n':
                 config_lines.append(f"# Camera 0 - CSI Camera (Motion Detection)")
                 config_lines.append(f"CAMERA_0_TYPE=picamera2")
                 config_lines.append(f"")
-                config_lines.append(f"# Camera 1 - USB Camera (Secondary)")
+                config_lines.append(f"# Camera 1 - USB Camera (Triggered by Camera 0)")
                 config_lines.append(f"CAMERA_1_TYPE=opencv")
                 config_lines.append(f"CAMERA_1_DEVICE={usb_cameras[0]['device']}")
             else:
                 # Manual setup
-                print("\nConfigure Camera 0 (Motion Detection):")
-                print("1. CSI Camera")
-                print("2. USB Camera")
+                print("\nWhich physical camera should be Camera 0 (motion detection)?")
+                print(f"1. CSI Camera ({csi_cameras[0]['model']})")
+                print(f"2. USB Camera ({usb_cameras[0]['name']})")
                 cam0_choice = input("Select [1]: ").strip() or "1"
                 
                 if cam0_choice == "1":
                     config_lines.append(f"# Camera 0 - CSI Camera (Motion Detection)")
                     config_lines.append(f"CAMERA_0_TYPE=picamera2")
                     config_lines.append(f"")
-                    config_lines.append(f"# Camera 1 - USB Camera")
+                    config_lines.append(f"# Camera 1 - USB Camera (Triggered by Camera 0)")
                     config_lines.append(f"CAMERA_1_TYPE=opencv")
-                    if usb_cameras:
-                        config_lines.append(f"CAMERA_1_DEVICE={usb_cameras[0]['device']}")
+                    config_lines.append(f"CAMERA_1_DEVICE={usb_cameras[0]['device']}")
+                    print("\n✓ Camera 0 (motion): CSI")
+                    print("✓ Camera 1 (triggered): USB")
                 else:
                     config_lines.append(f"# Camera 0 - USB Camera (Motion Detection)")
                     config_lines.append(f"CAMERA_0_TYPE=opencv")
-                    config_lines.append(f"CAMERA_0_DEVICE={usb_cameras[0]['device'] if usb_cameras else 0}")
+                    config_lines.append(f"CAMERA_0_DEVICE={usb_cameras[0]['device']}")
                     config_lines.append(f"")
-                    config_lines.append(f"# Camera 1 - CSI Camera")
+                    config_lines.append(f"# Camera 1 - CSI Camera (Triggered by Camera 0)")
                     config_lines.append(f"CAMERA_1_TYPE=picamera2")
+                    print("\n✓ Camera 0 (motion): USB")
+                    print("✓ Camera 1 (triggered): CSI")
     
     # Video settings
     print("\n📹 Video Quality Settings")
