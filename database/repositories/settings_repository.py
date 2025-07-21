@@ -42,7 +42,7 @@ class SettingsRepository(BaseRepository):
                   motion_threshold, min_contour_area, motion_timeout_seconds,
                   int(motion_box_enabled), motion_box_x1, motion_box_y1, motion_box_x2, motion_box_y2, datetime.now()))
             
-            print(f"💾 Saved motion settings: region=({region.x1},{region.y1},{region.x2},{region.y2}), "
+            print(f"Saved motion settings: region=({region.x1},{region.y1},{region.x2},{region.y2}), "
                   f"threshold={motion_threshold}, min_area={min_contour_area}, timeout={motion_timeout_seconds}s, "
                   f"motion_box_enabled={motion_box_enabled}, box=({motion_box_x1},{motion_box_y1},{motion_box_x2},{motion_box_y2})")
     
@@ -97,19 +97,26 @@ class SettingsRepository(BaseRepository):
                 cursor = conn.execute("PRAGMA table_info(motion_settings)")
                 columns = [row[1] for row in cursor.fetchall()]
                 
+                migrations_performed = []
+                
                 if 'motion_timeout_seconds' not in columns:
-                    print("🔄 Adding motion_timeout_seconds column to existing database...")
+                    print("Adding motion_timeout_seconds column to existing database...")
                     conn.execute('ALTER TABLE motion_settings ADD COLUMN motion_timeout_seconds INTEGER DEFAULT 30')
+                    migrations_performed.append('motion_timeout_seconds')
                 
                 if 'motion_box_enabled' not in columns:
-                    print("🔄 Adding motion box columns to existing database...")
+                    print("Adding motion box columns to existing database...")
                     conn.execute('ALTER TABLE motion_settings ADD COLUMN motion_box_enabled INTEGER DEFAULT 1')
                     conn.execute('ALTER TABLE motion_settings ADD COLUMN motion_box_x1 INTEGER DEFAULT 0')
                     conn.execute('ALTER TABLE motion_settings ADD COLUMN motion_box_y1 INTEGER DEFAULT 0')
                     conn.execute('ALTER TABLE motion_settings ADD COLUMN motion_box_x2 INTEGER DEFAULT 640')
                     conn.execute('ALTER TABLE motion_settings ADD COLUMN motion_box_y2 INTEGER DEFAULT 480')
-                    
-                print("✅ Database migration completed")
+                    migrations_performed.append('motion_box columns')
+                
+                if migrations_performed:
+                    print(f"Database schema updated: added {', '.join(migrations_performed)}")
+                else:
+                    print("Database schema check: all required columns present")
                     
             except Exception as e:
-                print(f"⚠️ Database migration failed (probably fine if new database): {e}")
+                print(f"Database migration check failed (probably fine if new database): {e}")

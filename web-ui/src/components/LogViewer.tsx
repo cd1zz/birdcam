@@ -22,7 +22,7 @@ const LogViewer: React.FC<LogViewerProps> = ({ service = 'combined' }) => {
   const [error, setError] = useState<string | null>(null);
   const [lines, setLines] = useState(100);
   const [since, setSince] = useState('1h');
-  const [level, setLevel] = useState<string>('');
+  const [levels, setLevels] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [selectedService, setSelectedService] = useState(service);
@@ -37,7 +37,7 @@ const LogViewer: React.FC<LogViewerProps> = ({ service = 'combined' }) => {
       const params = {
         lines,
         since,
-        ...(level && { level }),
+        ...(levels.length > 0 && { levels: levels.join(',') }),
         ...(search && { search }),
         ...(selectedService !== 'combined' && { service: selectedService })
       };
@@ -60,7 +60,7 @@ const LogViewer: React.FC<LogViewerProps> = ({ service = 'combined' }) => {
     } finally {
       setLoading(false);
     }
-  }, [lines, since, level, search, selectedService]);
+  }, [lines, since, levels, search, selectedService]);
 
   useEffect(() => {
     fetchLogs();
@@ -86,6 +86,7 @@ const LogViewer: React.FC<LogViewerProps> = ({ service = 'combined' }) => {
       const params = {
         since,
         format: 'text',
+        ...(levels.length > 0 && { levels: levels.join(',') }),
         ...(selectedService !== 'combined' && { service: selectedService })
       };
       
@@ -209,18 +210,45 @@ const LogViewer: React.FC<LogViewerProps> = ({ service = 'combined' }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Level</label>
-            <select
-              value={level}
-              onChange={(e) => setLevel(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">All Levels</option>
-              <option value="ERROR">Error</option>
-              <option value="WARNING">Warning</option>
-              <option value="INFO">Info</option>
-              <option value="DEBUG">Debug</option>
-              <option value="ACCESS">Access</option>
-            </select>
+            <div className="relative">
+              <div className="flex flex-wrap gap-2 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700">
+                {['ERROR', 'WARNING', 'INFO', 'DEBUG', 'ACCESS'].map((levelOption) => (
+                  <label
+                    key={levelOption}
+                    className="flex items-center gap-1 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={levels.includes(levelOption)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setLevels([...levels, levelOption]);
+                        } else {
+                          setLevels(levels.filter(l => l !== levelOption));
+                        }
+                      }}
+                      className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className={`text-sm ${
+                      levelOption === 'ERROR' ? 'text-red-600 dark:text-red-400' :
+                      levelOption === 'WARNING' ? 'text-yellow-600 dark:text-yellow-400' :
+                      levelOption === 'ACCESS' ? 'text-green-600 dark:text-green-400' :
+                      'text-gray-700 dark:text-gray-300'
+                    }`}>
+                      {levelOption}
+                    </span>
+                  </label>
+                ))}
+                {levels.length > 0 && (
+                  <button
+                    onClick={() => setLevels([])}
+                    className="ml-2 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           <div>

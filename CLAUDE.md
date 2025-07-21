@@ -93,6 +93,16 @@ Tests use pytest with a clear unit/integration separation. When adding features:
 
 ## Code Maintenance Guidelines
 
+### Logging Standards
+- **NEVER use emojis** in any log messages, print statements, or code comments
+- **Use the project's logging utilities** for consistent formatting:
+  - Backend services: Use `CaptureLogger` from `utils/capture_logger.py`
+  - Example: `from utils.capture_logger import logger`
+  - Use appropriate log levels: `logger.info()`, `logger.error()`, `logger.warning()`, etc.
+- **Avoid direct print() statements** - always use the logger instead
+- **Log format**: All logs use bracketed prefixes like `[INFO]`, `[ERROR]`, `[CAMERA]`, etc.
+- **When logging in database repositories or services without logger access**, use simple descriptive messages without emojis
+
 ### Documentation Updates
 - ALWAYS update relevant README.md files when adding, removing, or modifying code functionality
 - Keep documentation in sync with code changes to ensure accuracy

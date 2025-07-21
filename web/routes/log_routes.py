@@ -151,8 +151,9 @@ def get_pi_capture_logs():
         logs.sort(key=lambda x: x['timestamp'], reverse=True)
         
         # Apply level filter if specified
-        if level:
-            logs = [log for log in logs if log['level'] == level.upper()]
+        if levels:
+            level_list = [l.strip().upper() for l in levels.split(',')]
+            logs = [log for log in logs if log['level'] in level_list]
         
         # Apply search filter if specified
         if search:
@@ -180,7 +181,7 @@ def get_ai_processor_logs():
         # Get query parameters
         lines = request.args.get('lines', 100, type=int)
         since = request.args.get('since', '1h')
-        level = request.args.get('level', None)
+        levels = request.args.get('levels', None)
         search = request.args.get('search', None)
         
         # Convert time format for journalctl
@@ -218,8 +219,9 @@ def get_ai_processor_logs():
         logs.sort(key=lambda x: x['timestamp'], reverse=True)
         
         # Apply level filter if specified
-        if level:
-            logs = [log for log in logs if log['level'] == level.upper()]
+        if levels:
+            level_list = [l.strip().upper() for l in levels.split(',')]
+            logs = [log for log in logs if log['level'] in level_list]
         
         # Apply search filter if specified
         if search:
@@ -247,7 +249,7 @@ def get_combined_logs():
         # Get query parameters
         lines = request.args.get('lines', 100, type=int)
         since = request.args.get('since', '1h')
-        level = request.args.get('level', None)
+        levels = request.args.get('levels', None)
         search = request.args.get('search', None)
         service_filter = request.args.get('service', None)
         
@@ -284,8 +286,9 @@ def get_combined_logs():
         all_logs.sort(key=lambda x: x['timestamp'], reverse=True)
         
         # Apply level filter if specified
-        if level:
-            all_logs = [log for log in all_logs if log['level'] == level.upper()]
+        if levels:
+            level_list = [l.strip().upper() for l in levels.split(',')]
+            all_logs = [log for log in all_logs if log['level'] in level_list]
         
         # Apply search filter if specified
         if search:
@@ -319,7 +322,7 @@ def get_remote_pi_capture_logs():
         # Get query parameters
         lines = request.args.get('lines', 100, type=int)
         since = request.args.get('since', '1h')
-        level = request.args.get('level', None)
+        levels = request.args.get('levels', None)
         search = request.args.get('search', None)
         hostname = request.args.get('hostname', None)  # Filter by specific Pi hostname
         
@@ -439,8 +442,9 @@ def get_remote_pi_capture_logs():
         logs.sort(key=lambda x: x['timestamp'], reverse=True)
         
         # Apply level filter if specified
-        if level:
-            logs = [log for log in logs if log['level'] == level.upper()]
+        if levels:
+            level_list = [l.strip().upper() for l in levels.split(',')]
+            logs = [log for log in logs if log['level'] in level_list]
         
         # Apply search filter if specified
         if search:
@@ -474,6 +478,7 @@ def export_logs():
         since = request.args.get('since', '24h')
         service_filter = request.args.get('service', None)
         format_type = request.args.get('format', 'text')  # text or json
+        levels = request.args.get('levels', None)
         
         # Convert time format for journalctl
         since_arg = convert_time_format(since)
