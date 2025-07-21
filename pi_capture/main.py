@@ -25,7 +25,7 @@ from utils.capture_logger import logger
 from web.app import create_capture_app
 
 
-def setup_services(config):
+def setup_services(config, force_opencv=False):
     """Initialize all services with settings persistence"""
     logger.setup("Setting up services...")
     
@@ -67,7 +67,6 @@ def setup_services(config):
     logger.ok("Motion detector ready")
 
     logger.setup("Setting up camera manager...")
-    force_opencv = os.getenv("FORCE_OPENCV", "false").lower() == "true"
     camera_manager = CameraManager(config.capture, force_opencv=force_opencv)
     logger.ok("Camera manager ready")
 
@@ -182,12 +181,17 @@ def main():
         capture_services = {}
         sync_service = None
         settings_repos = {}
+        
+        # Check for force OpenCV mode
+        force_opencv = os.getenv("FORCE_OPENCV", "false").lower() == "true"
+        if force_opencv:
+            logger.info("FORCE_OPENCV mode enabled - using OpenCV for all cameras")
 
         for cfg in configs:
             logger.storage(f"Storage for camera {cfg.capture.camera_id}", path=cfg.processing.storage_path)
             logger.camera(f"Using {cfg.capture.camera_type} for camera {cfg.capture.camera_id}")
 
-            cs, sync, settings = setup_services(cfg)
+            cs, sync, settings = setup_services(cfg, force_opencv=force_opencv)
             capture_services[cfg.capture.camera_id] = cs
             settings_repos[cfg.capture.camera_id] = settings
             if sync_service is None:
