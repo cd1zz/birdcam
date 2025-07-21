@@ -258,7 +258,7 @@ def generate_config():
     
     # Generate secret key
     import secrets
-    secret_key = secrets.token_hex(32)
+    secret_key = secrets.token_urlsafe(32)
     config_lines.append(f"")
     config_lines.append(f"# Authentication - SAVE THIS KEY!")
     config_lines.append(f"SECRET_KEY={secret_key}")

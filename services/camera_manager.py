@@ -1,6 +1,8 @@
 # services/camera_manager.py
 import cv2
 import numpy as np
+import os
+import sys
 from typing import Optional, Tuple, List, Dict, TYPE_CHECKING
 from utils.capture_logger import logger
 
@@ -16,25 +18,42 @@ except ImportError:  # pragma: no cover - picamera2 may not be installed
 def detect_available_cameras(max_devices: int = 4) -> List[Dict[str, str]]:
     """Detect connected cameras and return their IDs."""
     cameras: List[Dict[str, str]] = []
+    
+    logger.info("Starting camera detection...")
 
     if Picamera2:
         try:
             infos = Picamera2.global_camera_info()
             for idx, _ in enumerate(infos):
                 cameras.append({"id": str(idx), "type": "picamera2"})
+                logger.info(f"Found CSI camera at index {idx}")
         except Exception as e:  # pragma: no cover - hardware specific
             logger.error(f"Picamera2 detection failed: {e}")
 
     # Also check for USB/OpenCV cameras
-    for i in range(max_devices):
-        cap = cv2.VideoCapture(i)
-        if cap.isOpened():
-            ret, _ = cap.read()
-            cap.release()
-            if ret:
-                # Check if this is already detected as picamera2
-                if not any(cam["id"] == str(i) and cam["type"] == "picamera2" for cam in cameras):
-                    cameras.append({"id": str(i), "type": "opencv"})
+    # Suppress OpenCV warnings during detection
+    logger.info(f"Checking for USB cameras (devices 0-{max_devices-1})...")
+    
+    # Temporarily suppress stderr to hide OpenCV warnings
+    old_stderr = sys.stderr
+    try:
+        # Redirect stderr to devnull during camera probing
+        sys.stderr = open(os.devnull, 'w')
+        
+        for i in range(max_devices):
+            cap = cv2.VideoCapture(i)
+            if cap.isOpened():
+                ret, _ = cap.read()
+                cap.release()
+                if ret:
+                    # Check if this is already detected as picamera2
+                    if not any(cam["id"] == str(i) and cam["type"] == "picamera2" for cam in cameras):
+                        cameras.append({"id": str(i), "type": "opencv"})
+                        logger.info(f"Found USB camera at /dev/video{i}")
+    finally:
+        # Restore stderr
+        sys.stderr.close()
+        sys.stderr = old_stderr
 
     return cameras
 
@@ -153,8 +172,16 @@ class CameraManager:
             else:
                 # Auto-detect based on camera ID
                 video_device = self.config.camera_id
+            
+            # Suppress OpenCV warnings when opening camera
+            old_stderr = sys.stderr
+            try:
+                sys.stderr = open(os.devnull, 'w')
+                self.cv_cap = cv2.VideoCapture(video_device)
+            finally:
+                sys.stderr.close()
+                sys.stderr = old_stderr
                 
-            self.cv_cap = cv2.VideoCapture(video_device)
             if self.cv_cap.isOpened():
                 # Set resolution
                 self.cv_cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.config.resolution[0])
