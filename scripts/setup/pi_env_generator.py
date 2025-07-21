@@ -276,8 +276,20 @@ def generate_config():
     config_lines.append(f"MOTION_BOX_ENABLED=true")
     config_lines.append(f"MOTION_BOX_X1=0")
     config_lines.append(f"MOTION_BOX_Y1=0")
-    config_lines.append(f"MOTION_BOX_X2={config_lines[config_lines.index('RESOLUTION_WIDTH=' + width) if 'width' in locals() else config_lines[config_lines.index('RESOLUTION_WIDTH=640')]].split('=')[1]}")
-    config_lines.append(f"MOTION_BOX_Y2={config_lines[config_lines.index('RESOLUTION_HEIGHT=' + height) if 'height' in locals() else config_lines[config_lines.index('RESOLUTION_HEIGHT=480')]].split('=')[1]}")
+    
+    # Get the resolution values we set earlier
+    resolution_width = "640"  # Default
+    resolution_height = "480"  # Default
+    
+    # Find the actual resolution values in config_lines
+    for line in config_lines:
+        if line.startswith("RESOLUTION_WIDTH="):
+            resolution_width = line.split("=")[1]
+        elif line.startswith("RESOLUTION_HEIGHT="):
+            resolution_height = line.split("=")[1]
+    
+    config_lines.append(f"MOTION_BOX_X2={resolution_width}")
+    config_lines.append(f"MOTION_BOX_Y2={resolution_height}")
     
     # Save configuration
     print("\n💾 Configuration Summary:")
