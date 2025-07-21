@@ -61,55 +61,72 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Check for existing session on mount
   useEffect(() => {
     const initAuth = async () => {
-      const accessToken = localStorage.getItem('accessToken');
-      const refreshTokenValue = localStorage.getItem('refreshToken');
-      
-      if (accessToken) {
-        setAuthToken(accessToken);
-        try {
-          const response = await apiClient.get('/api/auth/me');
-          setUser(response.data);
-        } catch (error) {
-          // If token is expired and we have a refresh token, try to refresh
-          if ((error as any).response?.status === 401 && refreshTokenValue) {
-            try {
-              const refreshResponse = await apiClient.post('/api/auth/refresh', {
-                refresh_token: refreshTokenValue
-              });
-              
-              const { access_token, refresh_token: newRefreshToken, user } = refreshResponse.data;
-              
-              // Store new tokens
-              localStorage.setItem('accessToken', access_token);
-              localStorage.setItem('refreshToken', newRefreshToken);
-              
-              // Set auth header
-              setAuthToken(access_token);
-              
-              // Get user data if not included in refresh response
-              if (user) {
-                setUser(user);
-              } else {
-                const meResponse = await apiClient.get('/api/auth/me');
-                setUser(meResponse.data);
+      try {
+        const accessToken = localStorage.getItem('accessToken');
+        const refreshTokenValue = localStorage.getItem('refreshToken');
+        
+        if (accessToken) {
+          setAuthToken(accessToken);
+          try {
+            const response = await apiClient.get('/api/auth/me');
+            setUser(response.data);
+          } catch (error) {
+            // If token is expired and we have a refresh token, try to refresh
+            if ((error as any).response?.status === 401 && refreshTokenValue) {
+              try {
+                const refreshResponse = await apiClient.post('/api/auth/refresh', {
+                  refresh_token: refreshTokenValue
+                });
+                
+                const { access_token, refresh_token: newRefreshToken, user } = refreshResponse.data;
+                
+                // Store new tokens
+                localStorage.setItem('accessToken', access_token);
+                localStorage.setItem('refreshToken', newRefreshToken);
+                
+                // Set auth header
+                setAuthToken(access_token);
+                
+                // Get user data if not included in refresh response
+                if (user) {
+                  setUser(user);
+                } else {
+                  const meResponse = await apiClient.get('/api/auth/me');
+                  setUser(meResponse.data);
+                }
+              } catch (refreshError) {
+                // Refresh failed, clear everything
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                setAuthToken(null);
+                setUser(null);
+                
+                // If the refresh endpoint returns 401, it means the refresh token is also invalid
+                // This ensures we properly clear the auth state and trigger navigation to login
+                if ((refreshError as any).response?.status === 401) {
+                  console.log('Refresh token is invalid, clearing auth state');
+                }
               }
-            } catch {
-              // Refresh failed, clear everything
+            } else {
+              // No refresh token or other error, clear everything
               localStorage.removeItem('accessToken');
               localStorage.removeItem('refreshToken');
               setAuthToken(null);
               setUser(null);
             }
-          } else {
-            // No refresh token or other error, clear everything
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            setAuthToken(null);
-            setUser(null);
           }
         }
+      } catch (error) {
+        // Catch any unexpected errors
+        console.error('Auth initialization error:', error);
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        setAuthToken(null);
+        setUser(null);
+      } finally {
+        // Always set loading to false
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     
     initAuth();
@@ -141,6 +158,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
       };
     }
   }, [user]);
+  
+  // Listen for storage changes to handle token removal from interceptors
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'accessToken' && !e.newValue) {
+        // Access token was removed, clear user state
+        setUser(null);
+        setAuthToken(null);
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
   
   const login = async (username: string, password: string) => {
     const response = await apiClient.post('/api/auth/login', {

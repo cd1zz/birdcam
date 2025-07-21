@@ -1,16 +1,13 @@
 # utils/auth.py
 import jwt
 import os
+import bcrypt
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
-from passlib.context import CryptContext
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class JWTManager:
     def __init__(self):
@@ -53,11 +50,21 @@ class JWTManager:
 # Password utilities
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt"""
-    return pwd_context.hash(password)
+    # bcrypt requires bytes, so encode the password
+    password_bytes = password.encode('utf-8')
+    # Generate salt and hash the password
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    # Return as string for storage
+    return hashed.decode('utf-8')
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash"""
-    return pwd_context.verify(plain_password, hashed_password)
+    # Convert strings to bytes
+    password_bytes = plain_password.encode('utf-8')
+    hashed_bytes = hashed_password.encode('utf-8')
+    # Check the password
+    return bcrypt.checkpw(password_bytes, hashed_bytes)
 
 # Global JWT manager instance
 jwt_manager = JWTManager()

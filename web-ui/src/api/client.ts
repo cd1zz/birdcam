@@ -396,8 +396,8 @@ piApi.interceptors.response.use(
   async error => {
     const originalRequest = error.config;
     
-    // Handle 401 errors (unauthorized)
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Handle 401 errors (unauthorized) - but not for refresh endpoint itself
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/api/auth/refresh')) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -430,11 +430,10 @@ piApi.interceptors.response.use(
           return piApi(originalRequest);
         } catch (refreshError) {
           processQueue(refreshError, null);
-          // Clear tokens and redirect to login
+          // Clear tokens but don't redirect here - let AuthContext handle it
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           setAuthToken(null);
-          window.location.href = '/login';
           return Promise.reject(refreshError);
         } finally {
           isRefreshing = false;
@@ -467,8 +466,8 @@ processingApi.interceptors.response.use(
   async error => {
     const originalRequest = error.config;
     
-    // Handle 401 errors (unauthorized)
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Handle 401 errors (unauthorized) - but not for refresh endpoint itself
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/api/auth/refresh')) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -501,11 +500,10 @@ processingApi.interceptors.response.use(
           return processingApi(originalRequest);
         } catch (refreshError) {
           processQueue(refreshError, null);
-          // Clear tokens and redirect to login
+          // Clear tokens but don't redirect here - let AuthContext handle it
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           setAuthToken(null);
-          window.location.href = '/login';
           return Promise.reject(refreshError);
         } finally {
           isRefreshing = false;
