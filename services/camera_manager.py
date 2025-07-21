@@ -161,11 +161,11 @@ class CameraManager:
                 self.cv_cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.config.resolution[1])
                 self.cv_cap.set(cv2.CAP_PROP_FPS, self.config.fps)
                 self.camera_type = "opencv"
-                logger.info(f"Initialized OpenCV for camera {camera_id}")
+                logger.info(f"Initialized OpenCV for camera {self.config.camera_id}")
             else:
-                raise RuntimeError(f"Failed to open camera {camera_id} with OpenCV")
+                raise RuntimeError(f"Failed to open camera {self.config.camera_id} with OpenCV")
         except Exception as e:
-            raise RuntimeError(f"Failed to initialize camera {camera_id}: {e}")
+            raise RuntimeError(f"Failed to initialize camera {self.config.camera_id}: {e}")
 
     def read_frame(self) -> Tuple[bool, Optional[np.ndarray]]:
         if self.camera_type == "picamera2" and self.picam2:
