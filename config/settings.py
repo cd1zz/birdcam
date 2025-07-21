@@ -93,6 +93,7 @@ class CaptureConfig:
     resolution: Tuple[int, int]
     buffer_size: int
     pre_motion_buffer_seconds: int
+    video_device: Optional[int] = None  # For OpenCV device mapping
 
 @dataclass 
 class MotionConfig:
@@ -161,17 +162,42 @@ def load_capture_config(camera_id: int = 0, camera_type: Optional[str] = None) -
     base_path = Path(os.getenv('STORAGE_PATH', './bird_footage'))
     camera_path = base_path / f"camera_{camera_id}"
     
+    # Get per-camera type configuration
+    camera_type_env = os.getenv(f'CAMERA_{camera_id}_TYPE', 'auto').lower()
+    if camera_type_env not in ['auto', 'picamera2', 'opencv']:
+        camera_type_env = 'auto'
+    
+    # Get per-camera resolution (with fallback to global settings)
+    resolution_env = os.getenv(f'CAMERA_{camera_id}_RESOLUTION', '')
+    if resolution_env and 'x' in resolution_env:
+        try:
+            width, height = map(int, resolution_env.split('x'))
+            resolution = (width, height)
+        except ValueError:
+            resolution = (get_int_env('RESOLUTION_WIDTH', 640), 
+                        get_int_env('RESOLUTION_HEIGHT', 480))
+    else:
+        resolution = (get_int_env('RESOLUTION_WIDTH', 640), 
+                     get_int_env('RESOLUTION_HEIGHT', 480))
+    
+    # Get per-camera FPS (with fallback to global setting)
+    fps = get_int_env(f'CAMERA_{camera_id}_FPS', get_int_env('FPS', 10))
+    
+    # Get per-camera video device (for OpenCV)
+    video_device = get_int_env(f'CAMERA_{camera_id}_DEVICE', None)
+    
     return AppConfig(
         database=DatabaseConfig(path=camera_path / "capture.db"),
         capture=CaptureConfig(
             camera_id=camera_id,
-            camera_type='picamera2',
+            camera_type=camera_type_env,  # Use per-camera type
             stream_url='',  # RTSP environment variable removed
             segment_duration=get_int_env('SEGMENT_DURATION', 300),
-            fps=get_int_env('FPS', 10),
-            resolution=(get_int_env('RESOLUTION_WIDTH', 640), get_int_env('RESOLUTION_HEIGHT', 480)),
+            fps=fps,  # Use per-camera FPS
+            resolution=resolution,  # Use per-camera resolution
             buffer_size=get_int_env('BUFFER_SIZE', 2),
-            pre_motion_buffer_seconds=get_int_env('PRE_MOTION_BUFFER_SECONDS', 15)
+            pre_motion_buffer_seconds=get_int_env('PRE_MOTION_BUFFER_SECONDS', 15),
+            video_device=video_device  # Add video device mapping
         ),
         motion=MotionConfig(
             threshold=get_int_env('MOTION_THRESHOLD', 5000),

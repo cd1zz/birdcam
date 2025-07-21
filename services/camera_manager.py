@@ -63,11 +63,24 @@ class CameraManager:
         self._initialize_camera()
 
     def _initialize_camera(self) -> None:
-        """Initialize camera using Picamera2 or OpenCV based on availability."""
+        """Initialize camera using configured type or auto-detect."""
         camera_id = self.config.camera_id
+        camera_type = self.config.camera_type  # Get type from config
         
-        # Try Picamera2 first (unless forced to use OpenCV)
-        if Picamera2 and not self.force_opencv:
+        # Handle configured camera type
+        if camera_type == 'opencv' or self.force_opencv:
+            # Force OpenCV
+            self._initialize_opencv()
+            return
+        elif camera_type == 'picamera2':
+            # Force Picamera2
+            if not Picamera2:
+                raise RuntimeError("Picamera2 requested but not available")
+            self._initialize_picamera2()
+            return
+        
+        # Auto mode - try Picamera2 first
+        if Picamera2:
             try:
                 # Check if this camera ID is available in Picamera2
                 infos = Picamera2.global_camera_info()
@@ -97,14 +110,49 @@ class CameraManager:
                     self.picam2 = None
         
         # Fall back to OpenCV
+        self._initialize_opencv()
+    
+    def _initialize_picamera2(self) -> None:
+        """Initialize Picamera2 camera."""
         try:
-            # For USB cameras, we need to find the actual video device
-            # Camera ID 1 in config might map to /dev/video0
-            video_device = camera_id
-            
-            # If camera_id is 1 and we know it's the USB camera, use /dev/video0
-            if camera_id == 1:
-                video_device = 0  # USB camera is at /dev/video0
+            infos = Picamera2.global_camera_info()
+            if self.config.camera_id < len(infos):
+                # Check if it's a USB camera - if so, fail
+                camera_info = infos[self.config.camera_id]
+                is_usb = "usb" in camera_info.get("Id", "").lower()
+                if is_usb:
+                    raise RuntimeError(f"Camera {self.config.camera_id} is USB, cannot use Picamera2")
+                
+                self.picam2 = Picamera2(camera_num=self.config.camera_id)
+                video_config = self.picam2.create_video_configuration(
+                    main={"size": self.config.resolution}
+                )
+                self.picam2.configure(video_config)
+                self.picam2.start()
+                self.camera_type = "picamera2"
+                logger.info(f"Initialized Picamera2 for camera {self.config.camera_id}")
+            else:
+                raise RuntimeError(f"Camera {self.config.camera_id} not found in Picamera2")
+        except Exception as e:
+            if self.picam2:
+                try:
+                    self.picam2.close()
+                except:
+                    pass
+                self.picam2 = None
+            raise RuntimeError(f"Failed to initialize Picamera2: {e}")
+    
+    def _initialize_opencv(self) -> None:
+        """Initialize OpenCV camera."""
+        try:
+            # Use configured video device or auto-detect
+            if self.config.video_device is not None:
+                # Use explicitly configured device
+                video_device = self.config.video_device
+                logger.info(f"Using configured video device {video_device} for camera {self.config.camera_id}")
+            else:
+                # Auto-detect based on camera ID
+                video_device = self.config.camera_id
                 
             self.cv_cap = cv2.VideoCapture(video_device)
             if self.cv_cap.isOpened():

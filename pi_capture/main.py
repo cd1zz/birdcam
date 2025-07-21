@@ -189,7 +189,7 @@ def main():
 
         for cfg in configs:
             logger.storage(f"Storage for camera {cfg.capture.camera_id}", path=cfg.processing.storage_path)
-            logger.camera(f"Using {cfg.capture.camera_type} for camera {cfg.capture.camera_id}")
+            logger.camera(f"Camera {cfg.capture.camera_id} configured as: {cfg.capture.camera_type}")
 
             cs, sync, settings = setup_services(cfg, force_opencv=force_opencv)
             capture_services[cfg.capture.camera_id] = cs
