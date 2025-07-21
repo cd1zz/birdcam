@@ -1,0 +1,45 @@
+# Bird/Animal Detection System Requirements
+# Install with: pip install -r requirements.txt
+
+# Core dependencies
+torch>=2.1.0
+torchvision>=0.16.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+pandas>=2.1.0
+
+# YOLOv5 dependencies (don't use ultralytics package, use torch.hub instead)
+# YOLOv5 is loaded via torch.hub.load() which has its own requirements
+gitpython>=3.1.30
+pillow>=10.3.0
+requests>=2.32.2
+setuptools>=70.0.0
+seaborn>=0.13.0
+matplotlib>=3.3.0
+
+# Web framework
+Flask>=2.3.0
+Flask-CORS>=4.0.0
+
+# Configuration
+python-dotenv>=1.0.0
+
+# Date/time utilities (for robust datetime parsing)
+python-dateutil>=2.8.0
+
+# Scheduling
+schedule>=1.2.0
+
+# System metrics
+psutil>=5.9.0
+
+# Authentication
+PyJWT>=2.8.0
+passlib[bcrypt]>=1.7.4
+bcrypt>=3.2.0,<4.0.0  # Pin to version 3.x to avoid __about__ AttributeError
+
+# NOTE: picamera2 is installed system-wide, not via pip
+# System dependencies (install separately if needed):
+# Ubuntu/Debian: sudo apt update && sudo apt install ffmpeg
+# macOS: brew install ffmpeg
+# Windows: Download from https://ffmpeg.org/

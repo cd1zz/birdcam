@@ -1,0 +1,33 @@
+[Unit]
+Description=Birdcam Pi Capture
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/birdcam
+Environment="PATH=/home/pi/birdcam/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/home/pi/birdcam/.venv/bin/python -m pi_capture.main
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=pi-capture
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/pi/birdcam/storage /home/pi/birdcam/database
+
+# Device access for camera
+DeviceAllow=/dev/video0 rw
+DeviceAllow=/dev/video1 rw
+DeviceAllow=/dev/video2 rw
+DeviceAllow=/dev/video3 rw
+SupplementaryGroups=video
+
+[Install]
+WantedBy=multi-user.target

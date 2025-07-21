@@ -1,0 +1,33 @@
+# AI Processing Server Requirements
+
+# Core dependencies
+flask>=3.0.0
+flask-cors>=4.0.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+schedule>=1.2.0
+
+# OpenCV and image processing
+opencv-python>=4.8.0
+numpy>=1.24.0
+Pillow>=10.0.0
+
+# AI/ML dependencies
+torch>=2.0.0       # PyTorch for YOLO
+torchvision>=0.15.0
+ultralytics>=8.0.0  # YOLOv5/v8 models
+
+# Authentication
+PyJWT>=2.8.0
+passlib[bcrypt]>=1.7.4
+bcrypt>=3.2.0,<4.0.0  # Pin to version 3.x to avoid __about__ AttributeError
+python-jose[cryptography]>=3.3.0
+
+# Monitoring
+psutil>=5.9.0
+
+# Database
+# No database dependencies needed - using built-in sqlite3
+
+# Development tools (optional)
+ipython>=8.12.0

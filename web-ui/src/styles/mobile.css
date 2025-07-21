@@ -1,0 +1,89 @@
+/* Mobile-specific styles for BirdCam */
+
+/* Hide scrollbars on mobile while keeping functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Touch-friendly button spacing */
+@media (max-width: 640px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Smooth scrolling for better mobile experience */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent text selection on mobile UI elements */
+.no-select {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Mobile-friendly video controls */
+@media (max-width: 640px) {
+  video::-webkit-media-controls-panel {
+    -webkit-appearance: none;
+  }
+  
+  video::-webkit-media-controls-start-playback-button {
+    -webkit-appearance: none;
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Better mobile modal handling */
+@media (max-width: 640px) {
+  .mobile-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: none;
+    border-radius: 0;
+    margin: 0;
+  }
+}
+
+/* Swipe indicator for mobile carousels */
+.swipe-indicator {
+  position: relative;
+}
+
+.swipe-indicator::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 2px;
+}
+
+/* Mobile-friendly toast notifications */
+@media (max-width: 640px) {
+  .toast-mobile {
+    position: fixed;
+    bottom: 20px;
+    left: 16px;
+    right: 16px;
+    z-index: 9999;
+  }
+}

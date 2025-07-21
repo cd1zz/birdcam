@@ -1,0 +1,10 @@
+# Testing requirements for BirdCam
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-mock>=3.10.0
+pytest-asyncio>=0.21.0
+
+# Additional testing utilities
+pytest-xdist>=3.0.0  # Parallel test execution
+pytest-timeout>=2.1.0  # Test timeouts
+pytest-html>=3.1.0  # HTML test reports

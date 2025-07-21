@@ -1,0 +1,26 @@
+[Unit]
+Description=Birdcam AI Processor
+After=network.target
+
+[Service]
+Type=simple
+User=craig
+Group=craig
+WorkingDirectory=/home/craig/birdcam
+Environment="PATH=/home/craig/birdcam/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/home/craig/birdcam/.venv/bin/python -m ai_processor.main
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ai-processor
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/craig/birdcam/storage /home/craig/birdcam/database
+
+[Install]
+WantedBy=multi-user.target
