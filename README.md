@@ -50,6 +50,8 @@ You need TWO separate machines:
 1. **Raspberry Pi** with camera(s) attached
 2. **Processing Server** (can be any computer with decent CPU/GPU)
 
+**Important**: Both machines must be on the same network initially for setup. You can configure remote access later.
+
 ### Step 2: Set Up the Raspberry Pi
 
 ```bash
@@ -57,27 +59,53 @@ You need TWO separate machines:
 git clone https://github.com/yourusername/birdcam.git
 cd birdcam
 
-# 2. Create Pi-specific configuration
-cp config/examples/.env.pi.example .env.pi
-nano .env.pi
-
-# 3. Edit these key settings:
-PROCESSING_SERVER=192.168.1.100  # IP of your AI server
-CAMERA_IDS=0                     # Your camera ID(s)
-
-# 4. Install dependencies
-pip install -r requirements.pi.txt
-
-# 5. Setup camera permissions
+# 2. IMPORTANT: Setup camera and virtual environment first
+# This script handles picamera2, numpy, and venv issues automatically
 ./scripts/setup/setup_pi_camera.sh
 
-# 6. Install and start capture service
+# 3. Use the interactive configuration generator (RECOMMENDED)
+python3 scripts/setup/pi_env_generator.py
+# This will:
+# - Auto-detect your cameras (CSI and USB)
+# - Help you configure settings interactively
+# - Generate a proper .env.pi file
+# - Create a SECRET_KEY for secure communication
+
+# Alternative: Manual configuration
+# cp config/examples/.env.pi.example .env.pi
+# nano .env.pi
+
+# 4. Activate the virtual environment created by setup script
+source .venv/bin/activate
+
+# 5. Install Python dependencies
+# Note: picamera2 is NOT in requirements.pi.txt - it uses system packages
+pip install -r requirements.pi.txt
+
+# 6. Test the setup before installing service
+python pi_capture/main.py
+# Press Ctrl+C after verifying camera feed works
+
+# 7. Install and start capture service
 sudo ./scripts/setup/install_pi_capture_service.sh
 sudo systemctl start pi-capture.service
 
-# Or run manually for testing:
-# python pi_capture/main.py
+# 8. Verify service is running
+sudo systemctl status pi-capture.service
+journalctl -u pi-capture.service -f  # View logs
 ```
+
+#### Common Pi Setup Issues:
+
+**picamera2/numpy errors**: The setup_pi_camera.sh script creates a virtual environment with `--system-site-packages` to use the system's picamera2 installation.
+
+**Camera not detected**: 
+- CSI cameras need a reboot after first enable
+- USB cameras need correct /dev/video* ID
+- Use `libcamera-hello --list-cameras` for CSI
+- Use `v4l2-ctl --list-devices` for USB
+
+**Permission errors**: Make sure you're added to the video group (setup script does this)
 
 ### Step 3: Set Up the AI Processing Server
 
@@ -86,27 +114,39 @@ sudo systemctl start pi-capture.service
 git clone https://github.com/yourusername/birdcam.git
 cd birdcam
 
-# 2. Create processor-specific configuration
+# 2. Create virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# 3. Install dependencies
+pip install -r requirements.processor.txt
+
+# 4. Create processor configuration
 cp config/examples/.env.processor.example .env.processor
 nano .env.processor
 
-# 3. Edit settings (most defaults are fine)
-# IMPORTANT: If exposing to internet, add:
-CAPTURE_SERVER=192.168.1.50      # Your Pi's internal IP
-CAPTURE_PORT=8090               # Pi's port
-SECRET_KEY=<generate-secure-key>
+# 5. Edit these critical settings:
+# If you used pi_env_generator.py, copy the SECRET_KEY it generated
+SECRET_KEY=<copy-from-pi-setup>    # MUST match Pi's SECRET_KEY
+CAPTURE_SERVER=192.168.1.50        # Your Pi's internal IP
+CAPTURE_PORT=8090                  # Pi's port (default 8090)
 
-# 4. Install dependencies
-pip install -r requirements.processor.txt
+# Storage paths (adjust as needed):
+STORAGE_PATH=/home/yourusername/birdcam_storage
 
-# 5. Install and start AI processor service
+# 6. Test the processor first
+python ai_processor/main.py
+# The first run will download the YOLO model (~14MB)
+# Press Ctrl+C after verifying it starts
+
+# 7. Install and start AI processor service
 sudo ./scripts/setup/install_ai_processor_service.sh
 sudo systemctl start ai-processor.service
 
-# Or run manually for testing:
-# python ai_processor/main.py
+# 8. Verify service is running
+sudo systemctl status ai-processor.service
 
-# 6. Set up web UI
+# 9. Set up web UI
 cd web-ui
 # For local network:
 cp ../config/examples/.env.web-ui.example .env
@@ -116,6 +156,10 @@ cp ../config/examples/.env.proxy.example .env
 nano .env  # Update with your server IPs
 npm install
 npm run build
+
+# 10. Create initial admin account
+cd ..
+python scripts/setup/setup_admin.py
 ```
 
 ### Step 4: Initial Admin Setup
@@ -124,6 +168,41 @@ npm run build
 2. You'll be redirected to `/setup` automatically
 3. Create your admin account (must be on local network)
 4. Start using the system!
+
+## 🔥 Common Installation Issues
+
+### Raspberry Pi Issues:
+
+**ImportError: numpy/picamera2**
+- Solution: Run `./scripts/setup/setup_pi_camera.sh` first
+- This creates a venv with `--system-site-packages` flag
+- Do NOT pip install picamera2 - use the system version
+
+**Camera not found**
+- CSI cameras: Need reboot after enabling in raspi-config
+- USB cameras: Check with `v4l2-ctl --list-devices`
+- Update CAMERA_IDS in .env.pi to match your setup
+
+**Permission denied**
+- Run: `sudo usermod -a -G video $USER`
+- Log out and back in for changes to take effect
+
+### Processing Server Issues:
+
+**YOLO model download fails**
+- First run downloads ~14MB model file
+- Ensure you have internet connection
+- Check firewall isn't blocking GitHub
+
+**Web UI build errors**
+- Ensure Node.js 18+ is installed
+- Clear cache: `rm -rf node_modules package-lock.json`
+- Reinstall: `npm install`
+
+**Cannot connect to Pi**
+- Verify both machines are on same network
+- Check Pi IP with `ip addr show`
+- Test connection: `curl http://PI_IP:8090/api/status`
 
 ## 📋 Configuration Files
 
@@ -134,12 +213,19 @@ See [Environment Files Guide](docs/ENV_FILES_GUIDE.md) for detailed configuratio
 - **`.env.processor`** - AI server settings (detection, storage, proxy)
 - **`web-ui/.env`** - Frontend configuration (server URLs)
 
+### Key Configuration Tips:
+
+1. **Use pi_env_generator.py** on the Pi for automatic camera detection
+2. **SECRET_KEY** must match between Pi and Processor
+3. **Storage paths** should have plenty of space (videos add up quickly)
+4. **Motion settings** usually need tuning for your environment
+
 ### Internet Access (Recommended Setup):
 Use the secure proxy mode to expose only one server:
 ```bash
 # In .env.processor:
 CAPTURE_SERVER=192.168.1.50  # Pi's internal IP
-SECRET_KEY=<secure-key>
+SECRET_KEY=<secure-key>      # From pi_env_generator.py
 
 # In web-ui/.env:
 VITE_PROCESSING_SERVER=https://your-tunnel.com
@@ -201,6 +287,21 @@ If a service fails to start:
 2. Verify virtual environment: Ensure `.venv` exists and has all dependencies
 3. Check permissions: Service runs as configured user (default: pi/craig)
 4. Validate .env file: Ensure all required settings are present
+
+## 🔧 Installation Prerequisites
+
+### Raspberry Pi Requirements:
+- Raspberry Pi OS (64-bit recommended for Pi 4/5)
+- Python 3.9+ (usually pre-installed)
+- System packages: `libcamera-apps libcamera-dev python3-picamera2`
+- At least 2GB free space
+
+### Processing Server Requirements:
+- Ubuntu 20.04+ / Debian 11+ / macOS / Windows with WSL2
+- Python 3.9+
+- At least 8GB RAM (16GB recommended)
+- 20GB+ free storage for videos
+- NVIDIA GPU optional but recommended for faster processing
 
 ## 🔧 Detailed Setup Guides
 
