@@ -67,7 +67,8 @@ def setup_services(config):
     logger.ok("Motion detector ready")
 
     logger.setup("Setting up camera manager...")
-    camera_manager = CameraManager(config.capture)
+    force_opencv = os.getenv("FORCE_OPENCV", "false").lower() == "true"
+    camera_manager = CameraManager(config.capture, force_opencv=force_opencv)
     logger.ok("Camera manager ready")
 
     # Video writing
