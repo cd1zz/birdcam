@@ -72,15 +72,21 @@ class CameraManager:
                 # Check if this camera ID is available in Picamera2
                 infos = Picamera2.global_camera_info()
                 if camera_id < len(infos):
-                    self.picam2 = Picamera2(camera_num=camera_id)
-                    video_config = self.picam2.create_video_configuration(
-                        main={"size": self.config.resolution}
-                    )
-                    self.picam2.configure(video_config)
-                    self.picam2.start()
-                    self.camera_type = "picamera2"
-                    logger.info(f"Initialized Picamera2 for camera {camera_id}")
-                    return
+                    # Check if it's a USB camera - if so, skip Picamera2
+                    camera_info = infos[camera_id]
+                    is_usb = "usb" in camera_info.get("Id", "").lower()
+                    if not is_usb:
+                        self.picam2 = Picamera2(camera_num=camera_id)
+                        video_config = self.picam2.create_video_configuration(
+                            main={"size": self.config.resolution}
+                        )
+                        self.picam2.configure(video_config)
+                        self.picam2.start()
+                        self.camera_type = "picamera2"
+                        logger.info(f"Initialized Picamera2 for camera {camera_id}")
+                        return
+                    else:
+                        logger.info(f"Camera {camera_id} is USB, skipping Picamera2")
             except Exception as e:
                 logger.warning(f"Picamera2 init failed for camera {camera_id}: {e}")
                 if self.picam2:
@@ -92,7 +98,15 @@ class CameraManager:
         
         # Fall back to OpenCV
         try:
-            self.cv_cap = cv2.VideoCapture(camera_id)
+            # For USB cameras, we need to find the actual video device
+            # Camera ID 1 in config might map to /dev/video0
+            video_device = camera_id
+            
+            # If camera_id is 1 and we know it's the USB camera, use /dev/video0
+            if camera_id == 1:
+                video_device = 0  # USB camera is at /dev/video0
+                
+            self.cv_cap = cv2.VideoCapture(video_device)
             if self.cv_cap.isOpened():
                 # Set resolution
                 self.cv_cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.config.resolution[0])
