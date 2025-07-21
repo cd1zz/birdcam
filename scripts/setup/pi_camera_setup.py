@@ -34,22 +34,43 @@ def detect_cameras():
                     model = parts[1].split('[')[0].strip()
                     csi_cameras.append({'index': idx, 'model': model, 'type': 'csi'})
     
-    # Check for USB cameras
+    # Check for USB cameras - use v4l2-ctl to properly identify unique cameras
     usb_cameras = []
-    video_devices = run_command("ls /dev/video* 2>/dev/null")
-    if video_devices:
-        devices = video_devices.split('\n')
-        for device in devices:
-            if device:
-                dev_num = device.replace('/dev/video', '')
-                try:
-                    dev_num = int(dev_num)
-                    # Check if it's a real camera
-                    info = run_command(f"v4l2-ctl -d {device} --info 2>&1")
-                    if info and "Driver name" in info and "uvcvideo" in info:
-                        usb_cameras.append({'device': dev_num, 'path': device, 'type': 'usb'})
-                except:
-                    pass
+    usb_camera_names = {}
+    
+    # First, get the device list to identify unique USB cameras
+    device_list = run_command("v4l2-ctl --list-devices 2>&1")
+    if device_list:
+        lines = device_list.split('\n')
+        current_camera = None
+        for line in lines:
+            line = line.strip()
+            if line and not line.startswith('/dev/') and '(' in line and 'usb' in line:
+                # This is a USB camera name
+                current_camera = line.split('(')[0].strip()
+            elif line.startswith('/dev/video') and current_camera:
+                # This is a video device for the current camera
+                if current_camera not in usb_camera_names:
+                    usb_camera_names[current_camera] = []
+                usb_camera_names[current_camera].append(line)
+    
+    # For each unique USB camera, use the first video device
+    for camera_name, devices in usb_camera_names.items():
+        if devices:
+            # Sort devices to ensure consistent ordering
+            devices.sort()
+            device = devices[0]  # Use the first device
+            dev_num = device.replace('/dev/video', '')
+            try:
+                dev_num = int(dev_num)
+                usb_cameras.append({
+                    'device': dev_num, 
+                    'path': device, 
+                    'type': 'usb',
+                    'name': camera_name
+                })
+            except:
+                pass
     
     return csi_cameras, usb_cameras
 
@@ -77,7 +98,9 @@ def generate_config():
     if usb_cameras:
         print("\nUSB Cameras:")
         for cam in usb_cameras:
-            print(f"  - {cam['path']} (device {cam['device']})")
+            name = cam.get('name', 'Unknown USB Camera')
+            print(f"  - {name}")
+            print(f"    Device: {cam['path']} (video{cam['device']})")
     
     # Camera selection
     print("\n🎯 Camera Setup")
