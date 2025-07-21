@@ -16,25 +16,21 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=pi-capture
 
-# Security settings
-NoNewPrivileges=true
+# Security settings - relaxed for camera access
 PrivateTmp=true
-ProtectSystem=strict
+ProtectSystem=full
 ProtectHome=read-only
 ReadWritePaths=/home/pi/bird_footage /home/pi/birdcam/database /home/pi/birdcam
 
-# Device access for camera
-DeviceAllow=/dev/video0 rw
-DeviceAllow=/dev/video1 rw
-DeviceAllow=/dev/video2 rw
-DeviceAllow=/dev/video3 rw
-DeviceAllow=/dev/video4 rw
-DeviceAllow=/dev/media0 rw
-DeviceAllow=/dev/media1 rw
-DeviceAllow=/dev/media2 rw
-DeviceAllow=/dev/media3 rw
-DeviceAllow=/dev/media4 rw
+# Device access for cameras - allow all video and media devices
+PrivateDevices=no
+DevicePolicy=auto
 SupplementaryGroups=video
+
+# Additional permissions for Picamera2
+# Needs access to various subsystem devices
+PrivateUsers=no
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 
 [Install]
 WantedBy=multi-user.target
