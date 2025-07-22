@@ -5,11 +5,16 @@ from services.auth_service import AuthService
 from database.repositories.user_repository import UserRepository
 from database.connection import DatabaseManager
 from web.middleware.auth import require_auth, require_admin, g
+from web.middleware.ip_restriction import require_internal_network
 import logging
 
 logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint('auth', __name__)
+
+# Combined decorator for admin + internal network
+def require_admin_internal(f):
+    return require_internal_network(require_admin(f))
 
 def get_auth_service() -> AuthService:
     """Create auth service instance."""
@@ -79,7 +84,7 @@ def get_current_user():
     })
 
 @auth_bp.route('/users', methods=['GET'])
-@require_admin
+@require_admin_internal
 def list_users():
     """List all users (admin only)."""
     auth_service = get_auth_service()
@@ -97,7 +102,7 @@ def list_users():
     })
 
 @auth_bp.route('/users', methods=['POST'])
-@require_admin
+@require_admin_internal
 def create_user():
     """Create a new user (admin only)."""
     data = request.get_json()
@@ -126,7 +131,7 @@ def create_user():
     }), 201
 
 @auth_bp.route('/users/<int:user_id>', methods=['PUT'])
-@require_admin
+@require_admin_internal
 def update_user(user_id: int):
     """Update user (admin only)."""
     data = request.get_json()
@@ -153,7 +158,7 @@ def update_user(user_id: int):
     return jsonify({'message': 'User updated successfully'})
 
 @auth_bp.route('/users/<int:user_id>', methods=['DELETE'])
-@require_admin
+@require_admin_internal
 def deactivate_user(user_id: int):
     """Deactivate user (admin only)."""
     # Prevent self-deactivation

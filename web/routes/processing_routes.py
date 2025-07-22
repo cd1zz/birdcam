@@ -7,11 +7,20 @@ from flask import request, jsonify, send_from_directory, send_file
 from services.system_metrics import SystemMetricsCollector
 from pathlib import Path
 from web.middleware.auth import require_auth, require_admin
+from web.middleware.ip_restriction import require_internal_network
 
 def create_processing_routes(app, processing_service, video_repo, detection_repo, config):
     
     # Initialize system metrics collector
     metrics_collector = SystemMetricsCollector(str(config.processing.storage_path))
+    
+    # Combined decorator for admin + internal network
+    def require_admin_internal(f):
+        return require_internal_network(require_admin(f))
+    
+    # Combined decorator for auth + internal network  
+    def require_auth_internal(f):
+        return require_internal_network(require_auth(f))
     
     # Track startup time for uptime calculation
     import time
@@ -360,7 +369,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/motion-settings', methods=['GET'])
-    @require_auth
+    @require_auth_internal
     def api_get_motion_settings():
         """Get motion detection settings"""
         import json
@@ -417,7 +426,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             })
     
     @app.route('/api/motion-settings', methods=['POST'])
-    @require_admin
+    @require_admin_internal
     def api_set_motion_settings():
         """Set motion detection settings"""
         import json
@@ -493,7 +502,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
         return send_from_directory(config.processing.storage_path / "thumbnails", filename)
     
     @app.route('/api/system-metrics')
-    @require_auth
+    @require_auth_internal
     def api_system_metrics():
         """Get current system metrics (CPU, memory, disk)"""
         try:
@@ -503,7 +512,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/system-settings', methods=['GET'])
-    @require_auth
+    @require_auth_internal
     def api_get_system_settings():
         """Get current system settings"""
         import json
@@ -555,7 +564,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/system-settings', methods=['POST'])
-    @require_admin
+    @require_admin_internal
     def api_set_system_settings():
         """Update system settings"""
         import json
@@ -608,4 +617,56 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             
         except Exception as e:
             print(f"Error in system settings POST: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/models/available', methods=['GET'])
+    @require_auth
+    def api_get_available_models():
+        """Get list of available AI models with metadata"""
+        from services.model_registry import ModelRegistry
+        
+        try:
+            models = ModelRegistry.get_available_models()
+            model_list = [ModelRegistry.to_dict(model) for model in models]
+            
+            # Get current model from config
+            current_model = config.processing.detection.model_name
+            
+            return jsonify({
+                'models': model_list,
+                'current': current_model,
+                'default': ModelRegistry.get_default_model()
+            })
+            
+        except Exception as e:
+            print(f"Error fetching available models: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/models/<model_id>/classes', methods=['GET'])
+    @require_auth
+    def api_get_model_classes(model_id):
+        """Get available classes for a specific model"""
+        from services.class_registry import ClassRegistry
+        
+        try:
+            classes = ClassRegistry.get_classes_for_model(model_id)
+            class_list = [ClassRegistry.to_dict(cls) for cls in classes]
+            categories = ClassRegistry.get_categories(model_id)
+            
+            # Get current selected classes from config
+            current_classes = config.processing.detection.classes
+            
+            return jsonify({
+                'classes': class_list,
+                'categories': categories,
+                'current': current_classes,
+                'presets': {
+                    'wildlife': ClassRegistry.get_wildlife_preset(),
+                    'people': ClassRegistry.get_people_preset(),
+                    'all_animals': ClassRegistry.get_all_animal_classes()
+                }
+            })
+            
+        except Exception as e:
+            print(f"Error fetching model classes: {e}")
             return jsonify({'error': str(e)}), 500

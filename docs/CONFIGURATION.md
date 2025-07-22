@@ -77,7 +77,7 @@ STORAGE_PATH=./bird_processing  # Where to store all videos/data
 ### AI Detection Settings
 ```bash
 # Model Selection
-MODEL_NAME=yolov5n             # Options: yolov5n/s/m/l/x
+MODEL_NAME=yolov8n             # Options: yolov8n/s/m/l/x
                               # n=nano (fastest), x=extra large (most accurate)
 
 # Processing Options
@@ -130,12 +130,12 @@ VITE_PROCESSING_SERVER=http://192.168.1.100:8091 # AI processor
 
 ### For Better Detection
 - Decrease confidence thresholds (e.g., 0.25 instead of 0.35)
-- Use larger model (yolov5m or yolov5l)
+- Use larger model (yolov8m or yolov8l)
 - Process more frames (PROCESS_EVERY_NTH_FRAME=1)
 
 ### For Faster Processing
 - Increase confidence thresholds
-- Use smaller model (yolov5n)
+- Use smaller model (yolov8n)
 - Skip more frames (PROCESS_EVERY_NTH_FRAME=5)
 
 ### For Reduced False Positives

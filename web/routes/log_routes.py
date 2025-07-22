@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request, g
 from web.middleware.auth import require_auth, require_admin
+from web.middleware.ip_restriction import require_internal_network
 import subprocess
 import json
 from datetime import datetime, timedelta
@@ -11,6 +12,10 @@ import os
 
 # Create blueprint
 log_routes = Blueprint('logs', __name__, url_prefix='/api/logs')
+
+# Combined decorator for admin + internal network
+def require_admin_internal(f):
+    return require_internal_network(require_admin(f))
 
 def convert_time_format(since: str) -> str:
     """Convert frontend time format to journalctl format"""
@@ -112,7 +117,7 @@ def parse_journalctl_output(output: str, service_name: str) -> List[Dict]:
     return logs
 
 @log_routes.route('/pi-capture', methods=['GET'])
-@require_admin
+@require_admin_internal
 def get_pi_capture_logs():
     """Get logs from the Pi capture service"""
     try:
@@ -174,7 +179,7 @@ def get_pi_capture_logs():
         }), 500
 
 @log_routes.route('/ai-processor', methods=['GET'])
-@require_admin
+@require_admin_internal
 def get_ai_processor_logs():
     """Get logs from the AI processor service"""
     try:
@@ -242,7 +247,7 @@ def get_ai_processor_logs():
         }), 500
 
 @log_routes.route('/combined', methods=['GET'])
-@require_admin
+@require_admin_internal
 def get_combined_logs():
     """Get combined logs from both services"""
     try:
@@ -307,7 +312,7 @@ def get_combined_logs():
         }), 500
 
 @log_routes.route('/levels', methods=['GET'])
-@require_auth
+@require_admin_internal
 def get_log_levels():
     """Get available log levels"""
     return jsonify({
@@ -315,7 +320,7 @@ def get_log_levels():
     })
 
 @log_routes.route('/remote/pi-capture', methods=['GET'])
-@require_admin
+@require_admin_internal
 def get_remote_pi_capture_logs():
     """Get logs from remote Pi Capture devices via rsyslog"""
     try:
@@ -470,7 +475,7 @@ def get_remote_pi_capture_logs():
 
 
 @log_routes.route('/export', methods=['GET'])
-@require_admin
+@require_admin_internal
 def export_logs():
     """Export logs as a downloadable file"""
     try:

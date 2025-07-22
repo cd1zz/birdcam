@@ -53,7 +53,7 @@ python3 -m venv venv
 source venv/bin/activate
 
 # Install Pi-specific dependencies
-pip install -r requirements.pi.txt
+pip install -r requirements.capture.txt
 
 # Create configuration
 cp config/examples/.env.pi.example .env.pi

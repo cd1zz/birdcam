@@ -22,3 +22,14 @@ class DatabaseManager:
         finally:
             conn.close()
 
+# Alias for backward compatibility with new code
+class DatabaseConnection(DatabaseManager):
+    """Database connection that auto-loads config path"""
+    def __init__(self, db_path: Path = None):
+        if db_path is None:
+            # Auto-load from config
+            from config.settings import load_processing_config
+            config = load_processing_config()
+            db_path = config.database.path
+        super().__init__(db_path)
+

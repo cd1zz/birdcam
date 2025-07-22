@@ -216,6 +216,7 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
         """Save motion detection settings persistently"""
         try:
             data = request.get_json()
+            print(f"[MOTION SETTINGS] Received POST data: {data}")
             region_data = data.get('region')
             motion_threshold = data.get('motion_threshold', 5000)
             min_contour_area = data.get('min_contour_area', 500)
@@ -235,20 +236,24 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
                 if motion_box_x1 < 0 or motion_box_y1 < 0 or motion_box_x2 < 0 or motion_box_y2 < 0:
                     return jsonify({'error': 'Motion box coordinates must be non-negative'}), 400
             
-            if region_data and not all(k in region_data for k in ['x1', 'y1', 'x2', 'y2']):
-                return jsonify({'error': 'Invalid region data'}), 400
-            
-            # Validate coordinate values
-            try:
-                x1, y1, x2, y2 = region_data['x1'], region_data['y1'], region_data['x2'], region_data['y2']
-                if not all(isinstance(coord, (int, float)) for coord in [x1, y1, x2, y2]):
-                    return jsonify({'error': 'Coordinates must be numeric'}), 400
-                if x1 >= x2 or y1 >= y2:
-                    return jsonify({'error': 'Invalid region dimensions'}), 400
-                if x1 < 0 or y1 < 0 or x2 < 0 or y2 < 0:
-                    return jsonify({'error': 'Coordinates must be non-negative'}), 400
-            except (KeyError, TypeError):
-                return jsonify({'error': 'Invalid coordinate format'}), 400
+            # Validate region data if provided
+            if region_data:
+                if not all(k in region_data for k in ['x1', 'y1', 'x2', 'y2']):
+                    return jsonify({'error': 'Invalid region data - missing coordinates'}), 400
+                
+                # Validate coordinate values
+                try:
+                    x1, y1, x2, y2 = region_data['x1'], region_data['y1'], region_data['x2'], region_data['y2']
+                    if not all(isinstance(coord, (int, float)) for coord in [x1, y1, x2, y2]):
+                        return jsonify({'error': f'Coordinates must be numeric. Got: x1={type(x1)}, y1={type(y1)}, x2={type(x2)}, y2={type(y2)}'}), 400
+                    if x1 >= x2 or y1 >= y2:
+                        return jsonify({'error': f'Invalid region dimensions: x1={x1}, y1={y1}, x2={x2}, y2={y2}'}), 400
+                    if x1 < 0 or y1 < 0 or x2 < 0 or y2 < 0:
+                        return jsonify({'error': f'Coordinates must be non-negative: x1={x1}, y1={y1}, x2={x2}, y2={y2}'}), 400
+                except (KeyError, TypeError) as e:
+                    print(f"ERROR parsing region data: {e}")
+                    print(f"region_data = {region_data}")
+                    return jsonify({'error': f'Invalid coordinate format: {str(e)}'}), 400
             
             # Validate other parameters
             if not isinstance(motion_threshold, (int, float)) or motion_threshold <= 0:

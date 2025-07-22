@@ -23,6 +23,12 @@ passlib[bcrypt]>=1.7.4
 bcrypt>=3.2.0,<4.0.0  # Pin to version 3.x to avoid __about__ AttributeError
 python-jose[cryptography]>=3.3.0
 
+# Email
+Flask-Mail>=0.9.1
+email-validator>=2.1.0
+itsdangerous>=2.1.2
+msal>=1.25.0  # Microsoft Authentication Library for Azure AD
+
 # Monitoring
 psutil>=5.9.0
 

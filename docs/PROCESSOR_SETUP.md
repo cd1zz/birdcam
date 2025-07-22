@@ -69,7 +69,7 @@ Edit `.env.processor`:
 STORAGE_PATH=./bird_processing
 
 # AI Model (smaller = faster, larger = more accurate)
-MODEL_NAME=yolov5n    # Options: yolov5n, yolov5s, yolov5m, yolov5l
+MODEL_NAME=yolov8n    # Options: yolov8n, yolov8s, yolov8m, yolov8l
 
 # What to detect
 DETECTION_CLASSES=bird,cat,dog,person
@@ -78,7 +78,37 @@ DETECTION_CLASSES=bird,cat,dog,person
 PROCESSING_PORT=8091
 ```
 
-## Step 4: GPU Setup (Optional but Recommended)
+## Step 4: Email Configuration (Optional)
+
+Email is used for user registration and notifications. You can choose between SMTP or Azure Graph API.
+
+### Option A: SMTP Configuration
+```bash
+# In .env.processor
+EMAIL_PROVIDER=smtp
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_USE_TLS=true
+```
+
+### Option B: Azure Graph API Configuration
+```bash
+# In .env.processor
+EMAIL_PROVIDER=azure
+AZURE_TENANT_ID=your-tenant-id
+AZURE_CLIENT_ID=your-client-id
+AZURE_CLIENT_SECRET=your-client-secret
+AZURE_SENDER_EMAIL=sender@yourdomain.com  # Optional
+```
+
+For Azure, ensure your app registration has:
+- `Mail.Send` or `Mail.Send.Shared` permission (application type)
+- A client secret configured
+- Admin consent granted for the permissions
+
+## Step 5: GPU Setup (Optional but Recommended)
 
 ### NVIDIA GPU:
 ```bash
@@ -96,7 +126,7 @@ python3 -c "import torch; print(torch.cuda.is_available())"
 python3 -c "import torch; print(torch.backends.mps.is_available())"
 ```
 
-## Step 5: Test the Setup
+## Step 6: Test the Setup
 
 ```bash
 # Activate environment
@@ -112,7 +142,7 @@ print('✅ Model loaded successfully')
 "
 ```
 
-## Step 6: Start the Processing Server
+## Step 7: Start the Processing Server
 
 ```bash
 # Manual start
@@ -120,12 +150,12 @@ source venv/bin/activate
 python ai_processor/main.py
 
 # You should see:
-# ✅ Model yolov5n loaded successfully
+# ✅ Model yolov8n loaded successfully
 # 🌐 Processing Dashboard ready!
 # 🌐 Access at: http://0.0.0.0:8091
 ```
 
-## Step 7: Set Up Web UI
+## Step 8: Set Up Web UI
 
 The modern React interface needs to be built:
 
@@ -155,14 +185,14 @@ npm run build
 # The built files are automatically served by the processor at port 8091
 ```
 
-## Step 8: Initial Admin Setup
+## Step 9: Initial Admin Setup
 
 1. Open browser to `http://YOUR_SERVER_IP:8091`
 2. You'll be redirected to `/setup`
 3. Create admin account (must be on local network)
 4. Log in with your new credentials
 
-## Step 9: Verify Everything Works
+## Step 10: Verify Everything Works
 
 1. **Check Pi Connection**: 
    - Go to Settings → System
@@ -176,7 +206,7 @@ npm run build
    - Go to Live Feeds tab
    - Should see camera streams from Pi
 
-## Step 10: Auto-Start Service (Optional)
+## Step 11: Auto-Start Service (Optional)
 
 ### Systemd (Linux):
 ```bash
@@ -213,7 +243,7 @@ sudo systemctl start birdcam-processor
 ```bash
 # In .env.processor:
 PROCESS_EVERY_NTH_FRAME=5    # Skip more frames
-MODEL_NAME=yolov5n           # Use smaller model
+MODEL_NAME=yolov8n           # Use smaller model
 MAX_THUMBNAILS_PER_VIDEO=3   # Generate fewer thumbnails
 ```
 
@@ -221,7 +251,7 @@ MAX_THUMBNAILS_PER_VIDEO=3   # Generate fewer thumbnails
 ```bash
 # In .env.processor:
 PROCESS_EVERY_NTH_FRAME=1    # Process every frame
-MODEL_NAME=yolov5l           # Use larger model
+MODEL_NAME=yolov8l           # Use larger model
 BIRD_CONFIDENCE=0.25         # Lower threshold
 ```
 
@@ -241,7 +271,7 @@ The system automatically manages storage:
 ### "Model failed to load"
 - Check internet connection (first run downloads model)
 - Verify PyTorch installation: `pip show torch`
-- Try smaller model: `MODEL_NAME=yolov5n`
+- Try smaller model: `MODEL_NAME=yolov8n`
 
 ### "Cannot connect to Pi"
 - Verify Pi is running: `curl http://PI_IP:8090/api/status`

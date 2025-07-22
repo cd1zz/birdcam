@@ -1,8 +1,7 @@
 # services/ai_model_manager.py
+from ultralytics import YOLO
 import torch
 import warnings
-import os
-import sys
 from typing import Optional, List, Dict
 from config.settings import DetectionConfig
 
@@ -29,69 +28,60 @@ class AIModelManager:
             confidence = self.detection_config.get_confidence(cls)
             print(f"  {cls}: {confidence:.2f} confidence threshold")
         
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=FutureWarning)
-            warnings.filterwarnings("ignore", category=UserWarning)
-            # Disable YOLOv5 auto-update
-            os.environ['YOLO_VERBOSE'] = 'False'
+        try:
+            # Load YOLO model directly using the configured name
+            model_name = self.detection_config.model_name
+            self.model = YOLO(f'{model_name}.pt')
             
-            try:
-                # Save original sys.path and clean it to avoid 'utils' module conflicts
-                # This is a known issue with YOLOv5 when loaded via torch.hub
-                original_path = sys.path.copy()
-                sys.path = [p for p in sys.path if p not in ['', '.', os.getcwd()]]
-                
-                try:
-                    # Clear any cached 'utils' module that might conflict
-                    if 'utils' in sys.modules:
-                        del sys.modules['utils']
-                    
-                    # Disable repository validation
-                    torch.hub._validate_not_a_forked_repo = lambda a, b, c: None
-                    
-                    # Load the model
-                    self.model = torch.hub.load('ultralytics/yolov5', self.detection_config.model_name,
-                                              pretrained=True, force_reload=False, verbose=False,
-                                              trust_repo=True, skip_validation=True)
-                finally:
-                    # Always restore the original path
-                    sys.path = original_path
-                    
-            except Exception as e:
-                print(f"ERROR: Failed to load AI model: {e}")
-                raise RuntimeError(f"Could not load YOLOv5 model: {e}")
-            
+            # Set device
             if self.device == 'cuda':
-                self.model = self.model.cuda()
                 print(f"Using GPU: {torch.cuda.get_device_name()}")
             else:
                 print("Using CPU for inference")
+                
+        except Exception as e:
+            print(f"ERROR: Failed to load AI model: {e}")
+            raise RuntimeError(f"Could not load YOLOv8 model: {e}")
     
     def predict(self, frame) -> List[Dict]:
         if self.model is None:
             raise RuntimeError("Model not loaded. Call load_model() first.")
         
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=FutureWarning)
-            results = self.model(frame)
+        # Run YOLOv8 inference
+        results = self.model(frame, device=self.device, verbose=False)
         
         detections = []
-        results_df = results.pandas().xyxy[0]
         
-        for _, row in results_df.iterrows():
-            detection_class = row['name']
-            confidence = float(row['confidence'])
-            
-            # Check if this detection class is enabled and meets confidence threshold
-            if (detection_class in self.detection_config.classes and 
-                confidence >= self.detection_config.get_confidence(detection_class)):
+        # YOLOv8 returns a list of Results objects
+        for result in results:
+            if result.boxes is not None:
+                boxes = result.boxes
                 
-                detections.append({
-                    'confidence': confidence,
-                    'bbox': [int(row['xmin']), int(row['ymin']), 
-                            int(row['xmax']), int(row['ymax'])],
-                    'class': detection_class
-                })
+                # Get class names from model
+                names = result.names
+                
+                for i in range(len(boxes)):
+                    # Get box coordinates, confidence, and class
+                    box = boxes.xyxy[i].cpu().numpy()
+                    confidence = float(boxes.conf[i].cpu().numpy())
+                    class_id = int(boxes.cls[i].cpu().numpy())
+                    detection_class = names[class_id]
+                    
+                    # Check if this detection class is enabled and meets confidence threshold
+                    # Case-insensitive comparison for class names
+                    config_classes_lower = [cls.lower() for cls in self.detection_config.classes]
+                    if detection_class.lower() in config_classes_lower:
+                        # Find the original config class name for confidence lookup
+                        for config_class in self.detection_config.classes:
+                            if config_class.lower() == detection_class.lower():
+                                if confidence >= self.detection_config.get_confidence(config_class):
+                                    detections.append({
+                                        'confidence': confidence,
+                                        'bbox': [int(box[0]), int(box[1]), 
+                                                int(box[2]), int(box[3])],
+                                        'class': detection_class  # Use the model's class name
+                                    })
+                                break
         
         return detections
     

@@ -149,6 +149,10 @@ class WebConfig:
     cors_enabled: bool
 
 @dataclass
+class SecurityConfig:
+    secret_key: str
+
+@dataclass
 class AppConfig:
     database: DatabaseConfig
     capture: CaptureConfig
@@ -156,6 +160,7 @@ class AppConfig:
     processing: ProcessingConfig
     sync: SyncConfig
     web: WebConfig
+    security: SecurityConfig
 
 def load_capture_config(camera_id: int = 0, camera_type: Optional[str] = None) -> AppConfig:
     """Load configuration for Pi capture system"""
@@ -216,7 +221,7 @@ def load_capture_config(camera_id: int = 0, camera_type: Optional[str] = None) -
             detection=DetectionConfig(
                 classes=get_list_env('DETECTION_CLASSES', ['bird']),
                 confidences=get_detection_confidences(),
-                model_name=os.getenv('MODEL_NAME', 'yolov5n'),
+                model_name=os.getenv('MODEL_NAME', 'yolov8n'),
                 process_every_nth_frame=get_int_env('PROCESS_EVERY_NTH_FRAME', 3),
                 max_thumbnails_per_video=get_int_env('MAX_THUMBNAILS_PER_VIDEO', 5)
             ),
@@ -236,6 +241,9 @@ def load_capture_config(camera_id: int = 0, camera_type: Optional[str] = None) -
             processing_port=get_int_env('PROCESSING_PORT', 8091),
             max_content_length=get_int_env('MAX_CONTENT_LENGTH', 500 * 1024 * 1024),
             cors_enabled=get_bool_env('CORS_ENABLED', True)
+        ),
+        security=SecurityConfig(
+            secret_key=os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
         )
     )
 
@@ -324,7 +332,7 @@ def load_processing_config() -> AppConfig:
             detection=DetectionConfig(
                 classes=get_list_env('DETECTION_CLASSES', ['bird']),
                 confidences=get_detection_confidences(),
-                model_name=os.getenv('MODEL_NAME', 'yolov5n'),
+                model_name=os.getenv('MODEL_NAME', 'yolov8n'),
                 process_every_nth_frame=get_int_env('PROCESS_EVERY_NTH_FRAME', 3),
                 max_thumbnails_per_video=get_int_env('MAX_THUMBNAILS_PER_VIDEO', 5)
             ),
@@ -344,5 +352,8 @@ def load_processing_config() -> AppConfig:
             processing_port=get_int_env('PROCESSING_PORT', 8091),
             max_content_length=get_int_env('MAX_CONTENT_LENGTH', 500 * 1024 * 1024),
             cors_enabled=get_bool_env('CORS_ENABLED', True)
+        ),
+        security=SecurityConfig(
+            secret_key=os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
         )
     )

@@ -13,24 +13,35 @@ class UserRepository(BaseRepository):
                     username TEXT NOT NULL UNIQUE,
                     password_hash TEXT NOT NULL,
                     role TEXT NOT NULL DEFAULT 'viewer',
+                    email TEXT UNIQUE,
+                    email_verified BOOLEAN NOT NULL DEFAULT 0,
+                    verification_token TEXT,
+                    verification_token_expires TIMESTAMP,
                     is_active BOOLEAN NOT NULL DEFAULT 1,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     last_login TIMESTAMP,
                     CHECK (role IN ('admin', 'viewer'))
                 )
             ''')
-            # Create index on username for faster lookups
+            # Create indexes for faster lookups
             conn.execute('CREATE INDEX IF NOT EXISTS idx_username ON users(username)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_email ON users(email)')
+            conn.execute('CREATE INDEX IF NOT EXISTS idx_verification_token ON users(verification_token)')
     
     def create(self, user: User) -> int:
         with self.db_manager.get_connection() as conn:
             cursor = conn.execute('''
-                INSERT INTO users (username, password_hash, role, is_active)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO users (username, password_hash, role, email, email_verified, 
+                                 verification_token, verification_token_expires, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 user.username.lower(), 
                 user.password_hash, 
                 user.role.value,
+                user.email.lower() if user.email else None,
+                user.email_verified,
+                user.verification_token,
+                user.verification_token_expires,
                 user.is_active
             ))
             return cursor.lastrowid
@@ -47,6 +58,21 @@ class UserRepository(BaseRepository):
             row = cursor.fetchone()
             return self._row_to_user(row) if row else None
     
+    def get_by_email(self, email: str) -> Optional[User]:
+        with self.db_manager.get_connection() as conn:
+            cursor = conn.execute('SELECT * FROM users WHERE LOWER(email) = LOWER(?)', (email,))
+            row = cursor.fetchone()
+            return self._row_to_user(row) if row else None
+    
+    def get_by_verification_token(self, token: str) -> Optional[User]:
+        with self.db_manager.get_connection() as conn:
+            cursor = conn.execute(
+                'SELECT * FROM users WHERE verification_token = ? AND verification_token_expires > ?', 
+                (token, datetime.now())
+            )
+            row = cursor.fetchone()
+            return self._row_to_user(row) if row else None
+    
     def get_all(self) -> List[User]:
         with self.db_manager.get_connection() as conn:
             cursor = conn.execute('SELECT * FROM users ORDER BY created_at DESC')
@@ -56,11 +82,17 @@ class UserRepository(BaseRepository):
         with self.db_manager.get_connection() as conn:
             conn.execute('''
                 UPDATE users 
-                SET password_hash = ?, role = ?, is_active = ?, last_login = ?
+                SET password_hash = ?, role = ?, email = ?, email_verified = ?,
+                    verification_token = ?, verification_token_expires = ?,
+                    is_active = ?, last_login = ?
                 WHERE id = ?
             ''', (
                 user.password_hash,
                 user.role.value,
+                user.email.lower() if user.email else None,
+                user.email_verified,
+                user.verification_token,
+                user.verification_token_expires,
                 user.is_active,
                 user.last_login,
                 user.id
@@ -89,12 +121,23 @@ class UserRepository(BaseRepository):
             )
             return cursor.fetchone()[0]
     
+    def get_unverified_users(self) -> List[User]:
+        with self.db_manager.get_connection() as conn:
+            cursor = conn.execute(
+                'SELECT * FROM users WHERE email_verified = 0 ORDER BY created_at DESC'
+            )
+            return [self._row_to_user(row) for row in cursor.fetchall()]
+    
     def _row_to_user(self, row) -> User:
         return User(
             id=row['id'],
             username=row['username'],
             password_hash=row['password_hash'],
             role=UserRole(row['role']),
+            email=row['email'] if 'email' in row.keys() else None,
+            email_verified=bool(row['email_verified']) if 'email_verified' in row.keys() else False,
+            verification_token=row['verification_token'] if 'verification_token' in row.keys() else None,
+            verification_token_expires=datetime.fromisoformat(row['verification_token_expires']) if 'verification_token_expires' in row.keys() and row['verification_token_expires'] else None,
             is_active=bool(row['is_active']),
             created_at=datetime.fromisoformat(row['created_at']) if row['created_at'] else None,
             last_login=datetime.fromisoformat(row['last_login']) if row['last_login'] else None

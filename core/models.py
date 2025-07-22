@@ -109,6 +109,10 @@ class User:
     username: str
     password_hash: str
     role: UserRole
+    email: Optional[str] = None
+    email_verified: bool = False
+    verification_token: Optional[str] = None
+    verification_token_expires: Optional[datetime] = None
     created_at: Optional[datetime] = None
     last_login: Optional[datetime] = None
     is_active: bool = True

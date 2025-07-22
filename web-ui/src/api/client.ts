@@ -336,6 +336,42 @@ export const api = {
     },
   },
 
+  // Model management APIs
+  models: {
+    getAvailable: async (): Promise<{models: Array<{
+      id: string;
+      name: string;
+      description: string;
+      architecture: string;
+      speed: string;
+      size_mb: number | null;
+      map50: number | null;
+      fps_estimate: number | null;
+    }>; current: string; default: string}> => {
+      const response = await processingApi.get('/api/models/available');
+      return response.data;
+    },
+    
+    getClasses: async (modelId: string): Promise<{
+      classes: Array<{
+        id: number;
+        name: string;
+        category: string;
+        description: string | null;
+      }>;
+      categories: string[];
+      current: string[];
+      presets: {
+        wildlife: string[];
+        people: string[];
+        all_animals: string[];
+      };
+    }> => {
+      const response = await processingApi.get(`/api/models/${modelId}/classes`);
+      return response.data;
+    },
+  },
+
   // Logs APIs
   logs: {
     getPiCaptureLogs: async (params?: { lines?: number; since?: string; level?: string; search?: string }) => {
@@ -363,6 +399,49 @@ export const api = {
         params,
         responseType: 'blob' 
       });
+      return response.data;
+    },
+  },
+
+  // Admin APIs (require admin role + internal network)
+  admin: {
+    // Email templates
+    getEmailTemplates: async () => {
+      const response = await processingApi.get('/api/admin/email/templates');
+      return response.data;
+    },
+    
+    getEmailTemplate: async (templateType: string) => {
+      const response = await processingApi.get(`/api/admin/email/templates/${templateType}`);
+      return response.data;
+    },
+    
+    updateEmailTemplate: async (templateType: string, data: {
+      subject?: string;
+      body_text?: string;
+      body_html?: string;
+      is_active?: boolean;
+    }) => {
+      const response = await processingApi.put(`/api/admin/email/templates/${templateType}`, data);
+      return response.data;
+    },
+    
+    resetEmailTemplate: async (templateType: string) => {
+      const response = await processingApi.post(`/api/admin/email/templates/${templateType}/reset`);
+      return response.data;
+    },
+    
+    previewEmailTemplate: async (templateType: string, data: {
+      format?: 'html' | 'text';
+      content?: string;
+      variables?: Record<string, any>;
+    }) => {
+      const response = await processingApi.post(`/api/admin/email/templates/${templateType}/preview`, data);
+      return response.data;
+    },
+    
+    sendRegistrationInvite: async (data: { email: string; message?: string }) => {
+      const response = await processingApi.post('/api/admin/email/send-invite', data);
       return response.data;
     },
   },

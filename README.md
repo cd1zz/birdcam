@@ -79,8 +79,8 @@ python3 scripts/setup/pi_env_generator.py
 source .venv/bin/activate
 
 # 5. Install Python dependencies
-# Note: picamera2 is NOT in requirements.pi.txt - it uses system packages
-pip install -r requirements.pi.txt
+# Note: picamera2 is NOT in requirements.capture.txt - it uses system packages
+pip install -r requirements.capture.txt
 
 # 6. Test the setup before installing service
 python pi_capture/main.py
@@ -318,10 +318,53 @@ If a service fails to start:
 - **AI Detection**: Identifies birds, cats, dogs, and more
 - **Smart Storage**: Keeps detections for 30 days, others for 7
 - **Web Interface**: Modern React UI with dark mode
-- **User Management**: Admin and viewer accounts
+- **User Management**: Admin and viewer accounts with email-based registration
+- **Registration System**: Invitation-based or open registration with email verification
 - **Motion Zones**: Configure detection regions per camera
 - **Access Logging**: HTTP request logging to syslog/journald
 - **System Logs**: Admin users can view logs from both services in the web UI (requires systemd service installation)
+
+## 👥 User Registration & Email Setup
+
+### Email Configuration
+Configure SMTP settings in your `.env.processor` file:
+
+```bash
+# Email Configuration
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password  # Use app-specific password for Gmail
+SMTP_USE_TLS=true
+EMAIL_FROM=noreply@yourdomain.com
+EMAIL_FROM_NAME=BirdCam System
+```
+
+### Registration Modes
+The system supports three registration modes:
+
+1. **Invitation Only** (default): Admins generate registration links
+2. **Open Registration**: Anyone can register with email verification
+3. **Disabled**: No new registrations allowed
+
+Set in `.env.processor`:
+```bash
+REGISTRATION_MODE=invitation  # or 'open' or 'disabled'
+```
+
+### Admin Registration Management
+Admins can manage registration through the web UI:
+
+- **Email Settings**: View SMTP configuration and send test emails
+- **Registration Settings**: View password requirements and registration mode
+- **Registration Links**: Generate single-use or multi-use invitation links
+- **Pending Registrations**: View and manually verify unverified accounts
+
+### Security Features
+- Email verification required for all new accounts
+- Configurable password complexity requirements
+- IP-based restrictions for sensitive admin operations
+- Registration links can have expiration times and usage limits
 
 ## 🛠️ Development
 

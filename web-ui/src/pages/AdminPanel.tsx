@@ -1,33 +1,32 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, type MotionSettings, type SystemSettings, type Camera } from '../api/client';
-import { useAuth } from '../contexts/AuthContext';
+import { api, type SystemSettings, type MotionSettings, type Camera } from '../api/client';
 import InteractiveCameraFeed from '../components/InteractiveCameraFeed';
 import UserManagement from '../components/UserManagement';
 import LogViewer from '../components/LogViewer';
+import EmailSettings from '../components/settings/EmailSettings';
+import RegistrationSettings from '../components/settings/RegistrationSettings';
+import RegistrationManagement from '../components/settings/RegistrationManagement';
+import EmailTemplates from '../components/settings/EmailTemplates';
+import ClassSelector from '../components/settings/ClassSelector';
 
-const Settings: React.FC = () => {
+const AdminPanel: React.FC = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'motion' | 'regions' | 'broadcast' | 'system' | 'users' | 'logs'>('motion');
-  const [selectedCamera, setSelectedCamera] = useState<number>(0);
+  const [activeTab, setActiveTab] = useState<'motion' | 'regions' | 'broadcast' | 'system' | 'users' | 'email' | 'registration' | 'logs'>('motion');
   const [warningMessage, setWarningMessage] = useState<string>('');
   const [localStoragePath, setLocalStoragePath] = useState<string>('');
   const [hasStorageChanges, setHasStorageChanges] = useState<boolean>(false);
+  const [accessDenied] = useState<boolean>(false);
+  const [selectedCameraId, setSelectedCameraId] = useState<number>(0);
+
+  const { data: motionSettings } = useQuery({
+    queryKey: ['motionSettings', selectedCameraId],
+    queryFn: () => api.motion.getSettings(selectedCameraId),
+  });
 
   const { data: cameras } = useQuery({
     queryKey: ['cameras'],
     queryFn: api.cameras.list,
-  });
-
-  const { data: motionSettings, isLoading } = useQuery({
-    queryKey: ['motionSettings', selectedCamera],
-    queryFn: () => api.motion.getSettings(selectedCamera),
-  });
-
-  const { data: activePassiveConfig } = useQuery({
-    queryKey: ['activePassiveConfig'],
-    queryFn: api.motion.getActivePassiveConfig,
   });
 
   const { data: systemSettings } = useQuery({
@@ -35,10 +34,17 @@ const Settings: React.FC = () => {
     queryFn: api.system.getSettings,
   });
 
+  const { data: availableModels } = useQuery({
+    queryKey: ['availableModels'],
+    queryFn: api.models.getAvailable,
+  });
+
+
   const updateMotionMutation = useMutation({
-    mutationFn: (settings: Partial<MotionSettings>) => api.motion.updateSettings(settings, selectedCamera),
+    mutationFn: (settings: Partial<MotionSettings>) => 
+      api.motion.updateSettings(settings, selectedCameraId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['motionSettings', selectedCamera] });
+      queryClient.invalidateQueries({ queryKey: ['motionSettings', selectedCameraId] });
     },
   });
 
@@ -65,13 +71,8 @@ const Settings: React.FC = () => {
   }, [systemSettings, hasStorageChanges, localStoragePath]);
 
 
-  const handleMotionSettingChange = (key: keyof MotionSettings, value: number | boolean) => {
-    if (motionSettings) {
-      updateMotionMutation.mutate({ [key]: value });
-    }
-  };
 
-  const handleSystemSettingChange = (category: keyof SystemSettings, key: string, value: string | number) => {
+  const handleSystemSettingChange = (category: keyof SystemSettings, key: string, value: string | number | string[]) => {
     if (systemSettings) {
       updateSystemMutation.mutate({ 
         [category]: { 
@@ -94,30 +95,57 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleClassToggle = (className: string, enabled: boolean) => {
-    if (systemSettings) {
-      const newClasses = enabled 
-        ? [...systemSettings.detection.classes, className]
-        : systemSettings.detection.classes.filter(c => c !== className);
-      updateSystemMutation.mutate({ 
-        detection: { 
-          ...systemSettings.detection,
-          classes: newClasses 
-        } 
+  const handleMotionSettingChange = (key: keyof MotionSettings, value: number | boolean) => {
+    if (motionSettings) {
+      updateMotionMutation.mutate({ 
+        ...motionSettings,  // Include all existing settings
+        [key]: value 
       });
     }
   };
 
-  if (isLoading) {
+  const handleMotionRegionChange = (region: { x1: number; y1: number; x2: number; y2: number; enabled: boolean }) => {
+    if (motionSettings) {
+      updateMotionMutation.mutate({
+        ...motionSettings,  // Include all existing settings
+        motion_box_enabled: region.enabled,
+        motion_box_x1: Math.round(region.x1),
+        motion_box_y1: Math.round(region.y1),
+        motion_box_x2: Math.round(region.x2),
+        motion_box_y2: Math.round(region.y2),
+      });
+    }
+  };
+
+
+
+  if (accessDenied) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="text-6xl mb-4">🚫</div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Access Denied</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            The Admin Panel can only be accessed from internal network IP addresses.
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Please connect from your local network to access administrative functions.
+          </p>
+        </div>
       </div>
     );
   }
 
+
   return (
     <div>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6 p-6">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Panel</h2>
+        <p className="text-gray-600 dark:text-gray-300 mt-2">
+          Configure system settings and manage users. This panel is only accessible from internal network IP addresses.
+        </p>
+      </div>
+
       {/* Tab Navigation */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
         <div className="border-b border-gray-200 dark:border-gray-700">
@@ -130,7 +158,7 @@ const Settings: React.FC = () => {
                   : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
-              <span className="hidden sm:inline">Motion Settings</span>
+              <span className="hidden sm:inline">Motion Detection</span>
               <span className="sm:hidden">Motion</span>
             </button>
             <button
@@ -152,8 +180,8 @@ const Settings: React.FC = () => {
                   : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
-              <span className="hidden sm:inline">Active-Passive Mode</span>
-              <span className="sm:hidden">A-P Mode</span>
+              <span className="hidden sm:inline">Active-Passive</span>
+              <span className="sm:hidden">Broadcast</span>
             </button>
             <button
               onClick={() => setActiveTab('system')}
@@ -166,32 +194,50 @@ const Settings: React.FC = () => {
               <span className="hidden sm:inline">System Settings</span>
               <span className="sm:hidden">System</span>
             </button>
-            {user?.role === 'admin' && (
-              <>
-                <button
-                  onClick={() => setActiveTab('users')}
-                  className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap ${
-                    activeTab === 'users'
-                      ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                      : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
-                  }`}
-                >
-                  <span className="hidden sm:inline">Users</span>
-                  <span className="sm:hidden">Users</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('logs')}
-                  className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap ${
-                    activeTab === 'logs'
-                      ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                      : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
-                  }`}
-                >
-                  <span className="hidden sm:inline">System Logs</span>
-                  <span className="sm:hidden">Logs</span>
-                </button>
-              </>
-            )}
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === 'users'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+              }`}
+            >
+              <span className="hidden sm:inline">Users</span>
+              <span className="sm:hidden">Users</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('email')}
+              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === 'email'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+              }`}
+            >
+              <span className="hidden sm:inline">Email</span>
+              <span className="sm:hidden">Email</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('registration')}
+              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === 'registration'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+              }`}
+            >
+              <span className="hidden sm:inline">Registration</span>
+              <span className="sm:hidden">Reg</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('logs')}
+              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === 'logs'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+              }`}
+            >
+              <span className="hidden sm:inline">System Logs</span>
+              <span className="sm:hidden">Logs</span>
+            </button>
           </nav>
         </div>
       </div>
@@ -212,25 +258,7 @@ const Settings: React.FC = () => {
         </div>
       )}
 
-      {/* Camera Selector - Only show for camera-related tabs */}
-      {cameras && cameras.length > 1 && (activeTab === 'motion' || activeTab === 'regions' || activeTab === 'broadcast') && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Configure Camera:</label>
-            <select
-              value={selectedCamera}
-              onChange={(e) => setSelectedCamera(parseInt(e.target.value))}
-              className="block w-full sm:w-48 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            >
-              {cameras.map((camera: Camera) => (
-                <option key={camera.id} value={camera.id}>
-                  {camera.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      )}
+
 
       {/* Motion Detection Settings */}
       {activeTab === 'motion' && motionSettings && (
@@ -240,146 +268,155 @@ const Settings: React.FC = () => {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Motion Threshold
+                Motion Sensitivity (Lower = More Sensitive)
               </label>
-              <input
-                type="range"
-                min="1000"
-                max="10000"
-                value={motionSettings.motion_threshold}
-                onChange={(e) => handleMotionSettingChange('motion_threshold', parseInt(e.target.value))}
-                className="w-full"
-              />
-              <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mt-1">
-                <span>Less Sensitive</span>
-                <span>{motionSettings.motion_threshold}</span>
-                <span>More Sensitive</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Minimum Contour Area
-                </label>
+              <div className="flex items-center space-x-4">
                 <input
-                  type="number"
-                  value={motionSettings.min_contour_area}
-                  onChange={(e) => handleMotionSettingChange('min_contour_area', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  type="range"
+                  min="1000"
+                  max="20000"
+                  step="500"
+                  value={motionSettings.motion_threshold}
+                  onChange={(e) => handleMotionSettingChange('motion_threshold', parseInt(e.target.value))}
+                  className="flex-1"
                 />
+                <span className="text-sm w-16 text-gray-900 dark:text-white">{motionSettings.motion_threshold}</span>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Motion Timeout (seconds)
-                </label>
-                <input
-                  type="number"
-                  value={motionSettings.motion_timeout_seconds}
-                  onChange={(e) => handleMotionSettingChange('motion_timeout_seconds', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Threshold for motion detection trigger</p>
             </div>
 
             <div>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={motionSettings.motion_box_enabled}
-                  onChange={(e) => handleMotionSettingChange('motion_box_enabled', e.target.checked)}
-                  className="mr-2"
-                />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Enable Motion Box Detection</span>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Minimum Motion Area
               </label>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Use the Motion Regions tab to visually configure the detection area
-              </p>
+              <div className="flex items-center space-x-4">
+                <input
+                  type="range"
+                  min="100"
+                  max="5000"
+                  step="100"
+                  value={motionSettings.min_contour_area}
+                  onChange={(e) => handleMotionSettingChange('min_contour_area', parseInt(e.target.value))}
+                  className="flex-1"
+                />
+                <span className="text-sm w-16 text-gray-900 dark:text-white">{motionSettings.min_contour_area}</span>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Minimum area to consider as motion (pixels)</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Motion Timeout (seconds)
+              </label>
+              <input
+                type="number"
+                min="5"
+                max="300"
+                value={motionSettings.motion_timeout_seconds}
+                onChange={(e) => handleMotionSettingChange('motion_timeout_seconds', parseInt(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Stop recording after no motion for this duration</p>
             </div>
           </div>
 
           {updateMotionMutation.isSuccess && (
-            <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 rounded">
-              Settings updated successfully!
+            <div className="mt-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <p className="text-sm text-green-700 dark:text-green-300">Motion settings updated successfully!</p>
             </div>
           )}
         </div>
       )}
 
       {/* Motion Regions Tab */}
-      {activeTab === 'regions' && cameras && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Configure Motion Detection Area</h3>
-          
-          <div className="space-y-4">
-            <p className="text-gray-600 dark:text-gray-300">
-              Use the controls on the camera feed to draw and adjust the motion detection box. 
-              Motion outside this area will be ignored.
+      {activeTab === 'regions' && (
+        <div className="space-y-6">
+          {/* Camera Selection */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Select Camera</h3>
+            <div className="flex gap-2">
+              {cameras?.map((camera: Camera) => (
+                <button
+                  key={camera.id}
+                  onClick={() => setSelectedCameraId(camera.id)}
+                  className={`px-4 py-2 rounded-md transition-colors ${
+                    selectedCameraId === camera.id
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {camera.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Interactive Camera Feed */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+              Define Motion Detection Region
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Click and drag on the camera feed to define the area where motion should be detected.
             </p>
             
-            <div className="aspect-video max-w-2xl">
-              <InteractiveCameraFeed
-                cameraId={selectedCamera}
-                cameraName={cameras.find((c: Camera) => c.id === selectedCamera)?.name || `Camera ${selectedCamera}`}
-                className="w-full h-full"
-                showMotionBox={true}
-                onMotionBoxChange={(box) => {
-                  console.log('Motion box changed:', box);
-                  queryClient.invalidateQueries({ queryKey: ['motionSettings', selectedCamera] });
-                }}
-              />
-            </div>
-            
             {motionSettings && (
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Motion Box Coordinates</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Top-Left: ({motionSettings.motion_box_x1}, {motionSettings.motion_box_y1})
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Bottom-Right: ({motionSettings.motion_box_x2}, {motionSettings.motion_box_y2})
-                  </p>
-                </div>
-                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Detection Status</p>
-                  <p className={`text-xs mt-1 ${motionSettings.motion_box_enabled ? 'text-green-600' : 'text-red-600'}`}>
-                    {motionSettings.motion_box_enabled ? 'Enabled' : 'Disabled'}
-                  </p>
-                </div>
-              </div>
+              <InteractiveCameraFeed
+                cameraId={selectedCameraId}
+                cameraName={cameras?.find(c => c.id === selectedCameraId)?.name || `Camera ${selectedCameraId}`}
+                showMotionBox={true}
+                onMotionBoxChange={(box) => handleMotionRegionChange({
+                  x1: box.x1,
+                  y1: box.y1,
+                  x2: box.x2,
+                  y2: box.y2,
+                  enabled: box.enabled
+                })}
+              />
             )}
           </div>
         </div>
       )}
 
       {/* Active-Passive Settings */}
-      {activeTab === 'broadcast' && activePassiveConfig && (
+      {activeTab === 'broadcast' && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Active-Passive Camera Settings</h3>
+          <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Active-Passive Camera Configuration</h3>
           
           <div className="space-y-4">
-            <p className="text-gray-600 dark:text-gray-300">
-              In active-passive mode, Camera 0 detects motion and triggers recording on all cameras.
-            </p>
-            
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded">
-              <h4 className="font-medium text-blue-900 dark:text-blue-200 mb-2">How it works:</h4>
-              <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
-                <li>• Camera 0 is the <strong>active camera</strong> - detects motion</li>
-                <li>• Other cameras are <strong>passive cameras</strong> - record when triggered</li>
-                <li>• Configure motion detection box only on Camera 0</li>
-                <li>• All cameras save separate recording files</li>
-              </ul>
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">How Active-Passive Mode Works</h4>
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                In active-passive mode, Camera 0 monitors for motion while Camera 1 remains in standby. 
+                When motion is detected on Camera 0, both cameras start recording simultaneously, 
+                capturing the event from multiple angles.
+              </p>
             </div>
-            
-            <pre className="bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white p-4 rounded overflow-auto text-sm">
-              {JSON.stringify(activePassiveConfig, null, 2)}
-            </pre>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                <h4 className="font-medium text-gray-900 dark:text-white mb-2">Active Camera</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Camera 0 (Primary)</p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Continuously monitors for motion</p>
+              </div>
+              
+              <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                <h4 className="font-medium text-gray-900 dark:text-white mb-2">Passive Camera</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Camera 1 (Secondary)</p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Records when triggered by active camera</p>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                <strong>Note:</strong> This mode is automatically enabled when exactly 2 cameras are connected. 
+                The system will use Camera 0 as the active camera and Camera 1 as the passive camera.
+              </p>
+            </div>
           </div>
         </div>
       )}
+
 
       {/* System Settings */}
       {activeTab === 'system' && systemSettings && (
@@ -459,19 +496,12 @@ const Settings: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   Enabled Detection Classes
                 </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {['bird', 'cat', 'dog', 'person', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe'].map((className) => (
-                    <label key={className} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={systemSettings.detection.classes.includes(className)}
-                        onChange={(e) => handleClassToggle(className, e.target.checked)}
-                        className="mr-2"
-                      />
-                      <span className="text-sm capitalize text-gray-900 dark:text-white">{className}</span>
-                    </label>
-                  ))}
-                </div>
+                <ClassSelector
+                  modelId={systemSettings.detection.model_name}
+                  selectedClasses={systemSettings.detection.classes}
+                  onChange={(classes) => handleSystemSettingChange('detection', 'classes', classes)}
+                  disabled={false}
+                />
               </div>
 
               {/* Confidence Thresholds */}
@@ -512,12 +542,17 @@ const Settings: React.FC = () => {
                     value={systemSettings.detection.model_name}
                     onChange={(e) => handleSystemSettingChange('detection', 'model_name', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    disabled={!availableModels}
                   >
-                    <option value="yolov5n">YOLOv5 Nano (fastest)</option>
-                    <option value="yolov5s">YOLOv5 Small</option>
-                    <option value="yolov5m">YOLOv5 Medium</option>
-                    <option value="yolov5l">YOLOv5 Large</option>
-                    <option value="yolov5x">YOLOv5 XLarge (most accurate)</option>
+                    {!availableModels ? (
+                      <option>Loading models...</option>
+                    ) : (
+                      availableModels.models.map((model) => (
+                        <option key={model.id} value={model.id}>
+                          {model.name} - {model.description}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
                 
@@ -649,12 +684,26 @@ const Settings: React.FC = () => {
         <UserManagement />
       )}
 
+      {/* Email Settings Tab */}
+      {activeTab === 'email' && (
+        <EmailSettings />
+      )}
+
+      {/* Registration Tab */}
+      {activeTab === 'registration' && (
+        <div className="space-y-6">
+          <RegistrationSettings />
+          <RegistrationManagement />
+          <EmailTemplates />
+        </div>
+      )}
+
       {/* Logs Tab */}
-      {activeTab === 'logs' && user?.role === 'admin' && (
+      {activeTab === 'logs' && (
         <LogViewer />
       )}
     </div>
   );
 };
 
-export default Settings;
+export default AdminPanel;

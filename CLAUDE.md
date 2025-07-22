@@ -14,8 +14,14 @@ This is a distributed bird/animal detection system with three main components:
 ### Backend (Python)
 ```bash
 # Install dependencies
-pip install -r requirements.txt
-pip install -r tests/requirements.txt  # For testing
+# On Raspberry Pi (capture service):
+pip install -r requirements.capture.txt
+
+# On Processing Server:
+pip install -r requirements.processor.txt
+
+# For testing (on either):
+pip install -r tests/requirements.txt
 
 # Run services
 python pi_capture/main.py     # On Raspberry Pi

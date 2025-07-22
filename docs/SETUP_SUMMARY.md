@@ -73,6 +73,6 @@ curl http://PROCESSOR_IP:8091/api/health
 1. **"No camera"** → Run `./scripts/setup/setup_pi_camera.sh` on Pi
 2. **"Can't connect"** → Check PROCESSING_SERVER IP in `.env.pi`
 3. **"No detections"** → Lower confidence values in `.env.processor`
-4. **"Slow processing"** → Use `MODEL_NAME=yolov5n` for speed
+4. **"Slow processing"** → Use `MODEL_NAME=yolov8n` for speed
 
 Remember: Pi and Processor must be on same network and able to reach each other!

@@ -103,7 +103,7 @@ v4l2-ctl --list-devices
    ping google.com
    
    # Manually download model:
-   python -c "import torch; torch.hub.load('ultralytics/yolov5', 'yolov5n')"
+   python -c "from ultralytics import YOLO; model = YOLO('yolov8n.pt')"
    ```
 
 2. **Check PyTorch installation:**
@@ -114,7 +114,7 @@ v4l2-ctl --list-devices
 3. **Try smaller model:**
    ```bash
    # In .env.processor:
-   MODEL_NAME=yolov5n  # Instead of yolov5s/m/l
+   MODEL_NAME=yolov8n  # Instead of yolov8s/m/l
    ```
 
 ### "Processing very slow"
@@ -133,7 +133,7 @@ v4l2-ctl --list-devices
    ```bash
    # In .env.processor:
    PROCESS_EVERY_NTH_FRAME=5   # Skip more frames
-   MODEL_NAME=yolov5n          # Use faster model
+   MODEL_NAME=yolov8n          # Use faster model
    ```
 
 3. **Monitor resources:**

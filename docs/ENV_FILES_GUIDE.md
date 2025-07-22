@@ -65,7 +65,7 @@ STORAGE_PATH=./bird_processing     # Where videos are stored
 
 # AI Detection
 DETECTION_CLASSES=bird,cat,dog,person
-MODEL_NAME=yolov5n                # YOLO model size
+MODEL_NAME=yolov8n                # YOLO model size
 BIRD_CONFIDENCE=0.35              # Detection thresholds
 
 # Retention

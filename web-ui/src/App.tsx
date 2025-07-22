@@ -7,10 +7,12 @@ import SetupGuard from './components/SetupGuard';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Setup from './pages/Setup';
+import Register from './pages/Register';
+import VerifyEmail from './pages/VerifyEmail';
 import LiveFeeds from './pages/LiveFeeds';
 import Detections from './pages/Detections';
 import Analytics from './pages/Analytics';
-import Settings from './pages/Settings';
+import AdminPanel from './pages/AdminPanel';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -33,6 +35,8 @@ function App() {
               <Routes>
                 <Route path="/setup" element={<Setup />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/verify" element={<VerifyEmail />} />
                 <Route path="/" element={
                   <ProtectedRoute>
                     <Layout />
@@ -45,9 +49,9 @@ function App() {
                     <Analytics />
                   </ProtectedRoute>
                 } />
-                <Route path="settings" element={
+                <Route path="admin" element={
                   <ProtectedRoute requireAdmin>
-                    <Settings />
+                    <AdminPanel />
                   </ProtectedRoute>
                 } />
               </Route>
