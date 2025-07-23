@@ -11,9 +11,12 @@ sys.modules.setdefault("cv2", types.ModuleType("cv2"))
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-ORIGINAL_ENV_PATH = Path(".env.processor")
+# Get the project root directory (parent of tests directory)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+ORIGINAL_ENV_PATH = PROJECT_ROOT / ".env.processor"
 if not ORIGINAL_ENV_PATH.exists():
-    ORIGINAL_ENV_PATH = Path("config/examples/.env.processor.example")
+    ORIGINAL_ENV_PATH = PROJECT_ROOT / "config/examples/.env.processor.example"
 
 TEST_ENV_PATH = Path(".env.test")
 TMP_STORAGE = Path("tests/tmp/storage")

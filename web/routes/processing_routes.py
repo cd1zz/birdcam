@@ -6,7 +6,7 @@ import threading
 from flask import request, jsonify, send_from_directory, send_file
 from services.system_metrics import SystemMetricsCollector
 from pathlib import Path
-from web.middleware.auth import require_auth, require_admin
+from web.middleware.auth import require_auth, require_admin, require_auth_or_secret
 from web.middleware.ip_restriction import require_internal_network
 
 def create_processing_routes(app, processing_service, video_repo, detection_repo, config):
@@ -55,6 +55,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
         return "File not found", 404
     
     @app.route('/upload', methods=['POST'])
+    @require_auth_or_secret
     def upload_video():
         if 'video' not in request.files:
             return jsonify({'error': 'No video file'}), 400

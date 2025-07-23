@@ -1,0 +1,459 @@
+[
+  {
+    "path": "/",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/<path:path>",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/upload",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/status",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/recent-detections",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/process-now",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/cleanup-now",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/reset-queue",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/debug/simple",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/debug/test",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/delete-detection",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/motion-settings",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/motion-settings",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/videos/<filename>",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/thumbnails/<filename>",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/system-metrics",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/system-settings",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/system-settings",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/models/available",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/models/<model_id>/classes",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/auth/login",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/auth/refresh",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/auth/me",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/auth/change-password",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/setup/status",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/setup/create-admin",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/logs/pi-capture",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/logs/ai-processor",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/logs/combined",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/logs/levels",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/logs/remote/pi-capture",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/logs/export",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/admin/users",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/admin/users",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/admin/users/<int:user_id>",
+    "methods": [
+      "PUT"
+    ]
+  },
+  {
+    "path": "/api/admin/users/<int:user_id>",
+    "methods": [
+      "DELETE"
+    ]
+  },
+  {
+    "path": "/api/admin/logs",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/admin/logs/files",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/admin/logs/capture",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/admin/logs/download/<filename>",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/admin/logs/clear",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/admin/settings/system",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/admin/settings/system",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/admin/stats/system",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/admin/stats/cameras",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/register",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/verify-email",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/resend-verification",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/admin/registration/generate-link",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/admin/registration/links",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/admin/registration/links/<int:link_id>",
+    "methods": [
+      "DELETE"
+    ]
+  },
+  {
+    "path": "/api/admin/registration/pending",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/admin/registration/verify/<int:user_id>",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/admin/email/test",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/admin/settings/email",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/admin/settings/email",
+    "methods": [
+      "PUT"
+    ]
+  },
+  {
+    "path": "/api/admin/settings/registration",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/admin/settings/registration",
+    "methods": [
+      "PUT"
+    ]
+  },
+  {
+    "path": "/api/admin/email/templates",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/admin/email/templates/<template_type>",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/admin/email/templates/<template_type>",
+    "methods": [
+      "PUT"
+    ]
+  },
+  {
+    "path": "/api/admin/email/templates/<template_type>/reset",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/admin/email/templates/<template_type>/preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/admin/email/send-invite",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/pi/camera/<camera_id>/stream",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/pi/camera/<camera_id>/snapshot",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/pi/status",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/pi/cameras",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/pi/motion-settings",
+    "methods": [
+      "POST",
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/pi/motion-debug",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/pi/sync-now",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/pi/process-server-queue",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/api/pi/system-metrics",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/pi/active-passive/config",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/pi/active-passive/stats",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/pi/active-passive/test-trigger",
+    "methods": [
+      "GET"
+    ]
+  }
+]

@@ -45,22 +45,33 @@ def retry_on_network_error(max_retries: int = 3, delay: float = 2.0, backoff: fl
     return decorator
 
 class FileSyncService:
-    def __init__(self, server_host: str, server_port: int = 8091, timeout: int = 10):
+    def __init__(self, server_host: str, server_port: int = 8091, timeout: int = 10, secret_key: Optional[str] = None):
         self.server_host = server_host
         self.server_port = server_port
         self.timeout = timeout
         self.base_url = f"http://{server_host}:{server_port}"
+        self.secret_key = secret_key
     
     @retry_on_network_error(max_retries=3, delay=2.0, backoff=1.5)
     def _get_request(self, endpoint: str, **kwargs) -> requests.Response:
         """Make GET request with automatic retries"""
         url = f"{self.base_url}{endpoint}"
+        # Add secret key header if available
+        if self.secret_key:
+            headers = kwargs.get('headers', {})
+            headers['X-Secret-Key'] = self.secret_key
+            kwargs['headers'] = headers
         return requests.get(url, timeout=self.timeout, **kwargs)
     
     @retry_on_network_error(max_retries=3, delay=2.0, backoff=1.5)
     def _post_request(self, endpoint: str, **kwargs) -> requests.Response:
         """Make POST request with automatic retries"""
         url = f"{self.base_url}{endpoint}"
+        # Add secret key header if available
+        if self.secret_key:
+            headers = kwargs.get('headers', {})
+            headers['X-Secret-Key'] = self.secret_key
+            kwargs['headers'] = headers
         return requests.post(url, timeout=self.timeout, **kwargs)
     
     def sync_file(self, file_path: Path, original_filename: str) -> bool:

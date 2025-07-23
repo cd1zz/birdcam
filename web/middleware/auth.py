@@ -1,11 +1,12 @@
 # web/middleware/auth.py
 from functools import wraps
-from flask import request, jsonify, g
+from flask import request, jsonify, g, current_app
 from typing import Optional, Callable
 from core.models import User, UserRole
 from services.auth_service import AuthService
 from database.repositories.user_repository import UserRepository
 from database.connection import DatabaseManager
+import os
 import logging
 
 logger = logging.getLogger(__name__)
@@ -135,6 +136,53 @@ def require_auth_with_query(f: Callable) -> Callable:
         except Exception as e:
             logger.error(f"Token validation error: {str(e)}")
             return jsonify({'error': 'Token validation error'}), 401
+        
+        # Store user in g for access in route
+        g.user = user
+        
+        return f(*args, **kwargs)
+    
+    return decorated_function
+
+def require_auth_or_secret(f: Callable) -> Callable:
+    """Decorator that accepts either JWT token OR shared secret key.
+    Used for endpoints that need to support both user auth and service-to-service auth."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # First check for shared secret
+        provided_secret = request.headers.get('X-Secret-Key')
+        if provided_secret:
+            # Get the configured secret key
+            expected_secret = os.getenv('SECRET_KEY')
+            if provided_secret == expected_secret:
+                # Create a system user object for the Pi service
+                from core.models import User, UserRole
+                g.user = User(
+                    id=0,  # System user ID
+                    username='pi-service',
+                    password_hash='',
+                    role=UserRole.ADMIN,  # Give admin role for file uploads
+                    is_active=True
+                )
+                logger.info(f"Authenticated via shared secret for {request.path}")
+                return f(*args, **kwargs)
+            else:
+                logger.warning(f"Invalid shared secret provided for {request.path}")
+                return jsonify({'error': 'Invalid authentication'}), 401
+        
+        # Fall back to JWT token authentication
+        token = get_token_from_header()
+        
+        if not token:
+            return jsonify({'error': 'Missing authentication token or secret key'}), 401
+        
+        # Get auth service
+        auth_service = get_auth_service(current_app.config['DATABASE_PATH'])
+        
+        # Validate token
+        user = auth_service.validate_token(token)
+        if not user:
+            return jsonify({'error': 'Invalid or expired token'}), 401
         
         # Store user in g for access in route
         g.user = user

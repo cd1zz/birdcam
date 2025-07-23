@@ -4,132 +4,142 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a distributed bird/animal detection system with three main components:
-- **Pi Capture** (Raspberry Pi): Motion-triggered video capture and segmentation
-- **AI Processor** (Server): YOLO-based object detection on video segments
-- **Web UI** (React/TypeScript): Live monitoring, results viewing, and system management
+BirdCam is a distributed wildlife detection system with a two-system architecture:
+- **Raspberry Pi**: Camera capture with motion detection (`pi_capture/`)
+- **AI Processing Server**: YOLO-based detection and web interface (`ai_processor/`, `web/`)
 
 ## Development Commands
 
-### Backend (Python)
-```bash
-# Install dependencies
-# On Raspberry Pi (capture service):
-pip install -r requirements.capture.txt
-
-# On Processing Server:
-pip install -r requirements.processor.txt
-
-# For testing (on either):
-pip install -r tests/requirements.txt
-
-# Run services
-python pi_capture/main.py     # On Raspberry Pi
-python ai_processor/main.py   # On processing server
-
-# Run tests
-pytest                        # All tests
-pytest tests/unit/           # Unit tests only
-pytest tests/integration/    # Integration tests only
-pytest -k "test_name"        # Specific test
-pytest --cov=.              # With coverage
-```
-
-### Frontend (TypeScript/React)
+### Frontend (Web UI)
 ```bash
 cd web-ui
-
-# Install dependencies
-npm install
-
-# Development
-npm run dev                  # Start dev server (http://localhost:5173)
-npm run lint                 # Run ESLint
-npm run build               # Production build
-npm run preview             # Preview production build
+npm install                # Install dependencies
+npm run dev               # Start development server
+npm run build             # Production build
+npm run lint              # Run ESLint
+npm run test              # Unit tests (Vitest)
+npm run test:coverage     # Tests with coverage
+npm run test:e2e          # E2E tests (Playwright)
+npm run test:all          # All tests
 ```
 
-### Setup
+### Backend (Python)
 ```bash
-# Copy and configure environment
-cp config/examples/.env.example .env
-# Edit .env with your IP addresses and settings
+# Virtual environment is in project root
+source .venv/bin/activate
 
-# For Raspberry Pi camera setup
-./scripts/setup/setup_pi_camera.sh
+# Install dependencies
+pip install -r requirements.capture.txt    # For Pi system
+pip install -r requirements.processor.txt  # For AI server
+
+# Run tests
+pytest                    # Run all tests
+pytest -v                 # Verbose output
+pytest tests/test_api.py  # Run specific test file
+
+# Run services (for testing/development)
+python pi_capture/main.py      # Run Pi capture service
+python ai_processor/main.py    # Run AI processor service
+
+# Service management (ask user to run these with sudo)
+# sudo systemctl start/stop/restart ai-processor.service
+# sudo systemctl start/stop/restart pi-capture.service
+# journalctl -u ai-processor.service -f
 ```
 
 ## Architecture
 
+### Backend Structure
+- **Two-system design**: Pi captures video, server processes with AI
+- **Flask-based**: Both systems use Flask for web APIs
+- **Database**: SQLite with repository pattern (`database/`)
+- **Services layer**: Business logic in `services/`
+- **Authentication**: JWT-based with role support (admin/viewer)
+- **Email**: SMTP integration for user registration
+
+### Frontend Structure
+- **React 19 + TypeScript**: Modern React with Vite
+- **State Management**: React Query for server state
+- **Styling**: Tailwind CSS
+- **Testing**: Vitest (unit), Playwright (E2E)
+- **Components**: Camera feeds, detection galleries, admin panel
+
 ### Key Directories
-- `pi_capture/`: Raspberry Pi capture service
-  - `camera_manager.py`: Multi-camera video capture with motion detection
-  - `main.py`: Service entry point with sync to processor
-- `ai_processor/`: Processing server
-  - `processor.py`: YOLO detection pipeline
-  - `main.py`: Service with Flask API
-- `web/`: Flask API routes (used by both services)
-- `services/`: Core business logic
-  - `detection_service.py`: Detection result management
-  - `storage_service.py`: File storage and cleanup
-- `database/`: Repository pattern for data access
-- `config/`: Configuration management
+- `pi_capture/`: Raspberry Pi camera system
+- `ai_processor/`: YOLO detection and video processing
+- `web/`: Flask API routes and authentication
 - `web-ui/`: React frontend application
+- `database/`: SQLite repositories and migrations
+- `services/`: Business logic (AI, camera, auth, email)
+- `core/`: Shared models and data structures
+- `config/`: Configuration and examples
+- `systemd/`: Linux service definitions
 
-### Data Flow
-1. Pi cameras capture video → motion detection → segment into chunks
-2. Segments sync to processing server every 15 minutes
-3. Processor runs YOLO detection on each segment
-4. Results stored in SQLite with detected/non-detected video separation
-5. Web UI displays live feeds and historical detections
+## Configuration
 
-### Key Configuration
-- Detection classes: bird, cat, dog, person, etc. (configurable in .env)
-- Retention: 30 days for detections, 7 days for non-detections
-- Motion detection uses background subtraction with configurable thresholds
-- Pre-motion buffer captures 15 seconds before motion trigger
+### Environment Files
+- `.env.pi`: Pi camera settings (motion, cameras)
+- `.env.processor`: AI server settings (detection, storage)
+- `web-ui/.env`: Frontend API endpoints
 
-## Testing Approach
+### Critical Settings
+- `SECRET_KEY`: Must match between Pi and Processor
+- `CAPTURE_SERVER`: Pi's IP address (in processor config)
+- `STORAGE_PATH`: Video storage location (needs space)
 
-Tests use pytest with a clear unit/integration separation. When adding features:
-- Unit tests go in `tests/unit/`
-- Integration tests go in `tests/integration/`
-- Mock external dependencies (cameras, filesystem) for unit tests
-- Use `pytest -k` to run specific tests during development
+## Testing
 
-### Testing Requirements
-- **ALWAYS add tests when adding new functionality or modifying existing code**
-- Write unit tests for individual functions/methods
-- Write integration tests for API endpoints and service interactions
-- Ensure tests pass before considering a feature complete
-- Update existing tests when changing functionality
-- Frontend: Add component tests for new React components
-- Frontend: Add E2E tests for new user workflows
+### Running Specific Tests
+```bash
+# Python
+pytest tests/test_api.py::test_specific_function
+pytest -k "test_name_pattern"
 
-## Code Maintenance Guidelines
+# Frontend
+npm run test -- UserProfile.test.tsx
+npm run test:e2e -- --project=chromium
+```
 
-### Logging Standards
-- **NEVER use emojis** in any log messages, print statements, or code comments
-- **Use the project's logging utilities** for consistent formatting:
-  - Backend services: Use `CaptureLogger` from `utils/capture_logger.py`
-  - Example: `from utils.capture_logger import logger`
-  - Use appropriate log levels: `logger.info()`, `logger.error()`, `logger.warning()`, etc.
-- **Avoid direct print() statements** - always use the logger instead
-- **Log format**: All logs use bracketed prefixes like `[INFO]`, `[ERROR]`, `[CAMERA]`, etc.
-- **When logging in database repositories or services without logger access**, use simple descriptive messages without emojis
+### Test Database
+Tests use in-memory SQLite database. Fixtures in `tests/conftest.py`.
 
-### Documentation Updates
-- ALWAYS update relevant README.md files when adding, removing, or modifying code functionality
-- Keep documentation in sync with code changes to ensure accuracy
-- Update configuration examples and command references when they change
+## Common Development Tasks
 
-### Test and Debug File Management
-- REMOVE temporary test files after validating that new code works correctly
-- DELETE debug files once issues are resolved and code is functioning properly
-- Clean up any diagnostic or troubleshooting files after fixes are implemented
+### Adding a New API Endpoint
+1. Add route in `web/api/routes/`
+2. Implement service logic in `services/`
+3. Add repository methods if needed in `database/repositories/`
+4. Update frontend API client if needed
+5. Add tests for the endpoint
 
-### File Naming Conventions
-- Name files based on their PURPOSE and FUNCTIONALITY, not their change history
-- Use descriptive names like `user_authentication.py` instead of `auth_fix_v2.py`
-- Avoid names that reference bugs, fixes, or versions (e.g., not `camera_manager_fixed.py`)
-- Choose names that clearly indicate what the code does, making the codebase self-documenting
+### Modifying AI Detection
+1. Update `services/ai_model_manager.py` for model changes
+2. Adjust detection logic in `ai_processor/main.py`
+3. Update detection categories in `services/detection.py`
+
+### Working with Camera Configuration
+1. Camera configs are in `.env.pi`
+2. Use `scripts/setup/pi_env_generator.py` for auto-detection
+3. Camera 0 is active (motion detection), others are passive
+
+## Security Considerations
+- Admin operations restricted to local network IPs
+- JWT tokens for authentication
+- Email verification for new users
+- Registration can be invitation-only, open, or disabled
+- Secrets should never be committed (use .env files)
+
+## Deployment
+- Uses systemd services (see `systemd/` directory)
+- Install scripts in `scripts/setup/`
+- **Services**:
+  - `pi-capture.service`: Runs on Raspberry Pi
+  - `ai-processor.service`: Runs on AI processing server
+- Frontend served statically by AI processor
+- **Note**: Claude does not have sudo access. Ask the user to run sudo commands when needed (e.g., `sudo systemctl restart ai-processor.service`)
+
+## Monitoring and Logs
+- Logs go to journald/syslog
+- Admin users can view logs in web UI
+- Access logs track HTTP requests
+- Motion detection logs include sensitivity data

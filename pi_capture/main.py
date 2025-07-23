@@ -86,7 +86,8 @@ def setup_services(config, force_opencv=False):
     sync_service = FileSyncService(
         config.sync.processing_server_host,
         config.sync.processing_server_port,
-        config.sync.upload_timeout_seconds
+        config.sync.upload_timeout_seconds,
+        config.security.secret_key
     )
     logger.ok("Sync service ready")
 
