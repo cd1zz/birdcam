@@ -72,10 +72,10 @@ cloudflared tunnel run --url http://localhost:8091 birdcam
 ### 5. Verify Security
 
 With this setup:
-- ✅ Pi camera endpoints require authentication
-- ✅ Only one server exposed to internet
-- ✅ All camera streams are proxied securely
-- ✅ JWT tokens protect all sensitive endpoints
+- Pi camera endpoints require authentication
+- Only one server exposed to internet
+- All camera streams are proxied securely
+- JWT tokens protect all sensitive endpoints
 
 ## API Endpoints
 

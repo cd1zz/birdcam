@@ -25,7 +25,7 @@ def load_environment():
         env_path = Path(env_file)
         if env_path.exists():
             load_dotenv(env_path)
-            print(f"✅ Loaded configuration from {env_file}")
+            print(f"Loaded configuration from {env_file}")
             return
     
     # If no file found, just load default

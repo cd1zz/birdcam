@@ -123,9 +123,9 @@ source venv/bin/activate
 python pi_capture/main.py
 
 # You should see:
-# ✅ Camera manager ready
-# ✅ Motion detector ready
-# ✅ Capture started for camera 0
+# Camera manager ready
+# Motion detector ready
+# Capture started for camera 0
 # 🌐 Access at: http://0.0.0.0:8090
 ```
 

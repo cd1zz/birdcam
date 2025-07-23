@@ -237,7 +237,7 @@ const Analytics: React.FC = () => {
           )}
           {syncMutation.isSuccess && (
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 text-sm text-green-700 dark:text-green-300">
-              ✅ File sync triggered successfully
+              File sync triggered successfully
             </div>
           )}
           
@@ -248,7 +248,7 @@ const Analytics: React.FC = () => {
           )}
           {processingMutation.isSuccess && (
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 text-sm text-green-700 dark:text-green-300">
-              ✅ AI processing triggered successfully
+              AI processing triggered successfully
             </div>
           )}
           
@@ -259,7 +259,7 @@ const Analytics: React.FC = () => {
           )}
           {cleanupMutation.isSuccess && (
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 text-sm text-green-700 dark:text-green-300">
-              ✅ Cleanup triggered successfully
+              Cleanup triggered successfully
             </div>
           )}
         </div>

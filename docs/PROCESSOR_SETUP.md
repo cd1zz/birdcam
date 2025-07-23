@@ -138,7 +138,7 @@ from services.ai_model_manager import ModelManager
 from config.settings import Config
 config = Config()
 model = ModelManager(config.detection)
-print('✅ Model loaded successfully')
+print('Model loaded successfully')
 "
 ```
 
@@ -150,7 +150,7 @@ source venv/bin/activate
 python ai_processor/main.py
 
 # You should see:
-# ✅ Model yolov8n loaded successfully
+# Model yolov8n loaded successfully
 # 🌐 Processing Dashboard ready!
 # 🌐 Access at: http://0.0.0.0:8091
 ```

@@ -67,7 +67,7 @@ def parse_journalctl_output(output: str, service_name: str) -> List[Dict]:
                 level = "ACCESS"
 
             keywords = ["processing", "YOLO", "detection", "segment"]
-            emojis = ["🔄", "✅", "❌", "🎯", "🦅", "📊", "⚙️", "🤖", "📥", "📤"]
+            emojis = ["🔄", "❌", "🎯", "🦅", "📊", "⚙️", "🤖", "📥", "📤"]
             if (
                 syslog_identifier == "python"
                 or any(e in message for e in emojis)
