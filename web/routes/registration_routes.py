@@ -1,5 +1,5 @@
 # web/routes/registration_routes.py
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime
 from core.registration_models import RegistrationLinkType
 from services.registration_service import RegistrationService
@@ -261,8 +261,6 @@ def create_registration_routes(reg_service: RegistrationService, email_service: 
     @require_admin_internal
     def update_email_settings():
         """Update email configuration (admin only)"""
-        from flask import g
-        
         data = request.get_json()
         if not data:
             return jsonify({'error': 'No data provided'}), 400
@@ -549,15 +547,14 @@ def create_registration_routes(reg_service: RegistrationService, email_service: 
             
             if email_service.config.registration_mode == 'invitation':
                 # Generate a registration link
-                result = reg_service.create_registration_link(
-                    created_by_id=g.user.id,
+                link = reg_service.create_registration_link(
+                    created_by=g.user.id,
                     link_type=RegistrationLinkType.SINGLE_USE,
                     max_uses=1,
                     expires_hours=48  # 48 hour expiration for email invites
                 )
                 
-                if result['success']:
-                    link = result['link']
+                if link:
                     # Build full URL (you may need to adjust this based on your frontend URL)
                     base_url = request.host_url.rstrip('/')
                     registration_url = f"{base_url}/register?token={link.token}"

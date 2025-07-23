@@ -27,6 +27,7 @@ export default function RegistrationManagement() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'links' | 'pending'>('links');
   const [showGenerateForm, setShowGenerateForm] = useState(false);
+  const [showInactiveLinks, setShowInactiveLinks] = useState(false);
   const [linkForm, setLinkForm] = useState({
     link_type: 'single_use' as 'single_use' | 'multi_use',
     max_uses: '',
@@ -143,12 +144,25 @@ export default function RegistrationManagement() {
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
               Registration Links
             </h3>
-            <button
-              onClick={() => setShowGenerateForm(!showGenerateForm)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Generate New Link
-            </button>
+            <div className="flex items-center space-x-4">
+              <label className="inline-flex items-center">
+                <input
+                  type="checkbox"
+                  checked={showInactiveLinks}
+                  onChange={(e) => setShowInactiveLinks(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                  Show expired/inactive links
+                </span>
+              </label>
+              <button
+                onClick={() => setShowGenerateForm(!showGenerateForm)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Generate New Link
+              </button>
+            </div>
           </div>
 
           {/* Generate Link Form */}
@@ -193,7 +207,7 @@ export default function RegistrationManagement() {
                       type="number"
                       value={linkForm.expires_hours}
                       onChange={(e) => setLinkForm({ ...linkForm, expires_hours: e.target.value })}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 rounded-md"
+                      className="mt-1 block w-full px-3 py-2 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-md"
                       placeholder="Never"
                     />
                   </div>
@@ -227,9 +241,20 @@ export default function RegistrationManagement() {
               <p className="text-gray-500 dark:text-gray-400">No registration links created yet</p>
             </div>
           ) : (
-            <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
-              <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-                {links.map((link) => (
+            <>
+              {links.filter(link => showInactiveLinks || link.is_valid).length === 0 ? (
+                <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg">
+                  <p className="text-gray-500 dark:text-gray-400">
+                    No active registration links. 
+                    {links.some(link => !link.is_valid) && ' Check "Show expired/inactive links" to see all links.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
+                  <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {links
+                      .filter(link => showInactiveLinks || link.is_valid)
+                      .map((link) => (
                   <li key={link.id} className="px-6 py-4">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -280,9 +305,11 @@ export default function RegistrationManagement() {
                       )}
                     </div>
                   </li>
-                ))}
-              </ul>
-            </div>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
