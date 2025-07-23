@@ -6,7 +6,7 @@ import threading
 from flask import request, jsonify, send_from_directory, send_file
 from services.system_metrics import SystemMetricsCollector
 from pathlib import Path
-from web.middleware import require_auth
+from web.middleware import require_auth, require_admin
 from web.middleware.auth import require_auth_or_secret
 from web.middleware.decorators import require_admin_internal, require_auth_internal
 
