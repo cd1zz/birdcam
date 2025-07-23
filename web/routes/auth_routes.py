@@ -1,21 +1,13 @@
 # web/routes/auth_routes.py
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify
 from core.models import UserRole
-from services.auth_service import AuthService
-from database.repositories.user_repository import UserRepository
-from database.connection import DatabaseManager
 from web.middleware.auth import require_auth, g
+from web.utils.auth_utils import get_auth_service
 import logging
 
 logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint('auth', __name__)
-
-def get_auth_service() -> AuthService:
-    """Create auth service instance."""
-    db_manager = DatabaseManager(current_app.config['DATABASE_PATH'])
-    user_repository = UserRepository(db_manager)
-    return AuthService(user_repository)
 
 @auth_bp.route('/login', methods=['POST'])
 def login():

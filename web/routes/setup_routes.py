@@ -2,23 +2,15 @@
 """
 Initial setup routes for first-time configuration
 """
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify
 from core.models import UserRole
-from services.auth_service import AuthService
-from database.repositories.user_repository import UserRepository
-from database.connection import DatabaseManager
 from web.middleware.ip_restriction import require_internal_network
+from web.utils.auth_utils import get_auth_service
 import logging
 
 logger = logging.getLogger(__name__)
 
 setup_bp = Blueprint('setup', __name__)
-
-def get_auth_service() -> AuthService:
-    """Create auth service instance."""
-    db_manager = DatabaseManager(current_app.config['DATABASE_PATH'])
-    user_repository = UserRepository(db_manager)
-    return AuthService(user_repository)
 
 @setup_bp.route('/status', methods=['GET'])
 def setup_status():
