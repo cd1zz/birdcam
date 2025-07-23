@@ -52,6 +52,11 @@ venv.bak/
 # Logs
 *.log
 logs/
+# Pip installer logs
+pip-log*.txt
+pip-log*.log
+# Temporary files accidentally created by pip (e.g., '=4.5.0')
+=*
 
 # Databases
 *.db
