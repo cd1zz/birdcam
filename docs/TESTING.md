@@ -20,8 +20,6 @@ pytest
 # Run with coverage
 pytest --cov=. --cov-report=html
 
-# Run specific test file
-pytest tests/unit/test_motion_event_broadcaster.py
 
 # Run tests matching pattern
 pytest -k "test_camera"
