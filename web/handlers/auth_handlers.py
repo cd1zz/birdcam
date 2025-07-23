@@ -2,20 +2,12 @@
 Auth route handlers extracted from web/routes/auth_routes.py
 These are standalone functions that can be imported by admin_routes.py
 """
-from flask import request, jsonify, current_app, g
+from flask import request, jsonify, g
 from core.models import UserRole
-from services.auth_service import AuthService
-from database.repositories.user_repository import UserRepository
-from database.connection import DatabaseManager
+from web.utils.auth_utils import get_auth_service
 import logging
 
 logger = logging.getLogger(__name__)
-
-def get_auth_service() -> AuthService:
-    """Create auth service instance."""
-    db_manager = DatabaseManager(current_app.config['DATABASE_PATH'])
-    user_repository = UserRepository(db_manager)
-    return AuthService(user_repository)
 
 def list_users_handler():
     """List all users (admin only)."""
