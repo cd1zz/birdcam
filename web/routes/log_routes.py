@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, request
-from web.middleware.auth import require_admin
-from web.middleware.ip_restriction import require_internal_network
+from web.middleware.decorators import require_admin_internal
 from web.utils.log_utils import convert_time_format, parse_journalctl_output
 import subprocess
 import json
@@ -11,11 +10,6 @@ import os
 
 # Create blueprint
 log_routes = Blueprint("logs", __name__, url_prefix="/api/logs")
-
-
-# Combined decorator for admin + internal network
-def require_admin_internal(f):
-    return require_internal_network(require_admin(f))
 
 
 @log_routes.route("/pi-capture", methods=["GET"])

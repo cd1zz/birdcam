@@ -7,8 +7,9 @@ from services.email_service import EmailService
 from database.repositories.email_settings_repository import EmailSettingsRepository
 from database.repositories.email_template_repository import EmailTemplateRepository
 from database.connection import DatabaseConnection
-from web.middleware.auth import require_admin, require_auth, g
-from web.middleware.ip_restriction import require_internal_network
+from flask import g
+from web.middleware import require_auth
+from web.middleware.decorators import require_admin_internal
 from utils.capture_logger import logger
 from core.email_template_model import EmailTemplateType
 import json
@@ -20,10 +21,6 @@ def create_registration_routes(reg_service: RegistrationService, email_service: 
     db_conn = DatabaseConnection()
     email_settings_repo = EmailSettingsRepository(db_conn)
     template_repo = EmailTemplateRepository(db_conn)
-    
-    # Combined decorator for admin + internal network
-    def require_admin_internal(f):
-        return require_internal_network(require_admin(f))
     
     @reg_bp.route('/api/register', methods=['POST'])
     def register():
