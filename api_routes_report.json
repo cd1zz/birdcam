@@ -1,0 +1,1010 @@
+{
+  "summary": {
+    "frontend_routes": 55,
+    "backend_routes": 138,
+    "matched": 29,
+    "missing_backend": 26,
+    "unused_backend": 55
+  },
+  "missing_backend": [
+    {
+      "method": "GET",
+      "path": "/api/logs/pi-capture",
+      "line": 378
+    },
+    {
+      "method": "GET",
+      "path": "/api/logs/ai-processor",
+      "line": 382
+    },
+    {
+      "method": "GET",
+      "path": "/api/logs/remote/pi-capture",
+      "line": 386
+    },
+    {
+      "method": "GET",
+      "path": "/api/logs/combined",
+      "line": 390
+    },
+    {
+      "method": "GET",
+      "path": "/api/logs/levels",
+      "line": 394
+    },
+    {
+      "method": "GET",
+      "path": "/api/logs/export",
+      "line": 398
+    },
+    {
+      "method": "POST",
+      "path": "/api/process-video",
+      "line": 300
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "line": 498
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "line": 568
+    },
+    {
+      "method": "GET",
+      "path": "/api/process-video",
+      "function": "processVideo",
+      "line": 299
+    },
+    {
+      "method": "GET",
+      "path": "/api/process-now",
+      "function": "triggerProcessing",
+      "line": 304
+    },
+    {
+      "method": "GET",
+      "path": "/api/cleanup-now",
+      "function": "triggerCleanup",
+      "line": 308
+    },
+    {
+      "method": "GET",
+      "path": "/api/sync-now",
+      "function": "triggerSync",
+      "line": 316
+    },
+    {
+      "method": "GET",
+      "path": "/api/process-server-queue",
+      "function": "triggerRemoteProcessing",
+      "line": 322
+    },
+    {
+      "method": "GET",
+      "path": "/api/models/${modelId}/classes",
+      "function": "getClasses",
+      "line": 355
+    },
+    {
+      "method": "GET",
+      "path": "/api/logs/pi-capture",
+      "function": "getPiCaptureLogs",
+      "line": 377
+    },
+    {
+      "method": "GET",
+      "path": "/api/logs/ai-processor",
+      "function": "getAiProcessorLogs",
+      "line": 381
+    },
+    {
+      "method": "GET",
+      "path": "/api/logs/remote/pi-capture",
+      "function": "getRemotePiCaptureLogs",
+      "line": 385
+    },
+    {
+      "method": "GET",
+      "path": "/api/logs/combined",
+      "function": "getCombinedLogs",
+      "line": 389
+    },
+    {
+      "method": "GET",
+      "path": "/api/logs/levels",
+      "function": "getLogLevels",
+      "line": 393
+    },
+    {
+      "method": "GET",
+      "path": "/api/logs/export",
+      "function": "exportLogs",
+      "line": 397
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/email/templates/${templateType}",
+      "function": "getEmailTemplate",
+      "line": 414
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/email/templates/${templateType}",
+      "function": "updateEmailTemplate",
+      "line": 419
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/email/templates/${templateType}/reset",
+      "function": "resetEmailTemplate",
+      "line": 429
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/email/templates/${templateType}/preview",
+      "function": "previewEmailTemplate",
+      "line": 434
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/email/send-invite",
+      "function": "sendRegistrationInvite",
+      "line": 443
+    }
+  ],
+  "unused_backend": [
+    {
+      "method": "POST",
+      "path": "/api/register",
+      "file": "web/routes/registration_routes.py",
+      "line": 28
+    },
+    {
+      "method": "POST",
+      "path": "/api/verify-email",
+      "file": "web/routes/registration_routes.py",
+      "line": 51
+    },
+    {
+      "method": "POST",
+      "path": "/api/resend-verification",
+      "file": "web/routes/registration_routes.py",
+      "line": 67
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/registration/generate-link",
+      "file": "web/routes/registration_routes.py",
+      "line": 84
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/registration/links",
+      "file": "web/routes/registration_routes.py",
+      "line": 116
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/registration/links/<int:link_id>",
+      "file": "web/routes/registration_routes.py",
+      "line": 135
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/registration/pending",
+      "file": "web/routes/registration_routes.py",
+      "line": 146
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/registration/verify/<int:user_id>",
+      "file": "web/routes/registration_routes.py",
+      "line": 160
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/email/test",
+      "file": "web/routes/registration_routes.py",
+      "line": 182
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/settings/email",
+      "file": "web/routes/registration_routes.py",
+      "line": 205
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/settings/email",
+      "file": "web/routes/registration_routes.py",
+      "line": 260
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/settings/registration",
+      "file": "web/routes/registration_routes.py",
+      "line": 293
+    },
+    {
+      "method": "POST",
+      "path": "/api/register",
+      "file": "web/routes/registration_routes.py",
+      "line": 28
+    },
+    {
+      "method": "POST",
+      "path": "/api/verify-email",
+      "file": "web/routes/registration_routes.py",
+      "line": 51
+    },
+    {
+      "method": "POST",
+      "path": "/api/resend-verification",
+      "file": "web/routes/registration_routes.py",
+      "line": 67
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/registration/generate-link",
+      "file": "web/routes/registration_routes.py",
+      "line": 84
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/registration/links",
+      "file": "web/routes/registration_routes.py",
+      "line": 116
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/registration/links/<int:link_id>",
+      "file": "web/routes/registration_routes.py",
+      "line": 135
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/registration/pending",
+      "file": "web/routes/registration_routes.py",
+      "line": 146
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/registration/verify/<int:user_id>",
+      "file": "web/routes/registration_routes.py",
+      "line": 160
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/email/test",
+      "file": "web/routes/registration_routes.py",
+      "line": 182
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/settings/email",
+      "file": "web/routes/registration_routes.py",
+      "line": 205
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/settings/email",
+      "file": "web/routes/registration_routes.py",
+      "line": 260
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/settings/registration",
+      "file": "web/routes/registration_routes.py",
+      "line": 293
+    },
+    {
+      "method": "POST",
+      "path": "/api/reset-queue",
+      "file": "web/routes/processing_routes.py",
+      "line": 321
+    },
+    {
+      "method": "GET",
+      "path": "/api/debug/simple",
+      "file": "web/routes/processing_routes.py",
+      "line": 342
+    },
+    {
+      "method": "GET",
+      "path": "/api/debug/test",
+      "file": "web/routes/processing_routes.py",
+      "line": 351
+    },
+    {
+      "method": "POST",
+      "path": "/api/delete-detection",
+      "file": "web/routes/processing_routes.py",
+      "line": 356
+    },
+    {
+      "method": "GET",
+      "path": "/api/system-metrics",
+      "file": "web/routes/processing_routes.py",
+      "line": 504
+    },
+    {
+      "method": "GET",
+      "path": "/api/server-status",
+      "file": "web/routes/capture_routes.py",
+      "line": 101
+    },
+    {
+      "method": "POST",
+      "path": "/api/sync-now",
+      "file": "web/routes/capture_routes.py",
+      "line": 110
+    },
+    {
+      "method": "GET",
+      "path": "/api/server-detections",
+      "file": "web/routes/capture_routes.py",
+      "line": 119
+    },
+    {
+      "method": "GET",
+      "path": "/api/server-metrics",
+      "file": "web/routes/capture_routes.py",
+      "line": 129
+    },
+    {
+      "method": "POST",
+      "path": "/api/delete-detection",
+      "file": "web/routes/capture_routes.py",
+      "line": 146
+    },
+    {
+      "method": "GET",
+      "path": "/api/motion-debug",
+      "file": "web/routes/capture_routes.py",
+      "line": 197
+    },
+    {
+      "method": "POST",
+      "path": "/api/process-server-queue",
+      "file": "web/routes/capture_routes.py",
+      "line": 336
+    },
+    {
+      "method": "GET",
+      "path": "/api/health",
+      "file": "web/routes/capture_routes.py",
+      "line": 349
+    },
+    {
+      "method": "GET",
+      "path": "/api/system-metrics",
+      "file": "web/routes/capture_routes.py",
+      "line": 459
+    },
+    {
+      "method": "GET",
+      "path": "/api/camera/<int:camera_id>/stream",
+      "file": "web/routes/capture_routes.py",
+      "line": 468
+    },
+    {
+      "method": "GET",
+      "path": "/api/camera/<int:camera_id>/snapshot",
+      "file": "web/routes/capture_routes.py",
+      "line": 524
+    },
+    {
+      "method": "GET",
+      "path": "/api/statistics/summary",
+      "file": "web/routes/capture_routes.py",
+      "line": 567
+    },
+    {
+      "method": "GET",
+      "path": "/api/pi/camera/<camera_id>/stream",
+      "file": "web/routes/pi_proxy_routes.py",
+      "line": 25
+    },
+    {
+      "method": "GET",
+      "path": "/api/pi/camera/<camera_id>/snapshot",
+      "file": "web/routes/pi_proxy_routes.py",
+      "line": 61
+    },
+    {
+      "method": "GET",
+      "path": "/api/pi/status",
+      "file": "web/routes/pi_proxy_routes.py",
+      "line": 89
+    },
+    {
+      "method": "GET",
+      "path": "/api/pi/cameras",
+      "file": "web/routes/pi_proxy_routes.py",
+      "line": 103
+    },
+    {
+      "method": "GET",
+      "path": "/api/pi/motion-debug",
+      "file": "web/routes/pi_proxy_routes.py",
+      "line": 144
+    },
+    {
+      "method": "POST",
+      "path": "/api/pi/sync-now",
+      "file": "web/routes/pi_proxy_routes.py",
+      "line": 161
+    },
+    {
+      "method": "POST",
+      "path": "/api/pi/process-server-queue",
+      "file": "web/routes/pi_proxy_routes.py",
+      "line": 175
+    },
+    {
+      "method": "GET",
+      "path": "/api/pi/system-metrics",
+      "file": "web/routes/pi_proxy_routes.py",
+      "line": 189
+    },
+    {
+      "method": "GET",
+      "path": "/api/pi/active-passive/config",
+      "file": "web/routes/pi_proxy_routes.py",
+      "line": 203
+    },
+    {
+      "method": "GET",
+      "path": "/api/pi/active-passive/stats",
+      "file": "web/routes/pi_proxy_routes.py",
+      "line": 217
+    },
+    {
+      "method": "GET",
+      "path": "/api/pi/active-passive/test-trigger",
+      "file": "web/routes/pi_proxy_routes.py",
+      "line": 231
+    },
+    {
+      "method": "GET",
+      "path": "/api/discovery/routes",
+      "file": "web/routes/api_discovery.py",
+      "line": 56
+    },
+    {
+      "method": "POST",
+      "path": "/api/discovery/validate",
+      "file": "web/routes/api_discovery.py",
+      "line": 94
+    },
+    {
+      "method": "GET",
+      "path": "/api/discovery/openapi",
+      "file": "web/routes/api_discovery.py",
+      "line": 164
+    }
+  ],
+  "matched": [
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/pi/motion-settings",
+        "line": 223
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/pi/motion-settings",
+          "file": "web/routes/pi_proxy_routes.py",
+          "line": 117
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/motion-settings",
+        "line": 228
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/motion-settings",
+          "file": "web/routes/processing_routes.py",
+          "line": 371
+        },
+        {
+          "method": "GET",
+          "path": "/api/motion-settings",
+          "file": "web/routes/capture_routes.py",
+          "line": 159
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/status",
+        "line": 275
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/status",
+          "file": "web/routes/processing_routes.py",
+          "line": 72
+        },
+        {
+          "method": "GET",
+          "path": "/api/status",
+          "file": "web/routes/capture_routes.py",
+          "line": 57
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/recent-detections",
+        "line": 289
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/recent-detections",
+          "file": "web/routes/processing_routes.py",
+          "line": 243
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/system-settings",
+        "line": 329
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/system-settings",
+          "file": "web/routes/processing_routes.py",
+          "line": 514
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/models/available",
+        "line": 351
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/models/available",
+          "file": "web/routes/processing_routes.py",
+          "line": 622
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/models/*/classes",
+        "line": 370
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/models/<model_id>/classes",
+          "file": "web/routes/processing_routes.py",
+          "line": 645
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/admin/email/templates",
+        "line": 410
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/admin/email/templates",
+          "file": "web/routes/registration_routes.py",
+          "line": 310
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin/email/templates",
+          "file": "web/routes/registration_routes.py",
+          "line": 310
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/admin/email/templates/*",
+        "line": 415
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/admin/email/templates/<template_type>",
+          "file": "web/routes/registration_routes.py",
+          "line": 323
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin/email/templates/<template_type>",
+          "file": "web/routes/registration_routes.py",
+          "line": 323
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "POST",
+        "path": "/api/pi/motion-settings",
+        "line": 237
+      },
+      "backend": [
+        {
+          "method": "POST",
+          "path": "/api/pi/motion-settings",
+          "file": "web/routes/pi_proxy_routes.py",
+          "line": 117
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "POST",
+        "path": "/api/motion-settings",
+        "line": 242
+      },
+      "backend": [
+        {
+          "method": "POST",
+          "path": "/api/motion-settings",
+          "file": "web/routes/processing_routes.py",
+          "line": 428
+        },
+        {
+          "method": "POST",
+          "path": "/api/motion-settings",
+          "file": "web/routes/capture_routes.py",
+          "line": 214
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "POST",
+        "path": "/api/process-now",
+        "line": 305
+      },
+      "backend": [
+        {
+          "method": "POST",
+          "path": "/api/process-now",
+          "file": "web/routes/processing_routes.py",
+          "line": 302
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "POST",
+        "path": "/api/cleanup-now",
+        "line": 309
+      },
+      "backend": [
+        {
+          "method": "POST",
+          "path": "/api/cleanup-now",
+          "file": "web/routes/processing_routes.py",
+          "line": 311
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "POST",
+        "path": "/api/system-settings",
+        "line": 334
+      },
+      "backend": [
+        {
+          "method": "POST",
+          "path": "/api/system-settings",
+          "file": "web/routes/processing_routes.py",
+          "line": 566
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "POST",
+        "path": "/api/admin/email/templates/*/reset",
+        "line": 430
+      },
+      "backend": [
+        {
+          "method": "POST",
+          "path": "/api/admin/email/templates/<template_type>/reset",
+          "file": "web/routes/registration_routes.py",
+          "line": 380
+        },
+        {
+          "method": "POST",
+          "path": "/api/admin/email/templates/<template_type>/reset",
+          "file": "web/routes/registration_routes.py",
+          "line": 380
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "POST",
+        "path": "/api/admin/email/templates/*/preview",
+        "line": 439
+      },
+      "backend": [
+        {
+          "method": "POST",
+          "path": "/api/admin/email/templates/<template_type>/preview",
+          "file": "web/routes/registration_routes.py",
+          "line": 400
+        },
+        {
+          "method": "POST",
+          "path": "/api/admin/email/templates/<template_type>/preview",
+          "file": "web/routes/registration_routes.py",
+          "line": 400
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "POST",
+        "path": "/api/admin/email/send-invite",
+        "line": 444
+      },
+      "backend": [
+        {
+          "method": "POST",
+          "path": "/api/admin/email/send-invite",
+          "file": "web/routes/registration_routes.py",
+          "line": 460
+        },
+        {
+          "method": "POST",
+          "path": "/api/admin/email/send-invite",
+          "file": "web/routes/registration_routes.py",
+          "line": 460
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "PUT",
+        "path": "/api/admin/email/templates/*",
+        "line": 425
+      },
+      "backend": [
+        {
+          "method": "PUT",
+          "path": "/api/admin/email/templates/<template_type>",
+          "file": "web/routes/registration_routes.py",
+          "line": 341
+        },
+        {
+          "method": "PUT",
+          "path": "/api/admin/email/templates/<template_type>",
+          "file": "web/routes/registration_routes.py",
+          "line": 341
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/cameras",
+        "function": "list",
+        "line": 173
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/cameras",
+          "file": "web/routes/capture_routes.py",
+          "line": 397
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/pi/motion-settings",
+        "function": "getSettings",
+        "line": 220
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/pi/motion-settings",
+          "file": "web/routes/pi_proxy_routes.py",
+          "line": 117
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "POST",
+        "path": "/api/pi/motion-settings",
+        "function": "updateSettings",
+        "line": 234
+      },
+      "backend": [
+        {
+          "method": "POST",
+          "path": "/api/pi/motion-settings",
+          "file": "web/routes/pi_proxy_routes.py",
+          "line": 117
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/active-passive/config",
+        "function": "getActivePassiveConfig",
+        "line": 247
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/active-passive/config",
+          "file": "web/routes/capture_routes.py",
+          "line": 428
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/active-passive/stats",
+        "function": "getActivePassiveStats",
+        "line": 253
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/active-passive/stats",
+          "file": "web/routes/capture_routes.py",
+          "line": 410
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/active-passive/test-trigger",
+        "function": "testActivePassiveTrigger",
+        "line": 259
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/active-passive/test-trigger",
+          "file": "web/routes/capture_routes.py",
+          "line": 440
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/status",
+        "function": "getPiStatus",
+        "line": 268
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/status",
+          "file": "web/routes/processing_routes.py",
+          "line": 72
+        },
+        {
+          "method": "GET",
+          "path": "/api/status",
+          "file": "web/routes/capture_routes.py",
+          "line": 57
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/status",
+        "function": "getProcessingStatus",
+        "line": 274
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/status",
+          "file": "web/routes/processing_routes.py",
+          "line": 72
+        },
+        {
+          "method": "GET",
+          "path": "/api/status",
+          "file": "web/routes/capture_routes.py",
+          "line": 57
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/system-settings",
+        "function": "getSettings",
+        "line": 328
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/system-settings",
+          "file": "web/routes/processing_routes.py",
+          "line": 514
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/models/available",
+        "function": "getAvailable",
+        "line": 341
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/models/available",
+          "file": "web/routes/processing_routes.py",
+          "line": 622
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "path": "/api/admin/email/templates",
+        "function": "getEmailTemplates",
+        "line": 409
+      },
+      "backend": [
+        {
+          "method": "GET",
+          "path": "/api/admin/email/templates",
+          "file": "web/routes/registration_routes.py",
+          "line": 310
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin/email/templates",
+          "file": "web/routes/registration_routes.py",
+          "line": 310
+        }
+      ]
+    }
+  ]
+}

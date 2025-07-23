@@ -5,7 +5,7 @@ import InteractiveCameraFeed from '../components/InteractiveCameraFeed';
 import UserManagement from '../components/UserManagement';
 import LogViewer from '../components/LogViewer';
 import EmailSettings from '../components/settings/EmailSettings';
-import RegistrationSettings from '../components/settings/RegistrationSettings';
+import RegistrationSettingsEditable from '../components/settings/RegistrationSettingsEditable';
 import RegistrationManagement from '../components/settings/RegistrationManagement';
 import EmailTemplates from '../components/settings/EmailTemplates';
 import ClassSelector from '../components/settings/ClassSelector';
@@ -692,7 +692,7 @@ const AdminPanel: React.FC = () => {
       {/* Registration Tab */}
       {activeTab === 'registration' && (
         <div className="space-y-6">
-          <RegistrationSettings />
+          <RegistrationSettingsEditable />
           <RegistrationManagement />
           <EmailTemplates />
         </div>

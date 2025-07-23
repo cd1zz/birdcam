@@ -1,0 +1,58 @@
+# Gitleaks configuration for BirdCam project
+
+[extend]
+useDefault = true
+
+# Custom rules for project-specific patterns
+[[rules]]
+id = "birdcam-api-key"
+description = "BirdCam API Key"
+regex = '''(?i)(birdcam|processor|capture)[-_]?(api[-_]?key|token|secret)['"]?\s*[:=]\s*['"]?[a-zA-Z0-9]{16,}'''
+tags = ["api", "key"]
+
+[[rules]]
+id = "openai-api-key"
+description = "OpenAI API Key"
+regex = '''(?i)(openai[-_]?api[-_]?key|OPENAI_API_KEY)['"]?\s*[:=]\s*['"]?sk-[a-zA-Z0-9]{48}'''
+tags = ["api", "openai"]
+
+[[rules]]
+id = "azure-secret"
+description = "Azure Client Secret"
+regex = '''(?i)(azure[-_]?client[-_]?secret|AZURE_CLIENT_SECRET)['"]?\s*[:=]\s*['"]?[a-zA-Z0-9\-_.~]{34,}'''
+tags = ["azure", "secret"]
+
+# Allowlist - patterns to ignore
+[allowlist]
+description = "Allowlisted files and patterns"
+
+# Ignore example files
+paths = [
+    '''.env.example''',
+    '''config/examples/''',
+    '''test''',
+    '''tests/''',
+    '''*.test.py''',
+    '''*.test.ts''',
+    '''*.test.tsx''',
+    '''*.spec.ts''',
+    '''*.spec.tsx''',
+    '''README.md''',
+    '''docs/'''
+]
+
+# Ignore false positives
+regexes = [
+    '''password\s*=\s*["']password["']''',
+    '''password\s*=\s*["']\*+["']''',
+    '''token\s*=\s*["']test-token["']''',
+    '''secret\s*=\s*["']your-secret-here["']''',
+    '''api_key\s*=\s*["']your-api-key["']''',
+    '''placeholder''',
+    '''example''',
+    '''mock''',
+    '''dummy'''
+]
+
+# Ignore specific commits (if needed)
+commits = []

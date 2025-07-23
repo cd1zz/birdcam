@@ -163,7 +163,7 @@ export default function RegistrationManagement() {
                     <select
                       value={linkForm.link_type}
                       onChange={(e) => setLinkForm({ ...linkForm, link_type: e.target.value as any })}
-                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-800 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                     >
                       <option value="single_use">Single Use</option>
                       <option value="multi_use">Multi Use</option>
@@ -179,7 +179,7 @@ export default function RegistrationManagement() {
                         type="number"
                         value={linkForm.max_uses}
                         onChange={(e) => setLinkForm({ ...linkForm, max_uses: e.target.value })}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 rounded-md"
+                        className="mt-1 block w-full px-3 py-2 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-md"
                         placeholder="Unlimited"
                       />
                     </div>
@@ -257,7 +257,7 @@ export default function RegistrationManagement() {
                           {link.remaining_uses !== null && ` • ${link.remaining_uses} uses remaining`}
                         </div>
                         <div className="mt-2 flex items-center space-x-2">
-                          <code className="text-xs bg-gray-100 dark:bg-gray-900 px-2 py-1 rounded">
+                          <code className="text-xs text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-900 px-2 py-1 rounded">
                             {link.url}
                           </code>
                           <button

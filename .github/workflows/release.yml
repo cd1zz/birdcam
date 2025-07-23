@@ -1,0 +1,116 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Get the previous tag
+        PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        
+        # Generate changelog
+        if [ -n "$PREV_TAG" ]; then
+          CHANGELOG=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s (%h)" | grep -v "Merge pull request")
+        else
+          CHANGELOG=$(git log --pretty=format:"- %s (%h)" | head -20)
+        fi
+        
+        # Save to file for the release
+        echo "## What's Changed" > changelog.md
+        echo "" >> changelog.md
+        echo "$CHANGELOG" >> changelog.md
+        
+        # Set output
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        cat changelog.md >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: ${{ steps.changelog.outputs.changelog }}
+        draft: false
+        prerelease: false
+
+  build-and-upload:
+    needs: create-release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Build frontend
+      working-directory: ./web-ui
+      run: |
+        npm ci
+        npm run build
+        # Create distributable archive
+        tar -czf ../birdcam-web-ui-${{ github.ref_name }}.tar.gz dist/
+    
+    - name: Create deployment package
+      run: |
+        # Create a deployment package with essential files
+        mkdir -p birdcam-${{ github.ref_name }}
+        
+        # Copy Python backend files
+        cp -r pi_capture ai_processor services database config utils web birdcam-${{ github.ref_name }}/
+        cp requirements*.txt birdcam-${{ github.ref_name }}/
+        cp README.md LICENSE birdcam-${{ github.ref_name }}/
+        
+        # Copy scripts
+        cp -r scripts birdcam-${{ github.ref_name }}/
+        
+        # Copy systemd service files
+        mkdir -p birdcam-${{ github.ref_name }}/systemd
+        cp config/systemd/*.service birdcam-${{ github.ref_name }}/systemd/
+        
+        # Create archive
+        tar -czf birdcam-${{ github.ref_name }}.tar.gz birdcam-${{ github.ref_name }}/
+    
+    - name: Upload Release Assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./birdcam-${{ github.ref_name }}.tar.gz
+        asset_name: birdcam-${{ github.ref_name }}.tar.gz
+        asset_content_type: application/gzip
+    
+    - name: Upload Web UI Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./birdcam-web-ui-${{ github.ref_name }}.tar.gz
+        asset_name: birdcam-web-ui-${{ github.ref_name }}.tar.gz
+        asset_content_type: application/gzip

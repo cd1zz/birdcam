@@ -22,7 +22,7 @@ vi.mock('axios', () => ({
 }))
 
 // Now import client after mocking
-const { api, piApi, apiClient, setAuthToken } = await import('./client')
+const { api, setAuthToken } = await import('./client')
 
 describe('API Client', () => {
   const mockAccessToken = 'mock-access-token'
@@ -57,33 +57,35 @@ describe('API Client', () => {
   describe('API Structure', () => {
     it('has expected API structure', () => {
       expect(api).toBeDefined()
-      expect(api.auth).toBeDefined()
       expect(api.detections).toBeDefined()
       expect(api.cameras).toBeDefined()
       expect(api.system).toBeDefined()
       expect(api.admin).toBeDefined()
+      expect(api.motion).toBeDefined()
+      expect(api.status).toBeDefined()
+      expect(api.processing).toBeDefined()
+      expect(api.models).toBeDefined()
+      expect(api.logs).toBeDefined()
     })
 
-    it('has auth endpoints', () => {
-      expect(api.auth.login).toBeDefined()
-      expect(api.auth.logout).toBeDefined()
-      expect(api.auth.refresh).toBeDefined()
-      expect(api.auth.getCurrentUser).toBeDefined()
+    it('has motion endpoints', () => {
+      expect(api.motion.getSettings).toBeDefined()
+      expect(api.motion.updateSettings).toBeDefined()
+      expect(api.motion.getActivePassiveConfig).toBeDefined()
+      expect(api.motion.getActivePassiveStats).toBeDefined()
+      expect(api.motion.testActivePassiveTrigger).toBeDefined()
     })
 
     it('has detection endpoints', () => {
       expect(api.detections.getRecent).toBeDefined()
-      expect(api.detections.getById).toBeDefined()
-      expect(api.detections.delete).toBeDefined()
-      expect(api.detections.getStats).toBeDefined()
+      expect(api.detections.getThumbnail).toBeDefined()
+      expect(api.detections.getVideo).toBeDefined()
     })
 
     it('has camera endpoints', () => {
       expect(api.cameras.list).toBeDefined()
       expect(api.cameras.getStream).toBeDefined()
       expect(api.cameras.getSnapshot).toBeDefined()
-      expect(api.cameras.getMotionSettings).toBeDefined()
-      expect(api.cameras.updateMotionSettings).toBeDefined()
     })
   })
 })

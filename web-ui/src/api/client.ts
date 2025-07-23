@@ -375,27 +375,27 @@ export const api = {
   // Logs APIs
   logs: {
     getPiCaptureLogs: async (params?: { lines?: number; since?: string; level?: string; search?: string }) => {
-      const response = await processingApi.get('/api/admin/logs/pi-capture', { params });
+      const response = await processingApi.get('/api/logs/pi-capture', { params });
       return response.data;
     },
     getAiProcessorLogs: async (params?: { lines?: number; since?: string; level?: string; search?: string }) => {
-      const response = await processingApi.get('/api/admin/logs/ai-processor', { params });
+      const response = await processingApi.get('/api/logs/ai-processor', { params });
       return response.data;
     },
     getRemotePiCaptureLogs: async (params?: { lines?: number; since?: string; level?: string; search?: string; hostname?: string }) => {
-      const response = await processingApi.get('/api/admin/logs/remote/pi-capture', { params });
+      const response = await processingApi.get('/api/logs/remote/pi-capture', { params });
       return response.data;
     },
     getCombinedLogs: async (params?: { lines?: number; since?: string; level?: string; search?: string; service?: string }) => {
-      const response = await processingApi.get('/api/admin/logs/combined', { params });
+      const response = await processingApi.get('/api/logs/combined', { params });
       return response.data;
     },
     getLogLevels: async () => {
-      const response = await processingApi.get('/api/admin/logs/levels');
+      const response = await processingApi.get('/api/logs/levels');
       return response.data;
     },
     exportLogs: async (params?: { since?: string; service?: string; format?: string }) => {
-      const response = await processingApi.get('/api/admin/logs/export', { 
+      const response = await processingApi.get('/api/logs/export', { 
         params,
         responseType: 'blob' 
       });

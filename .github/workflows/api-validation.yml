@@ -1,0 +1,63 @@
+name: API Route Validation
+
+on:
+  pull_request:
+    paths:
+      - 'web-ui/src/api/**'
+      - 'web/**/*.py'
+      - 'scripts/validate_api_routes.py'
+  push:
+    branches: [main]
+    paths:
+      - 'web-ui/src/api/**'
+      - 'web/**/*.py'
+
+jobs:
+  validate-api-routes:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Run API route validation
+      run: |
+        python3 scripts/validate_api_routes.py
+        
+    - name: Upload validation report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: api-routes-report
+        path: api_routes_report.json
+    
+    - name: Comment PR with validation results
+      if: github.event_name == 'pull_request' && failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('api_routes_report.json', 'utf8'));
+          
+          let comment = '## ⚠️ API Route Validation Failed\n\n';
+          
+          if (report.missing_backend.length > 0) {
+            comment += `### Frontend routes without backend implementation (${report.missing_backend.length}):\n`;
+            report.missing_backend.slice(0, 10).forEach(route => {
+              comment += `- ${route.method} ${route.path} (line ${route.line})\n`;
+            });
+            if (report.missing_backend.length > 10) {
+              comment += `\n_...and ${report.missing_backend.length - 10} more_\n`;
+            }
+          }
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });

@@ -1,0 +1,56 @@
+version: 2
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+    reviewers:
+      - "craig"
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
+    ignore:
+      # Don't update major versions automatically for critical packages
+      - dependency-name: "torch"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "ultralytics"
+        update-types: ["version-update:semver-major"]
+
+  # JavaScript dependencies
+  - package-ecosystem: "npm"
+    directory: "/web-ui"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "javascript"
+    reviewers:
+      - "craig"
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
+    ignore:
+      # Don't update major versions automatically for React
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "github-actions"

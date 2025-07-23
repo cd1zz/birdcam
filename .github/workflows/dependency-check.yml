@@ -1,0 +1,92 @@
+name: Dependency Security Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run weekly on Mondays
+    - cron: '0 0 * * 1'
+
+jobs:
+  # Check Python dependencies for vulnerabilities
+  python-security:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install safety
+      run: pip install safety
+    
+    - name: Check Python dependencies
+      run: |
+        # Check all requirements files
+        for req_file in requirements*.txt; do
+          if [ -f "$req_file" ]; then
+            echo "Checking $req_file..."
+            safety check -r "$req_file" --json
+          fi
+        done
+    
+    - name: Run pip-audit
+      run: |
+        pip install pip-audit
+        pip-audit --desc
+
+  # Check JavaScript dependencies for vulnerabilities
+  npm-security:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      working-directory: ./web-ui
+      run: npm ci
+    
+    - name: Run npm audit
+      working-directory: ./web-ui
+      run: |
+        npm audit --production
+        # Don't fail on low/moderate vulnerabilities, only high/critical
+        npm audit --audit-level=high
+    
+    - name: Check for outdated packages
+      working-directory: ./web-ui
+      run: npm outdated || true  # Don't fail, just report
+
+  # License compliance check
+  license-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Check Python licenses
+      run: |
+        pip install pip-licenses
+        pip-licenses --format=csv --with-urls --output-file=python-licenses.csv
+        
+        # Check for problematic licenses
+        if grep -E "(GPL|AGPL|SSPL)" python-licenses.csv; then
+          echo "::warning::Found packages with restrictive licenses"
+        fi
+    
+    - name: Upload license report
+      uses: actions/upload-artifact@v3
+      with:
+        name: license-reports
+        path: |
+          python-licenses.csv

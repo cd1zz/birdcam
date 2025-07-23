@@ -135,7 +135,138 @@ const Analytics: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      {/* Manual Controls - Moved to top */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
+          <span className="text-2xl">🎛️</span>
+          Manual Controls
+        </h3>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          {/* Sync Files Button */}
+          <button
+            onClick={() => syncMutation.mutate()}
+            disabled={syncMutation.isPending || getPiConnectionStatus() !== 'online'}
+            className={`flex flex-col sm:flex-row items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-lg transition-all text-center sm:text-left ${
+              syncMutation.isPending 
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : getPiConnectionStatus() !== 'online'
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800'
+            }`}
+          >
+            {syncMutation.isPending ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <span>Syncing...</span>
+              </>
+            ) : (
+              <>
+                <span className="text-xl">🔄</span>
+                <div>
+                  <div className="font-medium text-sm sm:text-base">Sync Files</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">Pi → AI Server</div>
+                </div>
+              </>
+            )}
+          </button>
+
+          {/* Process Videos Button */}
+          <button
+            onClick={() => processingMutation.mutate()}
+            disabled={processingMutation.isPending || getProcessingConnectionStatus() !== 'online'}
+            className={`flex flex-col sm:flex-row items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-lg transition-all text-center sm:text-left ${
+              processingMutation.isPending
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : getProcessingConnectionStatus() !== 'online'
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30 border border-green-200 dark:border-green-800'
+            }`}
+          >
+            {processingMutation.isPending ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                <span>Processing...</span>
+              </>
+            ) : (
+              <>
+                <span className="text-xl">🤖</span>
+                <div>
+                  <div className="font-medium text-sm sm:text-base">Process Videos</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">Run AI Analysis</div>
+                </div>
+              </>
+            )}
+          </button>
+
+          {/* Cleanup Button */}
+          <button
+            onClick={() => cleanupMutation.mutate()}
+            disabled={cleanupMutation.isPending || getProcessingConnectionStatus() !== 'online'}
+            className={`flex flex-col sm:flex-row items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-lg transition-all text-center sm:text-left ${
+              cleanupMutation.isPending
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : getProcessingConnectionStatus() !== 'online'
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-800'
+            }`}
+          >
+            {cleanupMutation.isPending ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+                <span>Cleaning...</span>
+              </>
+            ) : (
+              <>
+                <span className="text-xl">🧹</span>
+                <div>
+                  <div className="font-medium text-sm sm:text-base">Cleanup Files</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">Remove Old Videos</div>
+                </div>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Status Messages */}
+        <div className="mt-4 space-y-2">
+          {syncMutation.isError && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-2 text-sm text-red-700 dark:text-red-300">
+              ❌ Sync failed: {(syncMutation.error as Error)?.message || 'Connection error'}
+            </div>
+          )}
+          {syncMutation.isSuccess && (
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 text-sm text-green-700 dark:text-green-300">
+              ✅ File sync triggered successfully
+            </div>
+          )}
+          
+          {processingMutation.isError && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-2 text-sm text-red-700 dark:text-red-300">
+              ❌ Processing failed: {(processingMutation.error as Error)?.message || 'Connection error'}
+            </div>
+          )}
+          {processingMutation.isSuccess && (
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 text-sm text-green-700 dark:text-green-300">
+              ✅ AI processing triggered successfully
+            </div>
+          )}
+          
+          {cleanupMutation.isError && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-2 text-sm text-red-700 dark:text-red-300">
+              ❌ Cleanup failed: {(cleanupMutation.error as Error)?.message || 'Connection error'}
+            </div>
+          )}
+          {cleanupMutation.isSuccess && (
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 text-sm text-green-700 dark:text-green-300">
+              ✅ Cleanup triggered successfully
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* System Status Panes - Moved below Manual Controls */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pi Camera System */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
@@ -173,7 +304,7 @@ const Analytics: React.FC = () => {
               
               <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600 dark:text-gray-300">Storage</span>
+                  <span className="text-gray-600 dark:text-gray-300">Storage (System Boot Drive)</span>
                   <span className="text-sm text-gray-500 dark:text-gray-400">
                     {formatBytes(piStatus.storage_used || 0)} / {formatBytes(piStatus.storage_total || 0)}
                   </span>
@@ -383,136 +514,6 @@ const Analytics: React.FC = () => {
               ) : (
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
               )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Manual Controls */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
-          <span className="text-2xl">🎛️</span>
-          Manual Controls
-        </h3>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          {/* Sync Files Button */}
-          <button
-            onClick={() => syncMutation.mutate()}
-            disabled={syncMutation.isPending || getPiConnectionStatus() !== 'online'}
-            className={`flex flex-col sm:flex-row items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-lg transition-all text-center sm:text-left ${
-              syncMutation.isPending 
-                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                : getPiConnectionStatus() !== 'online'
-                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800'
-            }`}
-          >
-            {syncMutation.isPending ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                <span>Syncing...</span>
-              </>
-            ) : (
-              <>
-                <span className="text-xl">🔄</span>
-                <div>
-                  <div className="font-medium text-sm sm:text-base">Sync Files</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">Pi → AI Server</div>
-                </div>
-              </>
-            )}
-          </button>
-
-          {/* Process Videos Button */}
-          <button
-            onClick={() => processingMutation.mutate()}
-            disabled={processingMutation.isPending || getProcessingConnectionStatus() !== 'online'}
-            className={`flex flex-col sm:flex-row items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-lg transition-all text-center sm:text-left ${
-              processingMutation.isPending
-                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                : getProcessingConnectionStatus() !== 'online'
-                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                : 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30 border border-green-200 dark:border-green-800'
-            }`}
-          >
-            {processingMutation.isPending ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
-                <span>Processing...</span>
-              </>
-            ) : (
-              <>
-                <span className="text-xl">🤖</span>
-                <div>
-                  <div className="font-medium text-sm sm:text-base">Process Videos</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">Run AI Analysis</div>
-                </div>
-              </>
-            )}
-          </button>
-
-          {/* Cleanup Button */}
-          <button
-            onClick={() => cleanupMutation.mutate()}
-            disabled={cleanupMutation.isPending || getProcessingConnectionStatus() !== 'online'}
-            className={`flex flex-col sm:flex-row items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-lg transition-all text-center sm:text-left ${
-              cleanupMutation.isPending
-                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                : getProcessingConnectionStatus() !== 'online'
-                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                : 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-800'
-            }`}
-          >
-            {cleanupMutation.isPending ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
-                <span>Cleaning...</span>
-              </>
-            ) : (
-              <>
-                <span className="text-xl">🧹</span>
-                <div>
-                  <div className="font-medium text-sm sm:text-base">Cleanup Files</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">Remove Old Videos</div>
-                </div>
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Status Messages */}
-        <div className="mt-4 space-y-2">
-          {syncMutation.isError && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-2 text-sm text-red-700 dark:text-red-300">
-              ❌ Sync failed: {(syncMutation.error as Error)?.message || 'Connection error'}
-            </div>
-          )}
-          {syncMutation.isSuccess && (
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 text-sm text-green-700 dark:text-green-300">
-              ✅ File sync triggered successfully
-            </div>
-          )}
-          
-          {processingMutation.isError && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-2 text-sm text-red-700 dark:text-red-300">
-              ❌ Processing failed: {(processingMutation.error as Error)?.message || 'Connection error'}
-            </div>
-          )}
-          {processingMutation.isSuccess && (
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 text-sm text-green-700 dark:text-green-300">
-              ✅ AI processing triggered successfully
-            </div>
-          )}
-          
-          {cleanupMutation.isError && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-2 text-sm text-red-700 dark:text-red-300">
-              ❌ Cleanup failed: {(cleanupMutation.error as Error)?.message || 'Connection error'}
-            </div>
-          )}
-          {cleanupMutation.isSuccess && (
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-2 text-sm text-green-700 dark:text-green-300">
-              ✅ Cleanup triggered successfully
             </div>
           )}
         </div>

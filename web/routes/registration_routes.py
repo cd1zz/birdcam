@@ -307,6 +307,72 @@ def create_registration_routes(reg_service: RegistrationService, email_service: 
             'password_require_special': config.password_require_special
         })
     
+    @reg_bp.route('/api/admin/settings/registration', methods=['PUT'])
+    @require_admin_internal
+    def update_registration_settings():
+        """Update registration settings (admin only)"""
+        try:
+            data = request.get_json()
+            
+            # Validate registration mode
+            if 'registration_mode' in data:
+                valid_modes = ['disabled', 'open', 'invitation']
+                if data['registration_mode'] not in valid_modes:
+                    return jsonify({'error': f'Invalid registration mode. Must be one of: {", ".join(valid_modes)}'}), 400
+            
+            # Update settings in the email service config
+            config = email_service.config
+            
+            # Update each setting if provided
+            if 'registration_mode' in data:
+                config.registration_mode = data['registration_mode']
+                # Also update the app config for immediate effect
+                current_app.config['REGISTRATION_MODE'] = data['registration_mode']
+                current_app.config['REGISTRATION_ENABLED'] = data['registration_mode'] != 'disabled'
+            
+            if 'allow_resend_verification' in data:
+                config.allow_resend_verification = bool(data['allow_resend_verification'])
+                current_app.config['ALLOW_RESEND_VERIFICATION'] = config.allow_resend_verification
+            
+            if 'auto_delete_unverified_days' in data:
+                config.auto_delete_unverified_days = int(data['auto_delete_unverified_days'])
+                current_app.config['AUTO_DELETE_UNVERIFIED_DAYS'] = config.auto_delete_unverified_days
+            
+            if 'password_min_length' in data:
+                config.password_min_length = max(6, int(data['password_min_length']))
+                current_app.config['PASSWORD_MIN_LENGTH'] = config.password_min_length
+            
+            if 'password_require_uppercase' in data:
+                config.password_require_uppercase = bool(data['password_require_uppercase'])
+                current_app.config['PASSWORD_REQUIRE_UPPERCASE'] = config.password_require_uppercase
+            
+            if 'password_require_lowercase' in data:
+                config.password_require_lowercase = bool(data['password_require_lowercase'])
+                current_app.config['PASSWORD_REQUIRE_LOWERCASE'] = config.password_require_lowercase
+            
+            if 'password_require_numbers' in data:
+                config.password_require_numbers = bool(data['password_require_numbers'])
+                current_app.config['PASSWORD_REQUIRE_NUMBERS'] = config.password_require_numbers
+            
+            if 'password_require_special' in data:
+                config.password_require_special = bool(data['password_require_special'])
+                current_app.config['PASSWORD_REQUIRE_SPECIAL'] = config.password_require_special
+            
+            # Note: These settings are now stored in memory and will be reset on server restart
+            # For permanent changes, consider storing in database or updating .env file
+            
+            return jsonify({
+                'success': True,
+                'message': 'Registration settings updated successfully',
+                'warning': 'Settings will revert to .env values on server restart unless saved to database'
+            })
+            
+        except ValueError as e:
+            return jsonify({'error': f'Invalid value: {str(e)}'}), 400
+        except Exception as e:
+            logger.error(f"Failed to update registration settings: {e}")
+            return jsonify({'error': 'Failed to update registration settings'}), 500
+    
     @reg_bp.route('/api/admin/email/templates', methods=['GET'])
     @require_admin_internal
     def get_email_templates():
