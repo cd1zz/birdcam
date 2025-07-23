@@ -4,17 +4,12 @@ from core.models import UserRole
 from services.auth_service import AuthService
 from database.repositories.user_repository import UserRepository
 from database.connection import DatabaseManager
-from web.middleware.auth import require_auth, require_admin, g
-from web.middleware.ip_restriction import require_internal_network
+from web.middleware.auth import require_auth, g
 import logging
 
 logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint('auth', __name__)
-
-# Combined decorator for admin + internal network
-def require_admin_internal(f):
-    return require_internal_network(require_admin(f))
 
 def get_auth_service() -> AuthService:
     """Create auth service instance."""
@@ -83,94 +78,6 @@ def get_current_user():
         'last_login': g.user.last_login.isoformat() if g.user.last_login else None
     })
 
-@auth_bp.route('/users', methods=['GET'])
-@require_admin_internal
-def list_users():
-    """List all users (admin only)."""
-    auth_service = get_auth_service()
-    users = auth_service.user_repository.get_all()
-    
-    return jsonify({
-        'users': [{
-            'id': user.id,
-            'username': user.username,
-            'role': user.role.value,
-            'is_active': user.is_active,
-            'created_at': user.created_at.isoformat() if user.created_at else None,
-            'last_login': user.last_login.isoformat() if user.last_login else None
-        } for user in users]
-    })
-
-@auth_bp.route('/users', methods=['POST'])
-@require_admin_internal
-def create_user():
-    """Create a new user (admin only)."""
-    data = request.get_json()
-    
-    if not data or 'username' not in data or 'password' not in data:
-        return jsonify({'error': 'Username and password required'}), 400
-    
-    # Parse role
-    role_str = data.get('role', 'viewer')
-    try:
-        role = UserRole(role_str)
-    except ValueError:
-        return jsonify({'error': f'Invalid role: {role_str}'}), 400
-    
-    auth_service = get_auth_service()
-    user = auth_service.create_user(data['username'], data['password'], role)
-    
-    if not user:
-        return jsonify({'error': 'Username already exists'}), 409
-    
-    return jsonify({
-        'id': user.id,
-        'username': user.username,
-        'role': user.role.value,
-        'created_at': user.created_at.isoformat() if user.created_at else None
-    }), 201
-
-@auth_bp.route('/users/<int:user_id>', methods=['PUT'])
-@require_admin_internal
-def update_user(user_id: int):
-    """Update user (admin only)."""
-    data = request.get_json()
-    
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
-    
-    auth_service = get_auth_service()
-    
-    # Handle password update request
-    if 'password' in data:
-        if not auth_service.update_password(user_id, data['password']):
-            return jsonify({'error': 'User not found'}), 404
-    
-    # Handle role update request
-    if 'role' in data:
-        try:
-            role = UserRole(data['role'])
-            if not auth_service.update_role(user_id, role):
-                return jsonify({'error': 'Cannot update role (possibly last admin)'}), 400
-        except ValueError:
-            return jsonify({'error': f'Invalid role: {data["role"]}'}), 400
-    
-    return jsonify({'message': 'User updated successfully'})
-
-@auth_bp.route('/users/<int:user_id>', methods=['DELETE'])
-@require_admin_internal
-def deactivate_user(user_id: int):
-    """Deactivate user (admin only)."""
-    # Prevent self-deactivation
-    if g.user.id == user_id:
-        return jsonify({'error': 'Cannot deactivate your own account'}), 400
-    
-    auth_service = get_auth_service()
-    
-    if not auth_service.deactivate_user(user_id):
-        return jsonify({'error': 'Cannot deactivate user (possibly last admin or not found)'}), 400
-    
-    return jsonify({'message': 'User deactivated successfully'})
 
 @auth_bp.route('/change-password', methods=['POST'])
 @require_auth

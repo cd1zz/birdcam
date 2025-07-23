@@ -39,6 +39,7 @@ def create_processing_app(processing_service, video_repo, detection_repo, config
     from web.routes.pi_proxy_routes import create_pi_proxy_routes
     from web.routes.log_routes import log_routes
     from web.routes.registration_routes import create_registration_routes
+    from web.admin_routes import admin_bp
     
     # Initialize database
     from database.connection import DatabaseManager
@@ -66,6 +67,9 @@ def create_processing_app(processing_service, video_repo, detection_repo, config
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(setup_bp, url_prefix='/api/setup')
     app.register_blueprint(log_routes)
+    
+    # Register admin blueprint (includes user management routes)
+    app.register_blueprint(admin_bp)
     
     # Register registration routes
     registration_bp = create_registration_routes(registration_service, email_service)

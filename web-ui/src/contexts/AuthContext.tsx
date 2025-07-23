@@ -36,7 +36,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const refreshIntervalRef = useRef<number | null>(null);
+  const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   const refreshToken = async () => {
     const refreshTokenValue = localStorage.getItem('refreshToken');

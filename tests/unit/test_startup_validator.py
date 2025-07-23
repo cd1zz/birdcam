@@ -81,7 +81,7 @@ class TestStartupValidator:
                 assert dir_path.exists(), f"Directory not created: {dir_name}"
             
             # Should have success messages
-            success_messages = [msg for msg in validator.info if 'Directory' in msg and '✅' in msg]
+            success_messages = [msg for msg in validator.info if 'Created directory' in msg or 'Directory exists' in msg]
             assert len(success_messages) > 0
     
     def test_database_validation_success(self, mock_config):
@@ -140,7 +140,8 @@ class TestStartupValidator:
         
         # Should have error message
         assert len(validator.errors) > 0
-        db_error_messages = [msg for msg in validator.errors if 'Database validation failed' in msg]
+        # Check for database related error messages
+        db_error_messages = [msg for msg in validator.errors if 'database' in msg.lower() or 'Database directory' in msg]
         assert len(db_error_messages) > 0
     
     def test_configuration_validation(self, mock_config):

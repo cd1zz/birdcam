@@ -97,6 +97,15 @@ Tests use pytest with a clear unit/integration separation. When adding features:
 - Mock external dependencies (cameras, filesystem) for unit tests
 - Use `pytest -k` to run specific tests during development
 
+### Testing Requirements
+- **ALWAYS add tests when adding new functionality or modifying existing code**
+- Write unit tests for individual functions/methods
+- Write integration tests for API endpoints and service interactions
+- Ensure tests pass before considering a feature complete
+- Update existing tests when changing functionality
+- Frontend: Add component tests for new React components
+- Frontend: Add E2E tests for new user workflows
+
 ## Code Maintenance Guidelines
 
 ### Logging Standards

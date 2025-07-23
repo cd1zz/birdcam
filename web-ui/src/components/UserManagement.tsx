@@ -22,14 +22,14 @@ export default function UserManagement() {
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ['users'],
     queryFn: async () => {
-      const response = await apiClient.get('/api/auth/users');
+      const response = await apiClient.get('/api/admin/users');
       return response.data.users; // Extract users array from response
     },
   });
 
   const createUserMutation = useMutation({
     mutationFn: async (userData: typeof newUser) => {
-      const response = await apiClient.post('/api/auth/users', userData);
+      const response = await apiClient.post('/api/admin/users', userData);
       return response.data;
     },
     onSuccess: () => {
@@ -45,7 +45,7 @@ export default function UserManagement() {
 
   const updateUserMutation = useMutation({
     mutationFn: async ({ id, ...data }: { id: number; role?: string; is_active?: boolean }) => {
-      const response = await apiClient.put(`/api/auth/users/${id}`, data);
+      const response = await apiClient.put(`/api/admin/users/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -55,7 +55,7 @@ export default function UserManagement() {
 
   const deleteUserMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiClient.delete(`/api/auth/users/${id}`);
+      const response = await apiClient.delete(`/api/admin/users/${id}`);
       return response.data;
     },
     onSuccess: () => {

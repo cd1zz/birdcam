@@ -72,6 +72,25 @@ Thumbs.db
 # Test cache
 .pytest_cache/
 
+# Python test coverage
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+pytest_html_report.html
+assets/
+
+# Frontend test artifacts  
+web-ui/coverage/
+web-ui/test-results/
+web-ui/playwright-report/
+.nyc_output/
+
+# Test report files
+test-results.xml
+junit.xml
+**/test-results/
+
 # Node.js / React UI
 web-ui/node_modules/
 web-ui/dist/

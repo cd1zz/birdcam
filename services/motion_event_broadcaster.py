@@ -104,11 +104,13 @@ class MotionEventBroadcaster:
             # Log the motion event
             logger.motion(f"Motion detected on camera {camera_id}", confidence=f"{confidence:.2f}")
             
-            # Trigger recording on all cameras if cross-triggering is enabled
-            if self.cross_trigger_enabled:
-                triggered_cameras = []
-                
-                for listener_camera_id, callback in self._motion_listeners.items():
+            # Trigger recording based on cross-trigger settings
+            triggered_cameras = []
+            
+            for listener_camera_id, callback in self._motion_listeners.items():
+                # Always trigger the detecting camera itself
+                # Only trigger other cameras if cross-triggering is enabled
+                if listener_camera_id == camera_id or self.cross_trigger_enabled:
                     try:
                         callback(event)
                         triggered_cameras.append(listener_camera_id)
@@ -119,9 +121,9 @@ class MotionEventBroadcaster:
                             
                     except Exception as e:
                         logger.error(f"Error triggering camera {listener_camera_id}: {e}")
-                
-                if triggered_cameras:
-                    logger.trigger(f"Triggered recording on cameras: {triggered_cameras}")
+            
+            if triggered_cameras:
+                logger.trigger(f"Triggered recording on cameras: {triggered_cameras}")
     
     def is_motion_active(self) -> bool:
         """Check if motion is currently active (within timeout period)"""
@@ -154,11 +156,18 @@ class MotionEventBroadcaster:
     def get_statistics(self) -> Dict:
         """Get motion detection statistics"""
         with self._lock:
+            # Calculate active cameras directly to avoid deadlock
+            current_time = time.time()
+            active_cameras_count = 0
+            for camera_id, event in self._recent_motion_events.items():
+                if current_time - event.timestamp <= self.trigger_timeout:
+                    active_cameras_count += 1
+            
             return {
                 'total_events': self._total_events,
                 'cross_triggers': self._cross_triggers,
                 'registered_cameras': len(self._motion_listeners),
-                'active_cameras': len(self.get_active_cameras()),
+                'active_cameras': active_cameras_count,
                 'global_motion_active': self._global_motion_active,
                 'last_motion_time': self._last_motion_time
             }
