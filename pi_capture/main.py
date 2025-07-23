@@ -172,12 +172,6 @@ def main():
         configs = load_all_capture_configs()
         logger.ok(f"Loaded {len(configs)} camera configuration(s)")
         
-        # Initialize motion broadcaster for cross-camera triggering
-        logger.setup("Initializing motion broadcaster...")
-        cross_trigger_enabled = os.getenv('CROSS_CAMERA_TRIGGER', 'true').lower() == 'true'
-        trigger_timeout = float(os.getenv('CROSS_TRIGGER_TIMEOUT', '5.0'))
-        # Cross-camera triggering configuration
-        logger.ok("Motion broadcaster initialized", cross_trigger=cross_trigger_enabled, timeout_seconds=trigger_timeout)
 
         capture_services = {}
         sync_service = None

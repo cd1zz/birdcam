@@ -54,12 +54,6 @@ UPLOAD_TIMEOUT_SECONDS=300     # Maximum upload time
 PI_CLEANUP_DAYS=3             # Delete local files after N days
 ```
 
-### Multi-Camera Settings
-```bash
-CROSS_CAMERA_TRIGGER=true      # Enable synchronized recording
-CROSS_TRIGGER_TIMEOUT=5.0      # Sync timeout in seconds
-```
-
 ### Web Interface
 ```bash
 CAPTURE_PORT=8090              # Pi web API port
