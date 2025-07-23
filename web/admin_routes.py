@@ -3,10 +3,9 @@ Centralized admin API routes
 All admin-only endpoints are organized under /api/admin/*
 """
 from flask import Blueprint, request, jsonify, current_app
-from functools import wraps
 from core.models import User, UserRole
-from web.middleware.auth import require_auth, require_admin, g
-from web.middleware.ip_restriction import require_internal_network
+from web.middleware import require_auth
+from web.middleware.decorators import require_admin_internal
 from utils.capture_logger import logger
 import json
 import os
@@ -16,10 +15,6 @@ from web.handlers.auth_handlers import list_users_handler, create_user_handler, 
 from web.handlers.log_handlers import get_logs_handler, get_log_files_handler, get_capture_logs_handler, download_logs_handler, clear_logs_handler
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
-
-# Combined decorator for admin + internal network
-def require_admin_internal(f):
-    return require_internal_network(require_admin(f))
 
 # User Management Routes
 @admin_bp.route('/users', methods=['GET'])

@@ -6,21 +6,14 @@ import threading
 from flask import request, jsonify, send_from_directory, send_file
 from services.system_metrics import SystemMetricsCollector
 from pathlib import Path
-from web.middleware.auth import require_auth, require_admin, require_auth_or_secret
-from web.middleware.ip_restriction import require_internal_network
+from web.middleware import require_auth
+from web.middleware.auth import require_auth_or_secret
+from web.middleware.decorators import require_admin_internal, require_auth_internal
 
 def create_processing_routes(app, processing_service, video_repo, detection_repo, config):
     
     # Initialize system metrics collector
     metrics_collector = SystemMetricsCollector(str(config.processing.storage_path))
-    
-    # Combined decorator for admin + internal network
-    def require_admin_internal(f):
-        return require_internal_network(require_admin(f))
-    
-    # Combined decorator for auth + internal network  
-    def require_auth_internal(f):
-        return require_internal_network(require_auth(f))
     
     # Track startup time for uptime calculation
     import time
