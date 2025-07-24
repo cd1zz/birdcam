@@ -399,9 +399,11 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
         """List available cameras"""
         camera_list = []
         for cam_id, service in capture_services.items():
+            # Get camera name from environment or use default
+            camera_name = os.getenv(f'CAMERA_NAME_{cam_id}', f'Camera {cam_id}')
             camera_list.append({
                 'id': cam_id,
-                'name': f'Camera {cam_id}',
+                'name': camera_name,
                 'is_active': service.camera_manager.is_opened(),
                 'sensor_type': 'IMX500' if cam_id == 1 else 'OV5647'  
             })

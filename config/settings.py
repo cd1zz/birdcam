@@ -168,28 +168,29 @@ def load_capture_config(camera_id: int = 0, camera_type: Optional[str] = None) -
     camera_path = base_path / f"camera_{camera_id}"
     
     # Get per-camera type configuration
-    camera_type_env = os.getenv(f'CAMERA_{camera_id}_TYPE', 'auto').lower()
+    camera_type_env = os.getenv(f'CAMERA_TYPE_{camera_id}', os.getenv(f'CAMERA_{camera_id}_TYPE', 'auto')).lower()
     if camera_type_env not in ['auto', 'picamera2', 'opencv']:
         camera_type_env = 'auto'
     
+    # Get per-camera name
+    camera_name = os.getenv(f'CAMERA_NAME_{camera_id}', f'Camera {camera_id}')
+    
     # Get per-camera resolution (with fallback to global settings)
-    resolution_env = os.getenv(f'CAMERA_{camera_id}_RESOLUTION', '')
-    if resolution_env and 'x' in resolution_env:
-        try:
-            width, height = map(int, resolution_env.split('x'))
-            resolution = (width, height)
-        except ValueError:
-            resolution = (get_int_env('RESOLUTION_WIDTH', 640), 
-                        get_int_env('RESOLUTION_HEIGHT', 480))
-    else:
-        resolution = (get_int_env('RESOLUTION_WIDTH', 640), 
-                     get_int_env('RESOLUTION_HEIGHT', 480))
+    # Try new format first (CAMERA_WIDTH_0, CAMERA_HEIGHT_0), then old format
+    width = get_int_env(f'CAMERA_WIDTH_{camera_id}', get_int_env(f'CAMERA_{camera_id}_WIDTH', get_int_env('RESOLUTION_WIDTH', 640)))
+    height = get_int_env(f'CAMERA_HEIGHT_{camera_id}', get_int_env(f'CAMERA_{camera_id}_HEIGHT', get_int_env('RESOLUTION_HEIGHT', 480)))
+    resolution = (width, height)
     
     # Get per-camera FPS (with fallback to global setting)
-    fps = get_int_env(f'CAMERA_{camera_id}_FPS', get_int_env('FPS', 10))
+    fps = get_int_env(f'CAMERA_FPS_{camera_id}', get_int_env(f'CAMERA_{camera_id}_FPS', get_int_env('FPS', 10)))
     
     # Get per-camera video device (for OpenCV)
-    video_device = get_int_env(f'CAMERA_{camera_id}_DEVICE', None)
+    # Try new format first (CAMERA_DEVICE_0), then old format
+    device_str = os.getenv(f'CAMERA_DEVICE_{camera_id}', os.getenv(f'CAMERA_{camera_id}_DEVICE', ''))
+    if device_str and device_str.startswith('/dev/video'):
+        video_device = int(device_str.replace('/dev/video', ''))
+    else:
+        video_device = get_int_env(f'CAMERA_DEVICE_{camera_id}', get_int_env(f'CAMERA_{camera_id}_DEVICE', camera_id))
     
     return AppConfig(
         database=DatabaseConfig(path=camera_path / "capture.db"),
@@ -250,9 +251,20 @@ def load_capture_config(camera_id: int = 0, camera_type: Optional[str] = None) -
 def load_all_capture_configs() -> List[AppConfig]:
     """Load configurations for all cameras.
 
-    If CAMERA_IDS is provided it will be used. Otherwise the system will
-    auto-detect available cameras.
+    Uses CAMERA_COUNT to determine how many cameras to configure.
+    Falls back to CAMERA_IDS for backwards compatibility.
     """
+    # First check for new-style CAMERA_COUNT configuration
+    camera_count = get_int_env('CAMERA_COUNT', 0)
+    
+    if camera_count > 0:
+        # Use new-style configuration with CAMERA_COUNT
+        configs: List[AppConfig] = []
+        for cam_id in range(camera_count):
+            configs.append(load_capture_config(cam_id))
+        return configs
+    
+    # Fall back to old-style CAMERA_IDS configuration
     ids_env = os.getenv('CAMERA_IDS', '')
 
     from services.camera_manager import detect_available_cameras

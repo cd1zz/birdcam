@@ -18,27 +18,45 @@ from pathlib import Path
 
 
 def detect_csi_cameras():
-    """Detect available CSI cameras using libcamera-list"""
+    """Detect available CSI cameras using libcamera-hello --list-cameras"""
     cameras = []
     try:
-        result = subprocess.run(['libcamera-list'], capture_output=True, text=True)
+        result = subprocess.run(['libcamera-hello', '--list-cameras'], capture_output=True, text=True)
         if result.returncode == 0:
             # Parse output looking for camera entries
             lines = result.stdout.strip().split('\n')
-            for i, line in enumerate(lines):
-                if 'Available cameras' in line:
-                    continue
-                match = re.match(r'^(\d+)\s*:\s*(.+)$', line)
-                if match:
-                    cam_id = match.group(1)
-                    cam_name = match.group(2).strip()
+            current_id = None
+            current_name = None
+            
+            for line in lines:
+                # Look for camera ID line (e.g., "0 : imx500 [4056x3040 12-bit RGGB]")
+                id_match = re.match(r'^(\d+)\s*:\s*(\S+)\s*\[.*\]', line)
+                if id_match:
+                    current_id = int(id_match.group(1))
+                    current_name = id_match.group(2)
+                
+                # Look for model line to get more descriptive name
+                model_match = re.search(r'Model\s*:\s*(.+)', line)
+                if model_match and current_id is not None:
+                    full_name = model_match.group(1).strip()
                     cameras.append({
-                        'id': int(cam_id),
-                        'name': cam_name,
+                        'id': current_id,
+                        'name': f"{full_name} ({current_name})" if current_name else full_name,
                         'type': 'CSI'
                     })
+                    current_id = None
+                    current_name = None
+            
+            # If we found camera info but no model, add it anyway
+            if current_id is not None and current_name is not None:
+                cameras.append({
+                    'id': current_id,
+                    'name': current_name,
+                    'type': 'CSI'
+                })
+                    
     except FileNotFoundError:
-        print("Warning: libcamera-list not found. CSI camera detection unavailable.")
+        print("Warning: libcamera-hello not found. CSI camera detection unavailable.")
     except Exception as e:
         print(f"Warning: Error detecting CSI cameras: {e}")
     
