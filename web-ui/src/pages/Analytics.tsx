@@ -35,15 +35,6 @@ const Analytics: React.FC = () => {
     refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
-  // Fetch detailed system metrics including disk roles
-  const { data: systemMetrics } = useQuery({
-    queryKey: ['systemMetrics'],
-    queryFn: () => api.get('/api/system-metrics').then(res => res.data),
-    refetchInterval: 30000, // Less frequent than status
-    staleTime: 20000,
-    gcTime: 60000,
-    refetchOnWindowFocus: false,
-  });
 
   // Handle success/error states with useEffect
   useEffect(() => {
@@ -450,10 +441,17 @@ const Analytics: React.FC = () => {
               )}
               
               {/* Disk Storage with Roles */}
-              {systemMetrics?.disks && systemMetrics.disks.length > 0 ? (
+              {processingStatus.system?.disks && processingStatus.system.disks.length > 0 ? (
                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
                   <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Storage Disks</div>
-                  {systemMetrics.disks.map((disk: any, index: number) => (
+                  {processingStatus.system.disks.map((disk: {
+                    device: string;
+                    mountpoint: string;
+                    role: string;
+                    percent: number;
+                    used_gb: number;
+                    total_gb: number;
+                  }, index: number) => (
                     <div key={disk.device || index} className="space-y-1">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1">

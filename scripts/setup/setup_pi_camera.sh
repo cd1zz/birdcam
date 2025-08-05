@@ -40,9 +40,21 @@ if ! python3 -c "import venv" &> /dev/null; then
     MISSING_DEPS+=("python3-venv")
 fi
 
-# Check for libcamera
-if ! command -v libcamera-hello &> /dev/null; then
-    MISSING_DEPS+=("libcamera-apps")
+# Check for libcamera/rpicam commands (rpicam-* is the new naming)
+CAMERA_CMD_FOUND=false
+for cmd in rpicam-hello rpicam-still rpicam-vid libcamera-hello libcamera-still libcamera-vid; do
+    if command -v $cmd &> /dev/null; then
+        CAMERA_CMD_FOUND=true
+        break
+    fi
+done
+
+if [ "$CAMERA_CMD_FOUND" = false ]; then
+    # Also check if the packages are installed
+    if ! dpkg -l rpicam-apps 2>/dev/null | grep -q "^ii" && \
+       ! dpkg -l libcamera-apps 2>/dev/null | grep -q "^ii"; then
+        MISSING_DEPS+=("rpicam-apps")
+    fi
 fi
 
 # Check for v4l2 tools (for USB cameras)

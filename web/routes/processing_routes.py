@@ -74,7 +74,7 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             # Get system metrics
             metrics = metrics_collector.get_metrics_dict()
             
-            # Get storage info from metrics
+            # Get storage info from metrics (for backward compatibility)
             storage_info = metrics.get('disks', [{}])[0] if metrics.get('disks') else {}
             storage_used = int(storage_info.get('used_gb', 0) * 1024 * 1024 * 1024)  # Convert GB to bytes
             storage_total = int(storage_info.get('total_gb', 100) * 1024 * 1024 * 1024)  # Convert GB to bytes
@@ -133,7 +133,10 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
                 'system': {
                     'cpu_percent': metrics.get('cpu_percent', 0),
                     'memory_percent': metrics.get('memory_percent', 0),
-                    'model_loaded': processing_service.model_manager.is_loaded
+                    'memory_used_gb': metrics.get('memory_used_gb', 0),
+                    'memory_total_gb': metrics.get('memory_total_gb', 0),
+                    'model_loaded': processing_service.model_manager.is_loaded,
+                    'disks': metrics.get('disks', [])
                 },
                 
                 # Historical stats
@@ -495,15 +498,6 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
     def serve_thumbnail(filename):
         return send_from_directory(config.processing.storage_path / "thumbnails", filename)
     
-    @app.route('/api/system-metrics')
-    @require_auth_internal
-    def api_system_metrics():
-        """Get current system metrics (CPU, memory, disk)"""
-        try:
-            metrics = metrics_collector.get_metrics_dict()
-            return jsonify(metrics)
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
     
     @app.route('/api/system-settings', methods=['GET'])
     @require_auth_internal

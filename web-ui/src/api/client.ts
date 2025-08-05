@@ -119,7 +119,19 @@ export interface SystemStatus {
   system?: {
     cpu_percent: number;
     memory_percent: number;
+    memory_used_gb: number;
+    memory_total_gb: number;
     model_loaded: boolean;
+    disks: Array<{
+      device: string;
+      mountpoint: string;
+      fstype: string;
+      percent: number;
+      used_gb: number;
+      total_gb: number;
+      free_gb: number;
+      role: string;
+    }>;
   };
   totals?: {
     videos_processed: number;
