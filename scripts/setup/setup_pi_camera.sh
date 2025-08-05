@@ -11,6 +11,15 @@ echo "BirdCam Raspberry Pi Camera Setup"
 echo "================================================"
 echo
 
+# Check if running with sudo
+if [ "$EUID" -eq 0 ]; then 
+    echo "Error: This script should not be run with sudo"
+    echo "Please run as: ./setup_pi_camera.sh"
+    echo
+    echo "The script will ask for sudo when needed for system directories."
+    exit 1
+fi
+
 # Check if running on Raspberry Pi
 if [ ! -f /proc/device-tree/model ]; then
     echo "Warning: This doesn't appear to be a Raspberry Pi."
@@ -157,17 +166,26 @@ fi
 # Create required directories
 echo
 echo "Creating required directories..."
-mkdir -p /var/birdcam/videos
-mkdir -p /var/log/birdcam
 
-# Set permissions (user needs to own these)
-if [ -w /var/birdcam ]; then
-    echo "Setting permissions on /var/birdcam..."
+# Check if directories exist and create them with sudo if needed
+if [ ! -d /var/birdcam ]; then
+    echo "Creating /var/birdcam directory (requires sudo)..."
+    sudo mkdir -p /var/birdcam/videos
     sudo chown -R $USER:$USER /var/birdcam
-    sudo chown -R $USER:$USER /var/log/birdcam
 else
-    echo "Note: You may need to run with sudo to create system directories"
+    # Directory exists, ensure subdirectories exist
+    if [ ! -d /var/birdcam/videos ]; then
+        mkdir -p /var/birdcam/videos
+    fi
 fi
+
+if [ ! -d /var/log/birdcam ]; then
+    echo "Creating /var/log/birdcam directory (requires sudo)..."
+    sudo mkdir -p /var/log/birdcam
+    sudo chown -R $USER:$USER /var/log/birdcam
+fi
+
+echo "✓ Directories created with proper permissions"
 
 echo
 echo "================================================"
