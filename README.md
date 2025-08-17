@@ -61,10 +61,18 @@ cd birdcam
 
 # 2. IMPORTANT: Setup camera and virtual environment first
 # This script handles picamera2, numpy, and venv issues automatically
+# It will also install all required system packages
 ./scripts/setup/setup_pi_camera.sh
 
-# 3. Use the interactive configuration generator (RECOMMENDED)
-python3 scripts/setup/pi_env_generator.py
+# 3. Activate the virtual environment created by setup script
+source .venv/bin/activate
+
+# 4. Install Python dependencies
+# Note: picamera2 uses system packages via --system-site-packages
+pip install -r requirements.capture.txt
+
+# 5. Use the interactive configuration generator (RECOMMENDED)
+python scripts/setup/pi_env_generator.py
 # This will:
 # - Auto-detect your cameras (CSI and USB)
 # - Help you configure settings interactively
@@ -75,14 +83,8 @@ python3 scripts/setup/pi_env_generator.py
 # cp config/examples/.env.pi.example .env.pi
 # nano .env.pi
 
-# 4. Activate the virtual environment created by setup script
-source .venv/bin/activate
-
-# 5. Install Python dependencies
-# Note: picamera2 is NOT in requirements.capture.txt - it uses system packages
-pip install -r requirements.capture.txt
-
 # 6. Test the setup before installing service
+# (With cameras connected, or it will exit with "No cameras detected")
 python pi_capture/main.py
 # Press Ctrl+C after verifying camera feed works
 
@@ -98,6 +100,12 @@ journalctl -u pi-capture.service -f  # View logs
 #### Common Pi Setup Issues:
 
 **picamera2/numpy errors**: The setup_pi_camera.sh script creates a virtual environment with `--system-site-packages` to use the system's picamera2 installation.
+
+**Service fails with "No such file or directory"**: The systemd service needs `ProtectHome=read-only` instead of `ProtectHome=true` to access the virtual environment in /home/pi.
+
+**Numpy binary incompatibility**: If you see "numpy.dtype size changed" errors, the system has conflicting numpy versions. The setup script handles this automatically by using system numpy.
+
+**No cameras detected**: This is normal if no cameras are connected. The service will exit gracefully. Connect cameras before starting the service.
 
 **Camera not detected**: 
 - CSI cameras need a reboot after first enable

@@ -18,7 +18,7 @@ SyslogIdentifier=pi-capture
 
 # Security settings - relaxed for camera access
 PrivateTmp=true
-ProtectSystem=full
+ProtectSystem=strict
 ProtectHome=read-only
 ReadWritePaths=/home/pi/bird_footage /home/pi/birdcam/database /home/pi/birdcam
 
