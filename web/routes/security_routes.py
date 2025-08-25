@@ -63,24 +63,32 @@ def get_security_logs():
         since_str = since_time.strftime('%Y-%m-%d %H:%M:%S')
         
         # Build journalctl command
+        # Note: We don't use -t flag as syslog doesn't tag properly
+        # Instead we'll grep for our logger name
         cmd = [
             'journalctl',
-            '-t', 'birdcam.security.audit',
             '--since', since_str,
             '--no-pager',
-            '-n', '1000'  # Limit to last 1000 entries
+            '-n', '5000',  # Get more entries since we'll filter
+            '--output', 'cat'  # Get just the message without metadata
         ]
         
-        # Execute command
+        # Execute command and filter for security audit logs
         result = subprocess.run(cmd, capture_output=True, text=True)
         
         if result.returncode != 0:
             logger.error(f"Failed to get security logs: {result.stderr}")
             return jsonify({'error': 'Failed to retrieve security logs'}), 500
-            
+        
+        # Filter for security audit logs
+        security_lines = []
+        for line in result.stdout.strip().split('\n'):
+            if 'birdcam.security.audit' in line:
+                security_lines.append(line)
+                
         # Parse log entries
         logs = []
-        for line in result.stdout.strip().split('\n'):
+        for line in security_lines:
             if not line:
                 continue
                 
@@ -122,10 +130,10 @@ def get_security_summary():
         # Get logs
         cmd = [
             'journalctl',
-            '-t', 'birdcam.security.audit',
             '--since', since_str,
             '--no-pager',
-            '-n', '10000'  # Get more entries for statistics
+            '-n', '20000',  # Get more entries since we'll filter
+            '--output', 'cat'  # Get just the message without metadata
         ]
         
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -133,6 +141,12 @@ def get_security_summary():
         if result.returncode != 0:
             return jsonify({'error': 'Failed to retrieve security logs'}), 500
             
+        # Filter for security audit logs
+        security_lines = []
+        for line in result.stdout.strip().split('\n'):
+            if 'birdcam.security.audit' in line:
+                security_lines.append(line)
+                
         # Calculate statistics
         stats = {
             'total_events': 0,
@@ -147,7 +161,7 @@ def get_security_summary():
             'events_by_hour': defaultdict(int)
         }
         
-        for line in result.stdout.strip().split('\n'):
+        for line in security_lines:
             if not line:
                 continue
                 
@@ -205,10 +219,10 @@ def get_locked_users():
         
         cmd = [
             'journalctl',
-            '-t', 'birdcam.security.audit',
             '--since', since_str,
             '--no-pager',
-            '-n', '1000'
+            '-n', '5000',  # Get more entries since we'll filter
+            '--output', 'cat'  # Get just the message without metadata
         ]
         
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -216,10 +230,16 @@ def get_locked_users():
         if result.returncode != 0:
             return jsonify({'error': 'Failed to retrieve security logs'}), 500
             
+        # Filter for security audit logs
+        security_lines = []
+        for line in result.stdout.strip().split('\n'):
+            if 'birdcam.security.audit' in line:
+                security_lines.append(line)
+                
         # Track failed attempts by username
         failed_attempts = defaultdict(list)
         
-        for line in result.stdout.strip().split('\n'):
+        for line in security_lines:
             if not line:
                 continue
                 
