@@ -4,6 +4,7 @@ from datetime import datetime
 from core.models import User, UserRole
 from database.repositories.user_repository import UserRepository
 from utils.auth import hash_password, verify_password, jwt_manager
+from utils.security_logger import log_auth_failed, log_auth_success, log_password_changed, log_role_changed, log_user_deactivated, log_token_refresh_failed
 import logging
 
 logger = logging.getLogger(__name__)
@@ -19,10 +20,16 @@ class AuthService:
         """
         user = self.user_repository.get_by_username(username)
         
-        if not user or not user.is_active:
+        if not user:
+            log_auth_failed(username, "user_not_found")
+            return None
+            
+        if not user.is_active:
+            log_auth_failed(username, "account_disabled", {"user_id": user.id})
             return None
         
         if not verify_password(password, user.password_hash):
+            log_auth_failed(username, "invalid_password", {"user_id": user.id})
             return None
         
         # Update last login
@@ -37,6 +44,9 @@ class AuthService:
         access_token = jwt_manager.create_access_token(token_data)
         refresh_token = jwt_manager.create_refresh_token(token_data)
         
+        # Log successful authentication
+        log_auth_success(username, {"user_id": user.id, "role": user.role.value})
+        
         return user, access_token, refresh_token
     
     def refresh_tokens(self, refresh_token: str) -> Optional[Tuple[str, str]]:
@@ -46,12 +56,18 @@ class AuthService:
         """
         payload = jwt_manager.verify_token(refresh_token, token_type="refresh")
         if not payload:
+            log_token_refresh_failed("invalid_token")
             return None
         
         user_id = int(payload.get("sub"))
         user = self.user_repository.get_by_id(user_id)
         
-        if not user or not user.is_active:
+        if not user:
+            log_token_refresh_failed("user_not_found", {"user_id": user_id})
+            return None
+            
+        if not user.is_active:
+            log_token_refresh_failed("account_disabled", {"user_id": user_id, "username": user.username})
             return None
         
         # Create new tokens
@@ -100,9 +116,10 @@ class AuthService:
         self.user_repository.update(user)
         
         logger.info(f"Updated password for user: {user.username}")
+        log_password_changed(user.username)
         return True
     
-    def update_role(self, user_id: int, new_role: UserRole) -> bool:
+    def update_role(self, user_id: int, new_role: UserRole, changed_by: str = None) -> bool:
         """Update user role."""
         user = self.user_repository.get_by_id(user_id)
         if not user:
@@ -115,13 +132,15 @@ class AuthService:
                 logger.warning("Cannot remove last admin user")
                 return False
         
+        old_role = user.role
         user.role = new_role
         self.user_repository.update(user)
         
         logger.info(f"Updated role for user {user.username} to {new_role.value}")
+        log_role_changed(user.username, new_role.value, changed_by or "system")
         return True
     
-    def deactivate_user(self, user_id: int) -> bool:
+    def deactivate_user(self, user_id: int, deactivated_by: str = None) -> bool:
         """Deactivate a user."""
         user = self.user_repository.get_by_id(user_id)
         if not user:
@@ -136,6 +155,7 @@ class AuthService:
         
         self.user_repository.deactivate(user_id)
         logger.info(f"Deactivated user: {user.username}")
+        log_user_deactivated(user.username, deactivated_by or "system")
         return True
     
     def validate_token(self, token: str) -> Optional[User]:

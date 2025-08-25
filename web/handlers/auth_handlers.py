@@ -70,7 +70,8 @@ def update_user_handler(user_id: int):
     if 'role' in data:
         try:
             role = UserRole(data['role'])
-            if not auth_service.update_role(user_id, role):
+            # Pass the current admin's username for audit logging
+            if not auth_service.update_role(user_id, role, changed_by=g.user.username):
                 return jsonify({'error': 'Cannot update role (possibly last admin)'}), 400
         except ValueError:
             return jsonify({'error': f'Invalid role: {data["role"]}'}), 400
@@ -85,7 +86,8 @@ def delete_user_handler(user_id: int):
     
     auth_service = get_auth_service()
     
-    if not auth_service.deactivate_user(user_id):
+    # Pass the current admin's username for audit logging
+    if not auth_service.deactivate_user(user_id, deactivated_by=g.user.username):
         return jsonify({'error': 'Cannot deactivate user (possibly last admin or not found)'}), 400
     
     return jsonify({'message': 'User deactivated successfully'})

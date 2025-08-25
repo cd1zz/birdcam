@@ -1,13 +1,19 @@
 # web/routes/auth_routes.py
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from core.models import UserRole
-from web.middleware.auth import require_auth, g
+from web.middleware.auth import require_auth
 from web.utils.auth_utils import get_auth_service
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint('auth', __name__)
+
+@auth_bp.before_request
+def before_request():
+    """Set request ID for correlation"""
+    g.request_id = str(uuid.uuid4())
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
