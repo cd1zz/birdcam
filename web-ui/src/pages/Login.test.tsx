@@ -3,10 +3,10 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import Login from './Login'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 
-// Mock the auth context
-vi.mock('../contexts/AuthContext', () => ({
+// Mock the auth hook
+vi.mock('../hooks/useAuth', () => ({
   useAuth: vi.fn(),
 }))
 

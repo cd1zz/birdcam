@@ -54,7 +54,7 @@ export default function RegistrationManagement() {
 
   // Generate registration link
   const generateLinkMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: { link_type: 'single_use' | 'multi_use'; expires_hours?: number; max_uses?: number }) => {
       const response = await processingApi.post('/api/admin/registration/generate-link', data);
       return response.data;
     },
@@ -87,9 +87,9 @@ export default function RegistrationManagement() {
 
   const handleGenerateLink = (e: React.FormEvent) => {
     e.preventDefault();
-    const data: any = {
+    const data: { link_type: 'single_use' | 'multi_use'; expires_hours?: number; max_uses?: number } = {
       link_type: linkForm.link_type,
-      expires_hours: linkForm.expires_hours ? parseInt(linkForm.expires_hours) : null
+      expires_hours: linkForm.expires_hours ? parseInt(linkForm.expires_hours) : undefined
     };
     
     if (linkForm.link_type === 'multi_use' && linkForm.max_uses) {
@@ -176,7 +176,7 @@ export default function RegistrationManagement() {
                     </label>
                     <select
                       value={linkForm.link_type}
-                      onChange={(e) => setLinkForm({ ...linkForm, link_type: e.target.value as any })}
+                      onChange={(e) => setLinkForm({ ...linkForm, link_type: e.target.value as 'single_use' | 'multi_use' })}
                       className="mt-1 block w-full pl-3 pr-10 py-2 text-base text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                     >
                       <option value="single_use">Single Use</option>

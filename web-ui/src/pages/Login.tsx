@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { AlertCircle, LogIn, Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
@@ -24,13 +24,14 @@ export default function Login() {
     try {
       await login(username, password);
       navigate(from, { replace: true });
-    } catch (err: any) {
-      if (err.response?.status === 401) {
+    } catch (err: unknown) {
+      const error = err as { response?: { status: number }; code?: string; message?: string };
+      if (error.response?.status === 401) {
         setError('Invalid username or password');
-      } else if (err.code === 'ECONNREFUSED') {
+      } else if (error.code === 'ECONNREFUSED') {
         setError('Cannot connect to server. Please check if the system is running.');
       } else {
-        setError(err.message || 'An error occurred during login');
+        setError(error.message || 'An error occurred during login');
       }
     } finally {
       setIsLoading(false);

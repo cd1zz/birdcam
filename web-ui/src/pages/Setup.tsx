@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { api } from '../api/client';
 
 const Setup: React.FC = () => {
@@ -45,16 +45,17 @@ const Setup: React.FC = () => {
         await login(username, password);
         navigate('/');
       }
-    } catch (err: any) {
-      if (err.response?.status === 403) {
-        if (err.response.data.message?.includes('local network')) {
+    } catch (err: unknown) {
+      const error = err as { response?: { status: number; data?: { message?: string; error?: string } } };
+      if (error.response?.status === 403) {
+        if (error.response.data?.message?.includes('local network')) {
           setError('Initial setup can only be performed from the local network. Please access this page from the same network as the server.');
         } else {
           setError('Setup has already been completed. Please use the login page.');
           setTimeout(() => navigate('/login'), 2000);
         }
       } else {
-        setError(err.response?.data?.error || 'Failed to create admin user');
+        setError(error.response?.data?.error || 'Failed to create admin user');
       }
     } finally {
       setIsLoading(false);

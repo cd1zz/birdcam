@@ -46,7 +46,7 @@ export function RecentFailedLoginsWidget() {
           
           <Link
             to="/admin"
-            state={{ tab: 'security' } as any}
+            state={{ tab: 'security' } as { tab: string }}
             className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
           >
             View security logs →
@@ -64,8 +64,8 @@ export function AccountLockoutWidget() {
     refetchInterval: 60000, // Refresh every minute
   });
 
-  const lockedUsers = data?.users?.filter((u: any) => u.is_locked) || [];
-  const suspiciousUsers = data?.users?.filter((u: any) => u.recent_attempts >= 3 && !u.is_locked) || [];
+  const lockedUsers = data?.users?.filter((u: { is_locked: boolean }) => u.is_locked) || [];
+  const suspiciousUsers = data?.users?.filter((u: { recent_attempts: number; is_locked: boolean }) => u.recent_attempts >= 3 && !u.is_locked) || [];
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
@@ -88,7 +88,7 @@ export function AccountLockoutWidget() {
                 <span className="font-semibold">{lockedUsers.length} account{lockedUsers.length !== 1 ? 's' : ''} locked</span>
               </div>
               <div className="space-y-1">
-                {lockedUsers.slice(0, 3).map((user: any) => (
+                {lockedUsers.slice(0, 3).map((user: { username: string; recent_attempts: number }) => (
                   <div key={user.username} className="text-sm text-gray-600 dark:text-gray-400">
                     <span className="font-mono">{user.username}</span> - {user.recent_attempts} attempts
                   </div>
@@ -107,7 +107,7 @@ export function AccountLockoutWidget() {
                 <span className="font-semibold">Suspicious activity</span>
               </div>
               <div className="space-y-1">
-                {suspiciousUsers.slice(0, 3).map((user: any) => (
+                {suspiciousUsers.slice(0, 3).map((user: { username: string; recent_attempts: number }) => (
                   <div key={user.username} className="text-sm text-gray-600 dark:text-gray-400">
                     <span className="font-mono">{user.username}</span> - {user.recent_attempts} recent attempts
                   </div>
@@ -128,7 +128,7 @@ export function AccountLockoutWidget() {
           
           <Link
             to="/admin"
-            state={{ tab: 'security' } as any}
+            state={{ tab: 'security' } as { tab: string }}
             className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
           >
             View all activity →

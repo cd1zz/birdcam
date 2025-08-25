@@ -174,21 +174,7 @@ const InteractiveCameraFeed: React.FC<InteractiveCameraFeedProps> = ({
     setMotionBox(newBox);
   }, [isDragging, dragMode, dragStart, originalBox, screenToImageCoords]);
 
-  const handleMouseUp = useCallback(() => {
-    if (isDragging) {
-      setIsDragging(false);
-      setDragMode(null);
-      
-      // Save motion box to backend
-      if (onMotionBoxChange) {
-        onMotionBoxChange(motionBox);
-      }
-      
-      saveMotionBox(motionBox);
-    }
-  }, [isDragging, motionBox, onMotionBoxChange]);
-
-  const saveMotionBox = async (box: MotionBox) => {
+  const saveMotionBox = useCallback(async (box: MotionBox) => {
     try {
       await api.motion.updateSettings({
         motion_box_enabled: box.enabled,
@@ -201,7 +187,21 @@ const InteractiveCameraFeed: React.FC<InteractiveCameraFeedProps> = ({
     } catch (error) {
       console.error('Failed to save motion box:', error);
     }
-  };
+  }, [cameraId]);
+
+  const handleMouseUp = useCallback(() => {
+    if (isDragging) {
+      setIsDragging(false);
+      setDragMode(null);
+      
+      // Save motion box to backend
+      if (onMotionBoxChange) {
+        onMotionBoxChange(motionBox);
+      }
+      
+      saveMotionBox(motionBox);
+    }
+  }, [isDragging, motionBox, onMotionBoxChange, saveMotionBox]);
 
   const toggleMotionBox = () => {
     const newBox = { ...motionBox, enabled: !motionBox.enabled };

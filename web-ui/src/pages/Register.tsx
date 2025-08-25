@@ -27,7 +27,7 @@ export default function Register() {
   useEffect(() => {
     // Fetch password requirements
     processingApi.get('/api/admin/settings/registration')
-      .then((response: any) => {
+      .then((response: { data: { password_min_length: number; password_require_uppercase: boolean; password_require_lowercase: boolean; password_require_numbers: boolean; password_require_special: boolean } }) => {
         setPasswordRequirements({
           minLength: response.data.password_min_length,
           requireUppercase: response.data.password_require_uppercase,
@@ -97,8 +97,9 @@ export default function Register() {
       setTimeout(() => {
         navigate('/login');
       }, 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Registration failed');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      setError(error.response?.data?.error || 'Registration failed');
     } finally {
       setLoading(false);
     }

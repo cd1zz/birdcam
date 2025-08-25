@@ -1,33 +1,7 @@
-import { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { apiClient, setAuthToken } from '../api/client';
-
-interface User {
-  id: number;
-  username: string;
-  role: 'admin' | 'viewer';
-  created_at: string;
-  last_login: string | null;
-}
-
-interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (username: string, password: string) => Promise<void>;
-  logout: () => void;
-  refreshToken: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
+import { AuthContext, type User } from './AuthContext';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -72,7 +46,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             setUser(response.data);
           } catch (error) {
             // If token is expired and we have a refresh token, try to refresh
-            if ((error as any).response?.status === 401 && refreshTokenValue) {
+            if (error instanceof Error && 'response' in error && (error as { response?: { status: number } }).response?.status === 401 && refreshTokenValue) {
               try {
                 const refreshResponse = await apiClient.post('/api/auth/refresh', {
                   refresh_token: refreshTokenValue
@@ -103,7 +77,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 
                 // If the refresh endpoint returns 401, it means the refresh token is also invalid
                 // This ensures we properly clear the auth state and trigger navigation to login
-                if ((refreshError as any).response?.status === 401) {
+                if (refreshError instanceof Error && 'response' in refreshError && (refreshError as { response?: { status: number } }).response?.status === 401) {
                   console.log('Refresh token is invalid, clearing auth state');
                 }
               }

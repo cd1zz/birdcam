@@ -104,7 +104,7 @@ describe.skipIf(!isBackendAvailable())('API Contract Integration Tests', () => {
       expect(response.data).toHaveProperty('blueprints')
       
       console.log(`Backend has ${response.data.total_routes} routes`)
-    } catch (error) {
+    } catch {
       console.warn('Discovery endpoint not available, skipping route discovery')
     }
   }, TEST_TIMEOUT)
@@ -127,7 +127,7 @@ describe.skipIf(!isBackendAvailable())('API Contract Integration Tests', () => {
           if (response.status === 404) {
             missingRoutes.push(`${method} ${path}`)
           }
-        } catch (error) {
+        } catch {
           missingRoutes.push(`${method} ${path} (connection error)`)
         }
       }
@@ -235,7 +235,7 @@ describe.skipIf(!isBackendAvailable())('API Contract Integration Tests', () => {
             schemaIssues.push(`${test.endpoint}: Field '${key}' should be ${expectedType}, got ${typeof response.data[key]}`)
           }
         }
-      } catch (error) {
+      } catch {
         console.warn(`Could not test schema for ${test.endpoint}`)
       }
     }

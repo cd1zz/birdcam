@@ -24,7 +24,7 @@ function ensureHttps(url: string): string {
     if (privateIPRegex.test(hostname)) {
       return url;
     }
-  } catch (e) {
+  } catch {
     // If URL parsing fails, continue with simple string replacement
   }
   
@@ -446,7 +446,7 @@ export const api = {
     previewEmailTemplate: async (templateType: string, data: {
       format?: 'html' | 'text';
       content?: string;
-      variables?: Record<string, any>;
+      variables?: Record<string, unknown>;
     }) => {
       const response = await processingApi.post(`/api/admin/email/templates/${templateType}/preview`, data);
       return response.data;
@@ -490,9 +490,14 @@ export const api = {
 
 // Token refresh logic
 let isRefreshing = false;
-let failedQueue: any[] = [];
+interface FailedRequest {
+  resolve: (token: string | null) => void;
+  reject: (error: unknown) => void;
+}
 
-const processQueue = (error: any, token: string | null = null) => {
+let failedQueue: FailedRequest[] = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach(prom => {
     if (error) {
       prom.reject(error);

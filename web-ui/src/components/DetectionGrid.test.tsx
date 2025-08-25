@@ -12,7 +12,7 @@ vi.mock('../api/client', () => ({
       getVideo: (filename: string) => `/videos/${filename}`
     }
   },
-  Detection: {} as any
+  Detection: {} as unknown
 }))
 
 const mockDetections: Detection[] = [
@@ -80,7 +80,7 @@ describe('DetectionGrid Component', () => {
     
     // Check that timestamps are formatted
     // The exact format depends on locale, so just check for the presence of time parts
-    const timestampRegex = /\d{1,2}[:\/]\d{2}/
+    const timestampRegex = /\d{1,2}[:/]\d{2}/
     const timestamps = screen.getAllByText(timestampRegex)
     expect(timestamps.length).toBeGreaterThan(0)
   })

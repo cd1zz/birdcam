@@ -46,7 +46,7 @@ export default function EmailSettings() {
   }, [settings]);
 
   const updateMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Partial<EmailConfig> & { smtp_password?: string; azure_client_secret?: string }) => {
       const response = await processingApi.put('/api/admin/settings/email', data);
       return response.data;
     },
@@ -57,7 +57,7 @@ export default function EmailSettings() {
       setAzureSecret('');
       setTestStatus({ type: 'success', message: 'Email settings updated successfully!' });
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { error?: string } } }) => {
       setTestStatus({ type: 'error', message: error.response?.data?.error || 'Failed to update settings' });
     }
   });
@@ -70,7 +70,7 @@ export default function EmailSettings() {
     onSuccess: () => {
       setTestStatus({ type: 'success', message: 'Test email sent successfully!' });
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { error?: string } } }) => {
       setTestStatus({ type: 'error', message: error.response?.data?.error || 'Failed to send test email' });
     }
   });
@@ -84,7 +84,7 @@ export default function EmailSettings() {
   };
 
   const handleSave = () => {
-    const updateData: any = { ...formData };
+    const updateData: Partial<EmailConfig> & { smtp_password?: string; azure_client_secret?: string } = { ...formData };
     if (smtpPassword) {
       updateData.smtp_password = smtpPassword;
     }

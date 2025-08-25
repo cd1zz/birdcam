@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 interface User {
   id: number;
@@ -38,7 +38,7 @@ export default function UserManagement() {
       setNewUser({ username: '', password: '', role: 'viewer' });
       setError('');
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { error?: string } } }) => {
       setError(error.response?.data?.error || 'Failed to create user');
     },
   });
@@ -61,7 +61,7 @@ export default function UserManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { error?: string } } }) => {
       setError(error.response?.data?.error || 'Failed to delete user');
     },
   });
@@ -265,7 +265,7 @@ function ChangePasswordForm() {
       setError('');
       setTimeout(() => setSuccess(false), 5000);
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { error?: string } } }) => {
       setError(error.response?.data?.error || 'Failed to change password');
     },
   });

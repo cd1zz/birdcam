@@ -54,7 +54,7 @@ const LogViewer: React.FC<LogViewerProps> = ({ service = 'combined' }) => {
         const securityResponse = await api.security.getLogs({ 
           hours: since === '1h' ? 1 : since === '6h' ? 6 : since === '24h' ? 24 : 168
         });
-        const securityLogs = securityResponse.logs.map((log: any) => ({
+        const securityLogs = securityResponse.logs.map((log: { timestamp: string; severity?: string; event_type: string; username?: string; failure_reason?: string; ip_address?: string }) => ({
           timestamp: log.timestamp,
           level: log.severity || 'INFO',
           service: 'security',

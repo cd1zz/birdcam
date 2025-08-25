@@ -15,8 +15,9 @@ import { useLocation } from 'react-router-dom';
 const AdminPanel: React.FC = () => {
   const queryClient = useQueryClient();
   const location = useLocation();
-  const initialTab = (location.state as any)?.tab || 'motion';
-  const [activeTab, setActiveTab] = useState<'motion' | 'regions' | 'broadcast' | 'system' | 'users' | 'email' | 'registration' | 'logs' | 'security'>(initialTab);
+  type TabType = 'motion' | 'regions' | 'broadcast' | 'system' | 'users' | 'email' | 'registration' | 'logs' | 'security';
+  const initialTab = (location.state as { tab?: string })?.tab || 'motion';
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab as TabType);
   const [warningMessage, setWarningMessage] = useState<string>('');
   const [localStoragePath, setLocalStoragePath] = useState<string>('');
   const [hasStorageChanges, setHasStorageChanges] = useState<boolean>(false);

@@ -16,11 +16,11 @@ export default function VerifyEmail() {
     }
 
     processingApi.post('/api/verify-email', { token })
-      .then((response: any) => {
+      .then((response: { data: { message: string } }) => {
         setStatus('success');
         setMessage(response.data.message);
       })
-      .catch((error: any) => {
+      .catch((error: { response?: { data?: { error?: string } } }) => {
         setStatus('error');
         setMessage(error.response?.data?.error || 'Verification failed');
       });

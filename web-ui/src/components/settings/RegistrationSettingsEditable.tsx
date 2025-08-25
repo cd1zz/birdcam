@@ -145,7 +145,7 @@ export default function RegistrationSettingsEditable() {
                       name="registration_mode"
                       value={mode}
                       checked={editForm?.registration_mode === mode}
-                      onChange={(e) => setEditForm({ ...editForm!, registration_mode: e.target.value as any })}
+                      onChange={(e) => setEditForm({ ...editForm!, registration_mode: e.target.value as 'open' | 'invitation' | 'disabled' })}
                       className="mt-0.5 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
                     />
                     <div className="ml-3">
