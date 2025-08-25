@@ -143,3 +143,7 @@ Tests use in-memory SQLite database. Fixtures in `tests/conftest.py`.
 - Admin users can view logs in web UI
 - Access logs track HTTP requests
 - Motion detection logs include sensitivity data
+- Security audit logs track authentication events (login attempts, password changes, role changes)
+  - Located at `/api/security/logs` endpoint
+  - Parsed from journalctl with special handling for PID corruption in JSON format
+  - Filters available for event type, username, IP address, and time range

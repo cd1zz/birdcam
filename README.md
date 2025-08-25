@@ -331,6 +331,7 @@ If a service fails to start:
 - **Motion Zones**: Configure detection regions per camera
 - **Access Logging**: HTTP request logging to syslog/journald
 - **System Logs**: Admin users can view logs from both services in the web UI (requires systemd service installation)
+- **Security Audit Logs**: Track authentication events, failed login attempts, password changes, and role modifications
 
 ## 👥 User Registration & Email Setup
 
