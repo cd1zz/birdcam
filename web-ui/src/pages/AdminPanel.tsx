@@ -9,10 +9,14 @@ import RegistrationSettingsEditable from '../components/settings/RegistrationSet
 import RegistrationManagement from '../components/settings/RegistrationManagement';
 import EmailTemplates from '../components/settings/EmailTemplates';
 import ClassSelector from '../components/settings/ClassSelector';
+import SecurityLogs from '../components/SecurityLogs';
+import { useLocation } from 'react-router-dom';
 
 const AdminPanel: React.FC = () => {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'motion' | 'regions' | 'broadcast' | 'system' | 'users' | 'email' | 'registration' | 'logs'>('motion');
+  const location = useLocation();
+  const initialTab = (location.state as any)?.tab || 'motion';
+  const [activeTab, setActiveTab] = useState<'motion' | 'regions' | 'broadcast' | 'system' | 'users' | 'email' | 'registration' | 'logs' | 'security'>(initialTab);
   const [warningMessage, setWarningMessage] = useState<string>('');
   const [localStoragePath, setLocalStoragePath] = useState<string>('');
   const [hasStorageChanges, setHasStorageChanges] = useState<boolean>(false);
@@ -237,6 +241,17 @@ const AdminPanel: React.FC = () => {
             >
               <span className="hidden sm:inline">System Logs</span>
               <span className="sm:hidden">Logs</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('security')}
+              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === 'security'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+              }`}
+            >
+              <span className="hidden sm:inline">Security Logs</span>
+              <span className="sm:hidden">Security</span>
             </button>
           </nav>
         </div>
@@ -701,6 +716,11 @@ const AdminPanel: React.FC = () => {
       {/* Logs Tab */}
       {activeTab === 'logs' && (
         <LogViewer />
+      )}
+
+      {/* Security Logs */}
+      {activeTab === 'security' && (
+        <SecurityLogs />
       )}
     </div>
   );

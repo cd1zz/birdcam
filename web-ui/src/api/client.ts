@@ -457,6 +457,29 @@ export const api = {
       return response.data;
     },
   },
+
+  // Security APIs
+  security: {
+    getLogs: async (params?: { 
+      hours?: number; 
+      event_type?: string; 
+      username?: string; 
+      ip_address?: string; 
+    }) => {
+      const response = await processingApi.get('/api/security/logs', { params });
+      return response.data;
+    },
+    
+    getSummary: async (params?: { hours?: number }) => {
+      const response = await processingApi.get('/api/security/logs/summary', { params });
+      return response.data;
+    },
+    
+    getLockedUsers: async () => {
+      const response = await processingApi.get('/api/security/users/locked');
+      return response.data;
+    },
+  },
   
   // Raw API access for endpoints not yet wrapped
   get: processingApi.get.bind(processingApi),

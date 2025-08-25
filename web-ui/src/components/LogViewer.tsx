@@ -13,7 +13,7 @@ interface LogEntry {
 }
 
 interface LogViewerProps {
-  service?: 'pi-capture' | 'ai-processor' | 'combined' | 'pi-capture-remote';
+  service?: 'pi-capture' | 'ai-processor' | 'combined' | 'pi-capture-remote' | 'security';
 }
 
 const LogViewer: React.FC<LogViewerProps> = ({ service = 'combined' }) => {
@@ -49,6 +49,21 @@ const LogViewer: React.FC<LogViewerProps> = ({ service = 'combined' }) => {
         response = await api.logs.getPiCaptureLogs(params);
       } else if (selectedService === 'pi-capture-remote') {
         response = await api.logs.getRemotePiCaptureLogs(params);
+      } else if (selectedService === 'security') {
+        // Fetch and transform security logs to match LogEntry format
+        const securityResponse = await api.security.getLogs({ 
+          hours: since === '1h' ? 1 : since === '6h' ? 6 : since === '24h' ? 24 : 168
+        });
+        const securityLogs = securityResponse.logs.map((log: any) => ({
+          timestamp: log.timestamp,
+          level: log.severity || 'INFO',
+          service: 'security',
+          message: `[${log.event_type}] ${log.username || 'N/A'} - ${log.failure_reason || log.event_type}`,
+          syslog_identifier: 'birdcam.security.audit',
+          hostname: log.ip_address || 'N/A',
+          source: 'local' as const
+        }));
+        response = { logs: securityLogs };
       } else {
         response = await api.logs.getAiProcessorLogs(params);
       }
@@ -123,8 +138,21 @@ const LogViewer: React.FC<LogViewerProps> = ({ service = 'combined' }) => {
         return source === 'remote' ? 'bg-green-500 text-white' : 'bg-green-600 text-white';
       case 'ai-processor': return 'bg-blue-600 text-white';
       case 'access': return 'bg-orange-600 text-white';
+      case 'security': return 'bg-red-600 text-white';
       default: return 'bg-gray-600 text-white';
     }
+  };
+
+  const getMessageStyle = (log: LogEntry) => {
+    // Highlight security events
+    if (log.service === 'security' && log.message.includes('[auth_failed]')) {
+      return 'text-red-600 dark:text-red-400 font-semibold';
+    } else if (log.service === 'security' && log.message.includes('[auth_success]')) {
+      return 'text-green-600 dark:text-green-400';
+    } else if (log.service === 'security') {
+      return 'text-blue-600 dark:text-blue-400';
+    }
+    return 'text-gray-900 dark:text-gray-100';
   };
 
   return (
@@ -165,13 +193,14 @@ const LogViewer: React.FC<LogViewerProps> = ({ service = 'combined' }) => {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Service</label>
             <select
               value={selectedService}
-              onChange={(e) => setSelectedService(e.target.value as 'pi-capture' | 'ai-processor' | 'combined' | 'pi-capture-remote')}
+              onChange={(e) => setSelectedService(e.target.value as 'pi-capture' | 'ai-processor' | 'combined' | 'pi-capture-remote' | 'security')}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="combined">All Services</option>
               <option value="pi-capture">Pi Capture (Local)</option>
               <option value="pi-capture-remote">Pi Capture (Remote)</option>
               <option value="ai-processor">AI Processor</option>
+              <option value="security">Security Audit</option>
             </select>
           </div>
 
@@ -309,7 +338,7 @@ const LogViewer: React.FC<LogViewerProps> = ({ service = 'combined' }) => {
                       </span>
                     )}
                   </div>
-                  <div className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">
+                  <div className={`whitespace-pre-wrap break-words ${getMessageStyle(log)}`}>
                     {log.message}
                   </div>
                 </div>

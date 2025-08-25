@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, type SystemStatus } from '../api/client';
+import { RecentFailedLoginsWidget, AccountLockoutWidget } from '../components/widgets/SecurityWidget';
 
 interface SystemHealth {
   isOnline: boolean;
@@ -515,6 +516,12 @@ const Analytics: React.FC = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Security Status Widgets */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RecentFailedLoginsWidget />
+        <AccountLockoutWidget />
       </div>
 
     </div>
