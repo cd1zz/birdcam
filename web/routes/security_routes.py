@@ -17,12 +17,20 @@ def parse_security_log_entry(line):
     """Parse a security audit log entry from syslog."""
     try:
         # Extract JSON from syslog line
-        # Format: Aug 25 12:07:20 ubuntu-birdcam {"timestamp"[112180]: ...}
-        json_match = re.search(r'\{.*\}', line)
-        if not json_match:
+        # Format: Aug 25 12:07:20 ubuntu-birdcam {"timestamp"[PID]: ...}
+        # The [PID] part corrupts the JSON, so we need to fix it
+        
+        # Find where the JSON starts
+        json_start = line.find('{"timestamp"')
+        if json_start == -1:
             return None
             
-        log_data = json.loads(json_match.group())
+        # Extract from that point and fix the [PID]: issue
+        json_str = line[json_start:]
+        # Fix the [PID]: that appears after "timestamp"
+        json_str = re.sub(r'"\[\d+\]:', '":', json_str)
+        
+        log_data = json.loads(json_str)
         
         # Only include security audit events
         if log_data.get('logger') != 'birdcam.security.audit':
@@ -69,8 +77,7 @@ def get_security_logs():
             'journalctl',
             '--since', since_str,
             '--no-pager',
-            '-n', '5000',  # Get more entries since we'll filter
-            '--output', 'cat'  # Get just the message without metadata
+            '-n', '5000'  # Get more entries since we'll filter
         ]
         
         # Execute command and filter for security audit logs
@@ -132,8 +139,7 @@ def get_security_summary():
             'journalctl',
             '--since', since_str,
             '--no-pager',
-            '-n', '20000',  # Get more entries since we'll filter
-            '--output', 'cat'  # Get just the message without metadata
+            '-n', '20000'  # Get more entries since we'll filter
         ]
         
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -221,8 +227,7 @@ def get_locked_users():
             'journalctl',
             '--since', since_str,
             '--no-pager',
-            '-n', '5000',  # Get more entries since we'll filter
-            '--output', 'cat'  # Get just the message without metadata
+            '-n', '5000'  # Get more entries since we'll filter
         ]
         
         result = subprocess.run(cmd, capture_output=True, text=True)
