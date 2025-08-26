@@ -1,7 +1,7 @@
 # database/repositories/__init__.py
-from .base import BaseRepository
-from .video_repository import VideoRepository
-from .detection_repository import DetectionRepository
+from .base import BaseRepository as BaseRepository
+from .video_repository import VideoRepository as VideoRepository
+from .detection_repository import DetectionRepository as DetectionRepository
 
 # Only import UserRepository if passlib is available (AI processor only)
 try:

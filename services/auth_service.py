@@ -131,7 +131,6 @@ class AuthService:
                 logger.warning("Cannot remove last admin user")
                 return False
         
-        old_role = user.role
         user.role = new_role
         self.user_repository.update(user)
         

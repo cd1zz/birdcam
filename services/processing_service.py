@@ -75,7 +75,7 @@ class ProcessingService:
             status=ProcessingStatus.PENDING
         )
         
-        video_id = self.video_repo.create(video)
+        self.video_repo.create(video)
         print(f"Received: {filename} -> {unique_filename} ({len(file_data)/1024/1024:.1f}MB)")
         
         return unique_filename
@@ -221,9 +221,9 @@ class ProcessingService:
         cap = cv2.VideoCapture(str(video_path))
         fps = cap.get(cv2.CAP_PROP_FPS)
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        duration = total_frames / fps if fps > 0 else 0
+        int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        total_frames / fps if fps > 0 else 0
         
         detections = []
         frame_number = 0

@@ -61,7 +61,6 @@ def discover_routes():
     Returns a comprehensive list of all available API routes
     This endpoint is used for testing and documentation purposes
     """
-    routes = []
     
     # Group routes by blueprint
     blueprints = {}

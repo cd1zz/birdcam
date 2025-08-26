@@ -173,7 +173,7 @@ def load_capture_config(camera_id: int = 0, camera_type: Optional[str] = None) -
         camera_type_env = 'auto'
     
     # Get per-camera name
-    camera_name = os.getenv(f'CAMERA_NAME_{camera_id}', f'Camera {camera_id}')
+    os.getenv(f'CAMERA_NAME_{camera_id}', f'Camera {camera_id}')
     
     # Get per-camera resolution (with fallback to global settings)
     # Try new format first (CAMERA_WIDTH_0, CAMERA_HEIGHT_0), then old format

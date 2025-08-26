@@ -434,7 +434,7 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
     @app.route('/api/active-passive/config', methods=['GET'])
     def api_active_passive_config():
         """Get active-passive camera configuration"""
-        service = get_service()
+        get_service()
         return jsonify({
             'active_camera_enabled': True,  # Always enabled in active-passive mode
             'camera_count': len(capture_services),
