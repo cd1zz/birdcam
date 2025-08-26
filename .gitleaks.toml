@@ -32,11 +32,11 @@ paths = [
     '''config/examples/''',
     '''test''',
     '''tests/''',
-    '''*.test.py''',
-    '''*.test.ts''',
-    '''*.test.tsx''',
-    '''*.spec.ts''',
-    '''*.spec.tsx''',
+    '''.*\.test\.py$''',
+    '''.*\.test\.ts$''',
+    '''.*\.test\.tsx$''',
+    '''.*\.spec\.ts$''',
+    '''.*\.spec\.tsx$''',
     '''README.md''',
     '''docs/'''
 ]
