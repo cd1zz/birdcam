@@ -14,7 +14,7 @@ const DetectionGrid: React.FC<DetectionGridProps> = ({ detections, onVideoClick 
 
   const getSpeciesEmoji = (species: string) => {
     const emojiMap: { [key: string]: string } = {
-      bird: '🦅',
+      bird: '🦜',
       cat: '🐱',
       dog: '🐕',
       person: '👤',
@@ -79,8 +79,16 @@ const DetectionGrid: React.FC<DetectionGridProps> = ({ detections, onVideoClick 
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold text-base sm:text-lg capitalize flex items-center gap-1 sm:gap-2 text-gray-900 dark:text-white">
                 <span className="text-base sm:text-lg">{getSpeciesEmoji(detection.species)}</span>
-                <span className="truncate">{detection.species}</span>
+                <span className="truncate">
+                  {detection.species}
+                  {detection.count && detection.count > 1 && ` (x${detection.count})`}
+                </span>
               </h3>
+              {detection.duration && (
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {detection.duration}s
+                </span>
+              )}
             </div>
             
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mb-1">

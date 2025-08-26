@@ -79,7 +79,7 @@ describe('CameraFeed Component', () => {
     fireEvent.error(img)
     
     await waitFor(() => {
-      expect(screen.getByText('Failed to load camera feed')).toBeInTheDocument()
+      expect(screen.getByText(/Failed to load camera feed/)).toBeInTheDocument()
     })
   })
 

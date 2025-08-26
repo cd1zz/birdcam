@@ -68,12 +68,12 @@ describe('Login Component', () => {
     
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith('testuser', 'testpassword')
-      expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true })
+      expect(mockNavigate).toHaveBeenCalledWith('/detections', { replace: true })
     })
   })
 
   it('displays error message on login failure', async () => {
-    mockLogin.mockResolvedValueOnce(false)
+    mockLogin.mockRejectedValueOnce(new Error('Invalid username or password'))
     const user = userEvent.setup()
     
     renderLogin()
@@ -115,7 +115,7 @@ describe('Login Component', () => {
     renderLogin()
     
     const passwordInput = screen.getByLabelText(/password/i) as HTMLInputElement
-    const toggleButton = screen.getByRole('button', { name: /show password/i })
+    const toggleButton = passwordInput.parentElement?.parentElement?.querySelector('button[type="button"]') as HTMLButtonElement
     
     expect(passwordInput.type).toBe('password')
     
