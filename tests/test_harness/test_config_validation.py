@@ -12,6 +12,7 @@ from config.settings import (
     get_bool_env, get_int_env, get_float_env, get_list_env,
     get_detection_confidences
 )
+from services.camera_manager import detect_available_cameras
 
 
 def test_environment_variables():
@@ -78,7 +79,7 @@ def test_camera_configurations():
     print("=" * 50)
     
     # Mock detect_available_cameras
-    with patch('config.settings.detect_available_cameras') as mock_detect:
+    with patch('services.camera_manager.detect_available_cameras') as mock_detect:
         mock_detect.return_value = []
         
         # Test 1: Default camera configuration
@@ -130,7 +131,7 @@ def test_motion_box_configuration():
     print("\n\nTesting Motion Box Configuration")
     print("=" * 50)
     
-    with patch('config.settings.detect_available_cameras') as mock_detect:
+    with patch('services.camera_manager.detect_available_cameras') as mock_detect:
         mock_detect.return_value = []
         
         # Test 1: Motion box enabled
@@ -191,7 +192,7 @@ def test_storage_path_override():
     print("=" * 50)
     
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Create system_settings.json
+        # Create system_settings.json in the storage path
         settings_file = Path(tmpdir) / "system_settings.json"
         settings_data = {
             "storage": {
@@ -206,16 +207,11 @@ def test_storage_path_override():
         
         # Test loading with override
         with patch.dict(os.environ, {'STORAGE_PATH': tmpdir}):
-            with patch('pathlib.Path.exists') as mock_exists:
-                def path_exists(path):
-                    return str(path) == str(settings_file)
-                
-                mock_exists.side_effect = path_exists
-                
-                config = load_processing_config()
-                print(f"   ✓ Original path from env: {tmpdir}")
-                print(f"   ✓ Override path loaded: {config.processing.storage_path}")
-                assert str(config.processing.storage_path) == "/custom/storage/path"
+            # The settings file now exists in the actual tmpdir, so load_processing_config should find it
+            config = load_processing_config()
+            print(f"   ✓ Original path from env: {tmpdir}")
+            print(f"   ✓ Override path loaded: {config.processing.storage_path}")
+            assert str(config.processing.storage_path) == "/custom/storage/path"
 
 
 def test_edge_cases():
@@ -226,7 +222,7 @@ def test_edge_cases():
     # Test 1: Empty environment
     print("\n1. Testing with empty environment...")
     with patch.dict(os.environ, {}, clear=True):
-        with patch('config.settings.detect_available_cameras') as mock_detect:
+        with patch('services.camera_manager.detect_available_cameras') as mock_detect:
             mock_detect.return_value = []
             
             config = load_capture_config(0)
@@ -240,7 +236,7 @@ def test_edge_cases():
         'RESOLUTION_WIDTH': '800',
         'RESOLUTION_HEIGHT': '600'
     }):
-        with patch('config.settings.detect_available_cameras') as mock_detect:
+        with patch('services.camera_manager.detect_available_cameras') as mock_detect:
             mock_detect.return_value = []
             
             config = load_capture_config(0)
@@ -249,7 +245,7 @@ def test_edge_cases():
     # Test 3: Invalid camera IDs
     print("\n3. Testing invalid camera IDs...")
     with patch.dict(os.environ, {'CAMERA_IDS': '0,invalid,2,abc'}):
-        with patch('config.settings.detect_available_cameras') as mock_detect:
+        with patch('services.camera_manager.detect_available_cameras') as mock_detect:
             mock_detect.return_value = []
             
             configs = load_all_capture_configs()

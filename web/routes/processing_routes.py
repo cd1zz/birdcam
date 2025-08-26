@@ -237,6 +237,16 @@ def create_processing_routes(app, processing_service, video_repo, detection_repo
             events = events[:limit]
         return events
 
+    @app.route('/api/system-metrics')
+    @require_auth
+    def api_system_metrics():
+        """Get current system metrics (CPU, memory, disk)"""
+        try:
+            metrics = metrics_collector.get_metrics_dict()
+            return jsonify(metrics)
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
     @app.route('/api/recent-detections')
     @require_auth
     def api_recent_detections():

@@ -3,7 +3,15 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-import cv2
+import pytest
+try:
+    import cv2
+    # Test that cv2 has the required functionality
+    if not hasattr(cv2, 'createBackgroundSubtractorMOG2'):
+        pytest.skip("OpenCV doesn't have required functionality (mocked or incomplete)", allow_module_level=True)
+except ImportError:
+    pytest.skip("OpenCV not available", allow_module_level=True)
+
 import numpy as np
 from config.settings import MotionConfig
 from services.motion_detector import MotionDetector

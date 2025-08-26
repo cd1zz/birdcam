@@ -11,6 +11,7 @@ import requests
 from flask import request, jsonify, Response, stream_with_context
 from core.models import MotionRegion
 from services.system_metrics import SystemMetricsCollector
+from web.middleware import require_auth
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -463,6 +464,7 @@ def create_capture_routes(app, capture_services, sync_service, settings_repos):
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/system-metrics')
+    @require_auth
     def api_system_metrics():
         """Get current system metrics (CPU, memory, disk)"""
         try:
