@@ -1,0 +1,66 @@
+# Dockerfile for BirdCam Capture System (Raspberry Pi)
+FROM python:3.10-slim-bullseye
+
+# Install system dependencies for OpenCV and camera support
+RUN apt-get update && apt-get install -y \
+    # Build tools (needed for picamera2 dependencies)
+    gcc \
+    g++ \
+    # libcap for python-prctl
+    libcap-dev \
+    # OpenCV dependencies
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libgstreamer1.0-0 \
+    libgstreamer-plugins-base1.0-0 \
+    # Video/camera libraries
+    v4l-utils \
+    libv4l-dev \
+    # Cleanup
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY requirements.capture.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.capture.txt
+
+# Copy application code
+COPY pi_capture/ ./pi_capture/
+COPY web/ ./web/
+COPY services/ ./services/
+COPY database/ ./database/
+COPY core/ ./core/
+COPY config/ ./config/
+COPY utils/ ./utils/
+
+# Create necessary directories
+RUN mkdir -p /app/bird_footage/camera_0/incoming \
+    && mkdir -p /app/logs
+
+# Environment variables (can be overridden at runtime)
+ENV PYTHONUNBUFFERED=1
+ENV CAMERA_0_TYPE=opencv
+ENV CAMERA_0_DEVICE=0
+ENV STORAGE_PATH=/app/bird_footage/camera_0
+ENV PROCESSING_SERVER=http://processor:5001
+# Set SECRET_KEY at runtime for security
+# SECRET_KEY should be set at runtime via environment variable
+ENV CAPTURE_PORT=8090
+
+# Expose the capture API port
+EXPOSE 8090
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:8090/api/status')" || exit 1
+
+# Run the capture service
+CMD ["python", "-m", "pi_capture.main"]

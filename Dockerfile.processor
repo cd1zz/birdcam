@@ -1,0 +1,92 @@
+# Dockerfile for BirdCam AI Processing Server
+
+# Stage 1: Build the web UI
+FROM node:18-alpine AS web-builder
+WORKDIR /app
+COPY web-ui/package*.json ./
+RUN npm ci
+COPY web-ui/ ./
+RUN npm run build
+
+# Stage 2: Build the Python application
+FROM python:3.10-slim-bullseye
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    # OpenCV dependencies
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libgstreamer1.0-0 \
+    libgstreamer-plugins-base1.0-0 \
+    # Video processing
+    ffmpeg \
+    # Build tools for Python packages
+    gcc \
+    g++ \
+    # Cleanup
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY requirements.processor.txt .
+
+# Install Python dependencies (this will download YOLO models on first run)
+RUN pip install --no-cache-dir -r requirements.processor.txt
+
+# Copy application code
+COPY ai_processor/ ./ai_processor/
+COPY web/ ./web/
+COPY services/ ./services/
+COPY database/ ./database/
+COPY core/ ./core/
+COPY config/ ./config/
+COPY utils/ ./utils/
+# Copy built web UI from builder stage
+COPY --from=web-builder /app/dist ./web-ui/dist
+
+# Create necessary directories
+RUN mkdir -p /app/bird_footage/storage/incoming \
+    && mkdir -p /app/bird_footage/storage/processed/detections \
+    && mkdir -p /app/bird_footage/storage/processed/no_detections \
+    && mkdir -p /app/bird_footage/storage/thumbnails \
+    && mkdir -p /app/bird_footage/storage/models \
+    && mkdir -p /app/logs
+
+# Environment variables (can be overridden at runtime)
+ENV PYTHONUNBUFFERED=1
+ENV STORAGE_PATH=/app/bird_footage/storage
+ENV MODEL_PATH=/app/bird_footage/storage/models
+ENV CAPTURE_SERVER=http://capture:8090
+# SECRET_KEY should be set at runtime via environment variable
+ENV PROCESSING_PORT=5001
+ENV DEFAULT_MODEL=yolov5s
+
+# Admin setup
+ENV ADMIN_USERNAME=admin
+# ADMIN_PASSWORD should be set at runtime via environment variable
+ENV ADMIN_EMAIL=admin@example.com
+
+# Email settings (optional)
+ENV EMAIL_ENABLED=false
+ENV SMTP_HOST=smtp.gmail.com
+ENV SMTP_PORT=587
+ENV SMTP_USE_TLS=true
+
+# Expose the web UI and API port
+EXPOSE 5001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:5001/api/status')" || exit 1
+
+# Download default YOLO model during build to speed up first run
+RUN python -c "from ultralytics import YOLO; YOLO('yolov5s.pt')" || true
+
+# Run the processor service
+CMD ["python", "-m", "ai_processor.main"]

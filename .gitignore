@@ -102,3 +102,7 @@ web-ui/dist/
 web-ui/.vite/
 *.tsbuildinfo
 tests/tmp/
+
+# Docker volumes
+data/
+bird_footage/

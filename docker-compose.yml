@@ -1,0 +1,86 @@
+services:
+  # AI Processing Server
+  processor:
+    build:
+      context: .
+      dockerfile: Dockerfile.processor
+    image: birdcam-processor:latest
+    container_name: birdcam-processor
+    ports:
+      - "5001:5001"  # Web UI and API
+    volumes:
+      # Persist storage and models
+      - ./bird_footage:/app/bird_footage
+      - ./data/processor:/app/data
+    environment:
+      - STORAGE_PATH=/app/bird_footage/storage
+      - MODEL_PATH=/app/bird_footage/models
+      - CAPTURE_SERVER=http://capture:8090
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@example.com}
+      - PROCESSING_PORT=5001
+      # Email settings (optional)
+      - EMAIL_ENABLED=${EMAIL_ENABLED:-false}
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USE_TLS=${SMTP_USE_TLS:-true}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - FROM_EMAIL=${FROM_EMAIL:-noreply@birdcam.local}
+    networks:
+      - birdcam-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Camera Capture Service (comment out if running on actual Pi)
+  capture:
+    build:
+      context: .
+      dockerfile: Dockerfile.capture
+    image: birdcam-capture:latest
+    container_name: birdcam-capture
+    ports:
+      - "8090:8090"  # Capture API
+    volumes:
+      # Persist captured videos
+      - ./bird_footage:/app/bird_footage
+      - ./data/capture:/app/data
+    environment:
+      - CAMERA_0_TYPE=${CAMERA_0_TYPE:-opencv}
+      - CAMERA_0_DEVICE=${CAMERA_0_DEVICE:-0}
+      - CAMERA_0_RESOLUTION=${CAMERA_0_RESOLUTION:-640x480}
+      - CAMERA_0_FPS=${CAMERA_0_FPS:-10}
+      - STORAGE_PATH=/app/bird_footage/camera_0
+      - PROCESSING_SERVER=http://processor:5001
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
+      - MOTION_THRESHOLD=${MOTION_THRESHOLD:-5000}
+      - MIN_CONTOUR_AREA=${MIN_CONTOUR_AREA:-500}
+    # devices:
+    #   # Allow access to camera devices (Linux only)
+    #   - /dev/video0:/dev/video0
+    networks:
+      - birdcam-network
+    restart: unless-stopped
+    depends_on:
+      - processor
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  birdcam-network:
+    driver: bridge
+
+volumes:
+  bird_footage:
+    driver: local
