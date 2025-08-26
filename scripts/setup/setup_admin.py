@@ -7,7 +7,6 @@ It should be run after the AI processor service is installed but before
 first accessing the web interface.
 """
 
-import os
 import sys
 import getpass
 import re
@@ -119,8 +118,8 @@ def main():
             if user_repo.get_by_username(username):
                 print("Username already exists. Please choose another.")
                 continue
-        except:
-            pass  # Database might not be initialized yet
+        except Exception as e:
+            print(f"Note: Could not check for existing username (database may not be initialized): {e}")
         
         break
     
@@ -140,8 +139,8 @@ def main():
             if user_repo.get_by_email(email):
                 print("Email already registered. Please use another.")
                 continue
-        except:
-            pass  # Database might not be initialized yet
+        except Exception as e:
+            print(f"Note: Could not check for existing email (database may not be initialized): {e}")
         
         break
     
@@ -216,8 +215,8 @@ def main():
         # Close database connection
         try:
             db.close()
-        except:
-            pass
+        except Exception as e:
+            print(f"Note: Could not close database connection: {e}")
 
 
 if __name__ == "__main__":

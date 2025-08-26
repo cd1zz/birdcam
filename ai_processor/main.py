@@ -6,7 +6,6 @@ import schedule
 import threading
 import time
 import sys
-from pathlib import Path
 
 from config.settings import load_processing_config
 from database.connection import DatabaseManager
@@ -102,7 +101,7 @@ def main():
             confidence = config.processing.detection.get_confidence(detection_class)
             print(f"  {detection_class}: {confidence:.2f}")
         
-        print(f"Retention policies:")
+        print("Retention policies:")
         print(f"  Detection videos: {config.processing.detection_retention_days} days")
         print(f"  No-detection videos: {config.processing.no_detection_retention_days} days")
         
@@ -125,10 +124,10 @@ def main():
         log = logging.getLogger('werkzeug')
         log.setLevel(logging.ERROR)
         
-        print(f"Processing server ready!")
+        print("Processing server ready!")
         print(f"Web interface: http://0.0.0.0:{config.web.processing_port}")
         print(f"Storage path: {config.processing.storage_path}")
-        print(f"Videos will be sorted into detections/ and no_detections/ directories")
+        print("Videos will be sorted into detections/ and no_detections/ directories")
         print("Waiting for videos to process...")
         
         app.run(

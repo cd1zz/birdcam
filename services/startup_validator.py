@@ -8,9 +8,8 @@ import os
 import sys
 import sqlite3
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List
 import importlib
-import subprocess
 import logging
 
 logger = logging.getLogger(__name__)
@@ -176,7 +175,6 @@ class StartupValidator:
         
         # Check torch.hub connectivity (non-blocking)
         try:
-            import torch
             # This is a quick test - actual model loading happens later
             self.info.append("PyTorch available for model loading")
         except Exception as e:

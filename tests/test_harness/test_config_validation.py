@@ -167,7 +167,7 @@ def test_detection_confidence_configuration():
         'DEFAULT_CONFIDENCE': '0.35'
     }):
         confidences = get_detection_confidences()
-        print(f"   ✓ Default confidence: 0.35")
+        print("   ✓ Default confidence: 0.35")
         for cls in ['bird', 'cat', 'dog']:
             print(f"   ✓ {cls}: {confidences[cls]}")
     
@@ -230,7 +230,7 @@ def test_edge_cases():
             mock_detect.return_value = []
             
             config = load_capture_config(0)
-            print(f"   ✓ Loaded with defaults")
+            print("   ✓ Loaded with defaults")
             print(f"   ✓ Secret key: {config.security.secret_key[:20]}...")
     
     # Test 2: Invalid resolution format

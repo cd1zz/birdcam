@@ -1,6 +1,5 @@
 # database/repositories/email_template_repository.py
 from typing import List, Optional
-import json
 from datetime import datetime
 from core.email_template_model import EmailTemplate, EmailTemplateType, DEFAULT_TEMPLATES
 from database.connection import DatabaseConnection

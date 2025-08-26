@@ -22,7 +22,6 @@ from services.file_sync import FileSyncService
 from services.capture_service import CaptureService
 from utils.capture_logger import logger
 # Core service imports
-from web.app import create_capture_app
 
 
 def setup_services(config, force_opencv=False):

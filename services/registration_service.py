@@ -1,5 +1,5 @@
 # services/registration_service.py
-from typing import Optional, Dict, Tuple
+from typing import Optional, Tuple
 from datetime import datetime, timedelta
 import secrets
 from core.models import User, UserRole

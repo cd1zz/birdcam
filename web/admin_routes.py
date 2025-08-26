@@ -3,11 +3,9 @@ Centralized admin API routes
 All admin-only endpoints are organized under /api/admin/*
 """
 from flask import Blueprint, request, jsonify, current_app
-from core.models import User, UserRole
 from web.middleware import require_auth
 from web.middleware.decorators import require_admin_internal
 from utils.capture_logger import logger
-import json
 import os
 
 # Import route handlers from other modules

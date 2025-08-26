@@ -113,7 +113,7 @@ def main():
     protected_count = len(results['PROTECTED'])
     accessible_count = len(results['ACCESSIBLE'])
     
-    print(f"\n📊 SUMMARY:")
+    print("\n📊 SUMMARY:")
     print("-" * 60)
     print(f"Total endpoints analyzed: {total}")
     print(f"Protected endpoints: {protected_count} ({protected_count/total*100:.1f}%)")
@@ -128,7 +128,7 @@ def main():
             sensitive_accessible.append((path, method))
     
     if sensitive_accessible:
-        print(f"\n🚨 POTENTIALLY SENSITIVE ENDPOINTS WITHOUT AUTH:")
+        print("\n🚨 POTENTIALLY SENSITIVE ENDPOINTS WITHOUT AUTH:")
         print("-" * 60)
         for path, method in sorted(sensitive_accessible):
             print(f"  {method:6} {path}")

@@ -1,6 +1,5 @@
 # database/repositories/base.py
 from abc import ABC, abstractmethod
-from typing import Optional, List, Any, Dict
 from database.connection import DatabaseManager
 
 class BaseRepository(ABC):

@@ -4,7 +4,6 @@ import time
 import threading
 import subprocess
 from pathlib import Path
-from typing import List, Optional
 from datetime import datetime
 
 from core.models import VideoFile, BirdDetection, ProcessingStatus

@@ -2,7 +2,6 @@
 """Setup test users for E2E testing"""
 
 import os
-import sys
 import sqlite3
 from werkzeug.security import generate_password_hash
 

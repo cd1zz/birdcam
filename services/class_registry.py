@@ -2,7 +2,7 @@
 Class Registry Service
 Manages available classes for different YOLO models
 """
-from typing import List, Dict, Optional, Set
+from typing import List, Dict, Optional
 from dataclasses import dataclass
 
 

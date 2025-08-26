@@ -3,14 +3,18 @@
 Routes for Pi Capture System - provides API endpoints for camera streaming,
 motion detection status, and system configuration.
 """
+import os
 import threading
 import cv2
-import numpy as np
 import time
 import requests
-from flask import request, jsonify, Response, send_from_directory, stream_with_context
+from flask import request, jsonify, Response, stream_with_context
 from core.models import MotionRegion
 from services.system_metrics import SystemMetricsCollector
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from services.capture_service import CaptureService
 
 def create_capture_routes(app, capture_services, sync_service, settings_repos):
 

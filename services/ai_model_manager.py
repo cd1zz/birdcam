@@ -1,8 +1,7 @@
 # services/ai_model_manager.py
 from ultralytics import YOLO
 import torch
-import warnings
-from typing import Optional, List, Dict
+from typing import List, Dict
 from config.settings import DetectionConfig
 
 class AIModelManager:

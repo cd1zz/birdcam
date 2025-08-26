@@ -4,7 +4,6 @@ import time
 from datetime import datetime
 from flask import Flask, request, g
 from werkzeug.exceptions import HTTPException
-import socket
 
 # Create logger for access logs
 access_logger = logging.getLogger('birdcam.access')

@@ -4,7 +4,6 @@ Provides structured logging with consistent formatting matching AI Processor.
 """
 
 import sys
-import os
 from typing import Optional, Dict, Any
 
 

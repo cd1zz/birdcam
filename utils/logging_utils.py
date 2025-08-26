@@ -4,9 +4,7 @@ Provides structured logging with consistent formatting and log levels.
 """
 
 import sys
-from datetime import datetime
 from typing import Optional, Dict, Any
-import json
 
 
 class ProcessingLogger:
@@ -151,7 +149,7 @@ class ProcessingLogger:
     def batch_summary(self, processed: int, total: int, duration: float):
         """Log batch processing summary."""
         success_rate = (processed / total * 100) if total > 0 else 0
-        self.ok(f"Batch complete", processed=processed, total=total, 
+        self.ok("Batch complete", processed=processed, total=total, 
                 success_rate=f"{success_rate:.1f}%", duration=f"{duration:.1f}s")
 
 

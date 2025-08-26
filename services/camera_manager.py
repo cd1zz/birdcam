@@ -124,8 +124,8 @@ class CameraManager:
                 if self.picam2:
                     try:
                         self.picam2.close()
-                    except:
-                        pass
+                    except Exception as close_error:
+                        logger.warning(f"Could not close Picamera2: {close_error}")
                     self.picam2 = None
         
         # Fall back to OpenCV
@@ -156,8 +156,8 @@ class CameraManager:
             if self.picam2:
                 try:
                     self.picam2.close()
-                except:
-                    pass
+                except Exception as close_error:
+                    logger.warning(f"Could not close Picamera2: {close_error}")
                 self.picam2 = None
             raise RuntimeError(f"Failed to initialize Picamera2: {e}")
     

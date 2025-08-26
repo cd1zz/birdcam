@@ -108,7 +108,7 @@ def test_authentication_coverage(security_audit_data):
     
     coverage = (protected / total) * 100 if total > 0 else 0
     
-    print(f"\nSecurity Audit Summary:")
+    print("\nSecurity Audit Summary:")
     print(f"  Total endpoints: {total}")
     print(f"  Protected endpoints: {protected} ({coverage:.1f}%)")
     print(f"  Public endpoints: {public}")

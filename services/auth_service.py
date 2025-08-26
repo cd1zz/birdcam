@@ -1,6 +1,5 @@
 # services/auth_service.py
-from typing import Optional, Dict, Any, Tuple
-from datetime import datetime
+from typing import Optional, Tuple
 from core.models import User, UserRole
 from database.repositories.user_repository import UserRepository
 from utils.auth import hash_password, verify_password, jwt_manager

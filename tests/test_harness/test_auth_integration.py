@@ -3,12 +3,10 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from datetime import datetime
-from core.models import User, UserRole
+from core.models import UserRole
 from database.connection import DatabaseManager
 from database.repositories.user_repository import UserRepository
 from services.auth_service import AuthService
-from utils.auth import jwt_manager
 import tempfile
 
 

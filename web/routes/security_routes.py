@@ -1,6 +1,5 @@
 # web/routes/security_routes.py
-from flask import Blueprint, request, jsonify
-from web.middleware.auth import require_auth
+from flask import Blueprint, request, jsonify, current_app
 from web.middleware.decorators import require_admin_internal
 from datetime import datetime, timedelta
 import json
@@ -198,8 +197,8 @@ def get_security_summary():
                 timestamp = datetime.fromisoformat(entry['timestamp'].replace('Z', '+00:00'))
                 hour_key = timestamp.strftime('%Y-%m-%d %H:00')
                 stats['events_by_hour'][hour_key] += 1
-            except:
-                pass
+            except (ValueError, AttributeError, KeyError) as e:
+                current_app.logger.debug(f"Could not parse timestamp for security log entry: {e}")
         
         # Convert defaultdicts to regular dicts for JSON serialization
         stats['failed_by_reason'] = dict(stats['failed_by_reason'])

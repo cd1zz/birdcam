@@ -1,7 +1,7 @@
 # services/motion_detector.py
 import cv2
 import numpy as np
-from typing import Optional, Tuple
+from typing import Optional
 from core.models import MotionRegion
 from config.settings import MotionConfig
 

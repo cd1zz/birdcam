@@ -1,6 +1,5 @@
 # web/routes/registration_routes.py
 from flask import Blueprint, request, jsonify, current_app
-from datetime import datetime
 from core.registration_models import RegistrationLinkType
 from services.registration_service import RegistrationService
 from services.email_service import EmailService
@@ -8,11 +7,9 @@ from database.repositories.email_settings_repository import EmailSettingsReposit
 from database.repositories.email_template_repository import EmailTemplateRepository
 from database.connection import DatabaseConnection
 from flask import g
-from web.middleware import require_auth
 from web.middleware.decorators import require_admin_internal
 from utils.capture_logger import logger
 from core.email_template_model import EmailTemplateType
-import json
 
 def create_registration_routes(reg_service: RegistrationService, email_service: EmailService):
     reg_bp = Blueprint('registration', __name__)

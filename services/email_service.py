@@ -1,9 +1,7 @@
 # services/email_service.py
 from flask_mail import Mail, Message
 from typing import Optional, Dict, Any
-from datetime import datetime, timedelta
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-import secrets
 import re
 from email_validator import validate_email, EmailNotValidError
 from config.email_config import EmailConfig
@@ -12,7 +10,6 @@ from services.azure_email_provider import AzureEmailProvider
 from database.repositories.email_settings_repository import EmailSettingsRepository
 from database.repositories.email_template_repository import EmailTemplateRepository
 from database.connection import DatabaseConnection
-from core.email_settings_model import EmailProvider as EmailProviderEnum
 from core.email_template_model import EmailTemplateType
 
 class EmailService:

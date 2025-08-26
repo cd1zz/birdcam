@@ -6,7 +6,7 @@ from flask import Blueprint, jsonify, current_app
 from web.middleware.auth import require_auth
 from werkzeug.routing import Rule
 import inspect
-from typing import Dict, List, Any
+from typing import Dict, Any
 
 api_discovery = Blueprint('api_discovery', __name__)
 
@@ -47,8 +47,9 @@ def extract_route_info(rule: Rule) -> Dict[str, Any]:
                         'required': param.default == param.empty,
                         'default': str(param.default) if param.default != param.empty else None
                     }
-        except:
-            pass
+        except (ValueError, TypeError) as e:
+            # Some functions may not have introspectable signatures
+            current_app.logger.debug(f"Could not inspect signature for {endpoint.__name__}: {e}")
     
     return info
 

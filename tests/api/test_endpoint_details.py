@@ -1,6 +1,4 @@
 """Detailed endpoint testing to verify API behavior."""
-import pytest
-from flask import Flask
 
 
 def test_public_endpoints_no_auth(client):

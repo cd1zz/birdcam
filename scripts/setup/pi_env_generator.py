@@ -451,7 +451,7 @@ def main():
     for i in range(int(config['CAMERA_COUNT'])):
         print(f"  Camera {i}: {config[f'CAMERA_NAME_{i}']} ({config[f'CAMERA_TYPE_{i}']})")
     
-    print(f"\nMotion detection:")
+    print("\nMotion detection:")
     print(f"  Area threshold: {config['MOTION_AREA_THRESHOLD']}%")
     print(f"  Pre/Post buffer: {config['PRE_MOTION_SECONDS']}s / {config['POST_MOTION_SECONDS']}s")
     

@@ -3,9 +3,7 @@ import time
 import threading
 from collections import deque
 from typing import List, Optional, Callable
-from datetime import datetime, timedelta
-from pathlib import Path
-import numpy as np
+from datetime import datetime
 
 from core.models import CaptureSegment, SystemStatus
 from config.settings import CaptureConfig, MotionConfig

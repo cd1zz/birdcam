@@ -1,5 +1,4 @@
 """Test API response content and structure."""
-import pytest
 
 
 def test_debug_endpoints_return_json(client):

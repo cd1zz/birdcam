@@ -1,11 +1,9 @@
 # database/repositories/email_settings_repository.py
-import sqlite3
 from typing import Optional, Dict, Any
 from datetime import datetime
 from core.email_settings_model import EmailSettings, EmailProvider
 from database.connection import DatabaseConnection
 from utils.capture_logger import logger
-import json
 
 class EmailSettingsRepository:
     def __init__(self, db: DatabaseConnection):

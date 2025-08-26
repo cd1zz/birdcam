@@ -4,7 +4,6 @@ Flask Application Factory
 """
 from flask import Flask
 from flask_cors import CORS
-from config.settings import WebConfig
 
 def create_capture_app(capture_services, sync_service, config):
     """Create Flask app for Pi capture system"""

@@ -1,5 +1,4 @@
 # services/azure_email_provider.py
-import json
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 import requests

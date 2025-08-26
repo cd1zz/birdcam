@@ -6,9 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import cv2
 import numpy as np
 from config.settings import MotionConfig
-from core.models import MotionRegion
 from services.motion_detector import MotionDetector
-import time
 
 
 def create_test_frames():
@@ -158,8 +156,8 @@ def test_motion_detector_visual():
             key = cv2.waitKey(0)
             if key == ord('q'):
                 break
-        except:
-            print("  (No display available - images saved to /tmp/)")
+        except Exception as e:
+            print(f"  (No display available - images saved to /tmp/): {e}")
     
     cv2.destroyAllWindows()
     

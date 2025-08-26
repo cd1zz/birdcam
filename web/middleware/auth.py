@@ -2,7 +2,7 @@
 from functools import wraps
 from flask import request, jsonify, g, current_app
 from typing import Optional, Callable
-from core.models import User, UserRole
+from core.models import UserRole
 from services.auth_service import AuthService
 from database.repositories.user_repository import UserRepository
 from database.connection import DatabaseManager

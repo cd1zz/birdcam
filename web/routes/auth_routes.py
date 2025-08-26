@@ -1,6 +1,5 @@
 # web/routes/auth_routes.py
 from flask import Blueprint, request, jsonify, g
-from core.models import UserRole
 from web.middleware.auth import require_auth
 from web.utils.auth_utils import get_auth_service
 import logging

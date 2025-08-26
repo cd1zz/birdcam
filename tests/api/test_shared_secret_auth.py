@@ -1,5 +1,4 @@
 """Test shared secret authentication for upload endpoint."""
-import pytest
 import os
 from io import BytesIO
 
