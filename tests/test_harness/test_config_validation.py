@@ -12,7 +12,6 @@ from config.settings import (
     get_bool_env, get_int_env, get_float_env, get_list_env,
     get_detection_confidences
 )
-from services.camera_manager import detect_available_cameras
 
 
 def test_environment_variables():
