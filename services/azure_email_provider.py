@@ -1,5 +1,5 @@
 # services/azure_email_provider.py
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 from datetime import datetime, timedelta
 import requests
 from msal import ConfidentialClientApplication
@@ -152,7 +152,7 @@ class AzureEmailProvider:
             "contentBytes": base64.b64encode(content).decode('utf-8')
         }
     
-    def validate_configuration(self) -> tuple[bool, str]:
+    def validate_configuration(self) -> Tuple[bool, str]:
         """Validate Azure AD configuration"""
         if not self.tenant_id:
             return False, "Azure tenant ID is required"
