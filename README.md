@@ -300,13 +300,13 @@ If a service fails to start:
 
 ### Raspberry Pi Requirements:
 - Raspberry Pi OS (64-bit recommended for Pi 4/5)
-- Python 3.9+ (usually pre-installed)
+- Python 3.10+ (install if needed: `sudo apt install python3.10`)
 - System packages: `libcamera-apps libcamera-dev python3-picamera2`
 - At least 2GB free space
 
 ### Processing Server Requirements:
 - Ubuntu 20.04+ / Debian 11+ / macOS / Windows with WSL2
-- Python 3.9+
+- Python 3.10+ (modern type hints and features required)
 - At least 8GB RAM (16GB recommended)
 - 20GB+ free storage for videos
 - NVIDIA GPU optional but recommended for faster processing
